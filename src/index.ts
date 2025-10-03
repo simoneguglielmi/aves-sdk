@@ -6,3 +6,6 @@ export * from './types/interfaces';
 export * from './http/xml-http-client';
 export * from './config/aves.config';
 export * from './tokens';
+export * from './validation/aves-validation';
+export * from './errors/aves-error-handler';
+export * from './errors/aves-error';
