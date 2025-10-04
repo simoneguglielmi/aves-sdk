@@ -36,12 +36,13 @@ export class AvesService {
   ) {}
 
   private buildHeader(): RqHeader {
+    const { hostId, xtoken, languageCode } = this.config;
     return {
-      '@HostID': this.config.hostId,
-      '@Xtoken': this.config.xtoken,
-      '@Interface': 'WEB',
-      '@UserName': 'WEB',
-      '@LanguageCode': this.config.languageCode,
+      '@HostID': hostId,
+      '@Xtoken': xtoken,
+      '@Interface': 'WEB', // THIS IS THE DEFAULT VALUE FOR THE INTERFACE
+      '@UserName': 'WEB', // THIS IS THE DEFAULT VALUE FOR THE USERNAME
+      '@LanguageCode': languageCode,
     };
   }
 
