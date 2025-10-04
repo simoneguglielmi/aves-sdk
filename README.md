@@ -7,6 +7,7 @@ A comprehensive TypeScript SDK for integrating with the AVES XML REST API in Nes
 - **Full NestJS Integration** - Native module with `forRoot`/`forRootAsync` support and global availability
 - **Complete Type Safety** - Comprehensive TypeScript interfaces with clean API abstractions
 - **Advanced Validation** - Modern Zod validation with `AvesValidator` class and utility functions
+- **Enhanced Date Handling** - date-fns integration for robust date manipulation and validation
 - **Error Handling** - Structured error handling with AVES-specific error codes
 - **Configuration** - Environment-based configuration with validation
 - **Dependency Injection** - Interface-based DI following NestJS patterns
@@ -152,7 +153,7 @@ const customer: Customer = {
     title: 'mr',
     firstName: 'John',
     lastName: 'Doe',
-    dateOfBirth: createDateString('1990-01-01'),
+    dateOfBirth: createstring('1990-01-01'),
     gender: 'male',
   },
   address: {
@@ -197,7 +198,7 @@ const booking: CreateBookingRequest = {
       title: 'mr',
       firstName: 'John',
       lastName: 'Doe',
-      dateOfBirth: createDateString('1990-01-01'),
+      dateOfBirth: '1990-01-01',
       gender: 'male',
     },
   ],
@@ -207,8 +208,8 @@ const booking: CreateBookingRequest = {
       type: 'flight',
       status: 'confirmed',
       description: 'Flight from NYC to LAX',
-      startDate: createDateString('2024-06-01'),
-      endDate: createDateString('2024-06-01'),
+      startDate: '2024-06-01',
+      endDate: '2024-06-01',
     },
   ],
 };
@@ -240,7 +241,7 @@ const booking: CreateBookingRequest = {
       title: 'mr',
       firstName: 'John',
       lastName: 'Doe',
-      dateOfBirth: createDateString('1990-01-01'),
+      dateOfBirth: '1990-01-01',
       gender: 'male',
     },
     contact: {
@@ -322,8 +323,7 @@ Advanced validation class for comprehensive data validation scenarios.
 **Utility Functions:**
 
 - `createValidator(schema)` - Create validator instance
-- `quickValidate(data, schema)` - Quick validation with error throwing
-- `quickSafeValidate(data, schema)` - Quick safe validation
+- Date utilities with date-fns integration for enhanced date manipulation
 
 ### Configuration
 
@@ -354,19 +354,35 @@ type CustomerType = 'customer' | 'agent' | 'supplier';
 type BookingType = 'individual' | 'group' | 'corporate';
 ```
 
-#### Branded Date Types
+#### Date Utilities
 
-Type-safe date handling with branded types:
+Enhanced date manipulation with date-fns integration:
 
 ```typescript
-type DateString = string & { readonly __brand: 'DateString' }; // YYYY-MM-DD
-type DateTimeString = string & { readonly __brand: 'DateTimeString' }; // YYYY-MM-DDTHH:mm:ss
-type TimeString = string & { readonly __brand: 'TimeString' }; // HH:mm:ss
+import {
+  createDateString,
+  createDateTimeString,
+  createTimeString,
+  formatDateString,
+  isValidDateString,
+  calculateAge,
+  isValidBookingDate,
+} from 'aves-sdk';
 
-// Helper functions
+// Create validated date strings
 const dateString = createDateString('2024-01-01');
 const dateTimeString = createDateTimeString('2024-01-01T10:30:00');
 const timeString = createTimeString('10:30:00');
+
+// Format dates for display
+const formattedDate = formatDateString('2024-01-01', 'MMM dd, yyyy'); // "Jan 01, 2024"
+
+// Validate date strings
+const isValid = isValidDateString('2024-01-01'); // true
+
+// AVES-specific utilities
+const age = calculateAge('1990-01-01'); // Calculate customer age
+const isBookingValid = isValidBookingDate('2024-06-01'); // Check if booking date is valid
 ```
 
 ### Validation
@@ -403,8 +419,6 @@ import {
   AvesValidator,
   configValidationSchema,
   createValidator,
-  quickValidate,
-  quickSafeValidate,
 } from 'aves-sdk';
 
 // Constructor approach - validator with default schema
@@ -440,10 +454,6 @@ const searchResult = validator.safeValidateAndParse(
   searchData,
   SearchCustomerRequestValidation
 );
-
-// Utility functions for quick validation
-const validConfig = quickValidate(configData, configValidationSchema);
-const safeResult = quickSafeValidate(configData, configValidationSchema);
 
 // Factory function approach
 const validator = createValidator(configValidationSchema);
@@ -686,6 +696,6 @@ For issues and questions:
 
 - Replaced `class-validator` with Zod validation
 - Introduced clean API interfaces alongside XML interfaces
-- Added branded types for better type safety
+- Enhanced date utilities with date-fns integration
 - Updated module configuration with enhanced validation
 - Improved error handling structure
