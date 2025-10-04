@@ -12,6 +12,7 @@ import { XML_HTTP_CLIENT } from '../tokens';
 import { avesConfig } from '../config/aves.config';
 import { AvesSdkConfig } from '../types/common';
 import { AVES_SDK_CONFIG } from '../tokens';
+import { configValidationSchema } from 'src/validation/aves-validation';
 
 /**
  * AvesModule - Dynamic module for AVES SDK integration
@@ -165,17 +166,16 @@ export class AvesModule {
    * @private
    */
   private static validateConfig(config: AvesSdkConfig): AvesSdkConfig {
-    if (!config.baseUrl) {
-      throw new Error('AVES baseUrl is required');
-    }
-    if (!config.hostId) {
-      throw new Error('AVES hostId is required');
-    }
-    if (!config.xtoken) {
-      throw new Error('AVES xtoken is required');
+    const validatedConfig = configValidationSchema.safeParse(config);
+    if (!validatedConfig.success) {
+      throw new Error(
+        `Invalid AVES SDK configuration: ${validatedConfig.error.issues
+          .map((issue) => issue.message)
+          .join(', ')}`
+      );
     }
 
-    return config;
+    return validatedConfig.data;
   }
 }
 
