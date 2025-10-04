@@ -27,6 +27,7 @@ import type {
   PrintBookingDocumentRQ,
   PrintBookingDocumentRS,
 } from '../types/interfaces';
+import { WrapRequestDto } from './dto/wrap-request.dto';
 
 @Injectable()
 export class AvesService {
@@ -46,13 +47,11 @@ export class AvesService {
     };
   }
 
-  private wrapRequest<T>(body: T): AvesRequestRoot<T> {
-    return {
-      Request: {
-        RqHeader: this.buildHeader(),
-        Body: body,
-      },
-    };
+  private wrapRequest<T>(body: T): WrapRequestDto<T> {
+    return new WrapRequestDto({
+      RqHeader: this.buildHeader(),
+      Body: body,
+    });
   }
 
   // Master Records
