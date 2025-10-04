@@ -2,13 +2,13 @@
   "name": "aves-sdk",
   "version": "0.1.0",
   "description": "TypeScript SDK for AVES XML REST, compatible with NestJS",
-  "homepage": "https://github.com/your-org/aves-sdk#readme",
+  "homepage": "https://github.com/simoneguglielmi/aves-sdk#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/aves-sdk.git"
+    "url": "git+https://github.com/simoneguglielmi/aves-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/aves-sdk/issues"
+    "url": "https://github.com/simoneguglielmi/aves-sdk/issues"
   },
   "keywords": [
     "aves",

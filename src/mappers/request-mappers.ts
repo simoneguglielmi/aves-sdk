@@ -1,4 +1,5 @@
 import {
+  Customer,
   CustomerAddress,
   CustomerContact,
   BookingPassenger,
@@ -31,6 +32,8 @@ import {
   mapPaymentStatusToXml,
   mapPaymentStatusFromXml,
   mapCustomerTypeToXml,
+  mapCustomerStatusToXml,
+  mapCommunicationMethodToXml,
   mapBookingTypeToXml,
   mapPriorityToXml,
   mapSpecialRequestTypeToXml,
@@ -44,6 +47,7 @@ import {
   mapGenderFromXml,
 } from './type-mappers';
 import {
+  MasterRecord,
   Address as XmlAddress,
   ContactInfo as XmlContactInfo,
   Passenger as XmlPassenger,
@@ -287,6 +291,45 @@ export function mapSearchCustomerToXml(
   };
 }
 
+export function mapCustomerToXml(clean: Customer): MasterRecord {
+  return {
+    '@MasterRecordID': clean.id,
+    '@Type': mapCustomerTypeToXml(clean.type),
+    '@Status': mapCustomerStatusToXml(clean.status),
+    PersonalInfo: clean.personalInfo
+      ? {
+          Title: clean.personalInfo.title,
+          FirstName: clean.personalInfo.firstName,
+          LastName: clean.personalInfo.lastName,
+          MiddleName: clean.personalInfo.middleName,
+          DateOfBirth: clean.personalInfo.dateOfBirth,
+          Gender: clean.personalInfo.gender
+            ? mapGenderToXml(clean.personalInfo.gender)
+            : undefined,
+          Nationality: clean.personalInfo.nationality,
+        }
+      : undefined,
+    ContactInfo: clean.contact ? mapContactToXml(clean.contact) : undefined,
+    Address: clean.address ? mapAddressToXml(clean.address) : undefined,
+    BusinessInfo: clean.businessInfo
+      ? {
+          CompanyName: clean.businessInfo.companyName,
+          TaxID: clean.businessInfo.taxId,
+          LicenseNumber: clean.businessInfo.licenseNumber,
+        }
+      : undefined,
+    Preferences: clean.preferences
+      ? {
+          Language: clean.preferences.language,
+          Currency: clean.preferences.currency,
+          CommunicationMethod: clean.preferences.communicationMethod
+            ? mapCommunicationMethodToXml(clean.preferences.communicationMethod)
+            : undefined,
+        }
+      : undefined,
+  };
+}
+
 export function mapCreateBookingToXml(clean: CreateBookingRequest): BookFileRQ {
   return {
     BookingDetails: {
@@ -294,7 +337,9 @@ export function mapCreateBookingToXml(clean: CreateBookingRequest): BookFileRQ {
       '@Priority': mapPriorityToXml(clean.priority),
       CustomerInfo: {
         '@CustomerID': clean.customerId,
-        CustomerDetails: clean.customerDetails,
+        CustomerDetails: clean.customerDetails
+          ? mapCustomerToXml(clean.customerDetails)
+          : undefined,
       },
       PassengerList: {
         Passenger: clean.passengers.map(mapPassengerToXml),
