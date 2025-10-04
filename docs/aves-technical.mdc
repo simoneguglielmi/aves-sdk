@@ -1,0 +1,263 @@
+---
+alwaysApply: true
+---
+
+Documentazione Tecnica API REST di AVES per Sviluppatori SDK
+
+1. Introduzione e Scopo del Documento
+
+Questo documento fornisce una guida tecnica completa per gli sviluppatori che intendono creare un Software Development Kit (SDK) per interagire con il sistema di booking AVES. La documentazione si concentra esclusivamente sull'interfaccia REST/XML, in quanto il protocollo SOAP è deprecato e non più supportato per le nuove integrazioni. L'obiettivo è descrivere in modo comprensivo le interfacce, le strutture dati comuni e gli endpoint disponibili per la gestione delle anagrafiche e del ciclo di vita completo di una pratica di booking, dalla creazione fino alle operazioni finanziarie e documentali.
+
+Prima di esplorare i singoli endpoint, è essenziale comprendere i concetti fondamentali che governano ogni interazione con l'API.
+
+2. Concetti Fondamentali: Autenticazione e Strutture Comuni
+
+Comprendere i meccanismi di base dell'API di AVES è un passo strategico fondamentale prima di interagire con gli endpoint specifici. Ogni chiamata API richiede un'autenticazione precisa e standardizzata per garantire la sicurezza e l'identificazione del chiamante. Inoltre, le richieste e le risposte seguono una struttura comune, la cui comprensione è essenziale per un'integrazione di successo e per una corretta gestione degli esiti di ogni operazione.
+
+Analizziamo ora in dettaglio il protocollo e le strutture di base.
+
+2.1. Protocollo e Formato Dati
+
+Tutte le interazioni con l'API di AVES avvengono tramite il protocollo REST. È importante notare che, a differenza delle convenzioni REST più comuni, l'API di AVES utilizza esclusivamente il metodo POST per tutte le operazioni, incluse quelle di lettura. Il formato per lo scambio dei dati, sia per le richieste (request) che per le risposte (response), è XML.
+
+2.2. Autenticazione: L'Header di Richiesta ()
+
+Ogni singola richiesta inviata al sistema AVES deve obbligatoriamente includere un nodo RqHeader. Questo elemento contiene le credenziali di accesso e i metadati necessari per autenticare e contestualizzare la chiamata.
+
+Elemento Descrizione Obbligatorio
+@HostID Codice identificativo a 6 cifre fornito al cliente. Sì
+@Xtoken Stringa di validazione univoca associata all'HostID. Sì
+@Interface Identifica chi esegue la richiesta. Deve essere impostato sul valore fisso "WEB". Sì
+@UserName Nome utente AVES. Deve essere impostato sul valore fisso "WEB". Sì
+@LanguageCode Codice lingua per le descrizioni testuali. Esempi: 1 (italiano), 2 (inglese). No
+
+IMPORTANTE: Ogni richiesta deve contenere HostID (codice identificativo a 6 cifre) e Xtoken (stringa di validazione univoca) che costituiscono i codici di accesso per abilitare l'interrogazione del sistema.
+
+2.3. Gestione della Risposta: Il Nodo
+
+Ogni risposta fornita dall'API, indipendentemente dall'esito, contiene un nodo RsStatus. Questo elemento fornisce un feedback immediato e standardizzato sullo stato dell'operazione richiesta, permettendo al client di gestire correttamente successi, errori e altre condizioni.
+
+Attributo/Elemento Descrizione Possibili Valori
+@Status Attributo che indica l'esito generale della richiesta. OK: Operazione completata con successo.<br>ERROR: Si è verificato un errore bloccante.<br>WARNING: Operazione completata, ma con avvisi da verificare.<br>TIMEOUT: La richiesta ha superato il tempo massimo di esecuzione.
+ErrorCode Elemento contenente un codice numerico o alfanumerico che identifica l'errore specifico, presente solo se @Status è ERROR. -
+ErrorDescription Elemento con la descrizione testuale dell'errore, presente solo se @Status è ERROR. -
+
+Una volta compresi questi elementi di base, è possibile procedere con l'analisi delle strutture dati più complesse e degli endpoint specifici.
+
+3. Gestione Anagrafiche (Master Records)
+
+La gestione delle anagrafiche è un'attività fondamentale per garantire la coerenza dei dati tra sistemi diversi. Gli endpoint descritti in questa sezione sono cruciali per sincronizzare i dati di clienti e fornitori tra un sistema esterno e AVES. Come evidenziato nel caso d'uso di Blueberry Travel, questo processo elimina il doppio inserimento manuale, riduce il rischio di errori e assicura l'accuratezza dei dati fiscali, prerequisito per una corretta fatturazione.
+
+Il primo passo in questo flusso è verificare se un'anagrafica esiste già nel sistema.
+
+3.1. Endpoint:
+
+Questo endpoint permette di verificare l'esistenza di un'anagrafica cliente o fornitore nel sistema AVES, utilizzando diversi criteri di ricerca. È l'operazione preliminare consigliata prima di tentare un inserimento, per evitare la creazione di duplicati.
+
+- Metodo e URL:
+
+  - Metodo: POST
+  - Endpoint: <BaseAddress>/interop/masterRecords/v2/rest/Search
+
+  3.1.1. Struttura della Richiesta ()
+
+La richiesta permette di specificare il tipo di ricerca e il valore da utilizzare come filtro. L'elemento SearchType determina quale altro campo deve essere valorizzato per eseguire la query.
+
+Elemento Descrizione Note d'Uso
+SearchType Definisce il criterio di ricerca. I valori possibili sono: CODE, NAME, VATCODE, ZONE, CATEGORY, EMAIL, LASTMODDATE, SEARCH_FIELD, EXTERNAL_REF_CODE. Determina quale dei seguenti campi valorizzare.
+RecordCode Codice anagrafico AVES da cercare. Da usare quando SearchType è CODE.
+Name Nome del cliente o fornitore. Da usare quando SearchType è NAME.
+VatCode Partita IVA o Codice Fiscale. Da usare quando SearchType è VATCODE.
+Email Indirizzo email da cercare. Da usare quando SearchType è EMAIL.
+LastModificationDate Nodo per cercare per data di ultima modifica, con attributi @MinDate e @MaxDate. Da usare quando SearchType è LASTMODDATE.
+SearchFieldValue Campo di ricerca generico. Da usare quando SearchType è SEARCH_FIELD o EXTERNAL_REF_CODE.
+ZipCode, City, CountyCode Parametri aggiuntivi per ricerche di zona. Da usare quando SearchType è ZONE.
+
+3.1.2. Struttura della Risposta ()
+
+La risposta fornisce un elenco delle anagrafiche che corrispondono ai criteri di ricerca. In caso di successo (Status="OK"), il corpo della risposta conterrà un elemento MasterRecordList, che a sua volta conterrà una lista di zero o più nodi MasterRecordDetail. Ogni MasterRecordDetail rappresenta un'anagrafica completa, la cui struttura è dettagliata nella documentazione ufficiale a pagina 35. Se la lista è vuota, significa che nessuna anagrafica corrisponde ai criteri.
+
+3.2. Endpoint:
+
+Questo endpoint viene utilizzato per creare una nuova anagrafica (cliente o fornitore) o per aggiornare i dati di un'anagrafica già esistente nel sistema AVES.
+
+- Metodo e URL:
+
+  - Metodo: POST
+  - Endpoint: <BaseAddress>/interop/masterRecords/v2/rest/InsertOrUpdate
+
+  3.2.1. Struttura della Richiesta ()
+
+Il corpo della richiesta è costituito principalmente dal nodo MasterRecordDetail, che contiene tutti i dati anagrafici da inserire o aggiornare. Un attributo chiave di questo nodo è @InsertCriteria, che definisce il comportamento dell'operazione.
+
+L'attributo @InsertCriteria controlla la logica di inserimento e aggiornamento con i seguenti valori:
+
+- S: Inserisce sempre un nuovo record.
+- N: Se il record esiste, non lo aggiorna.
+- T: Se il record esiste, aggiorna tutti i campi.
+- M: Se il record esiste, aggiorna solo i campi secondari.
+
+Per implementare una logica di "upsert" (aggiorna se esiste, altrimenti crea), si raccomanda esplicitamente l'uso del valore "T", come indicato nel documento di integrazione di Blueberry Travel.
+
+3.2.2. Struttura della Risposta ()
+
+In caso di esito positivo, la risposta conterrà l'elemento MasterRecordDetail completo con i dati appena inseriti o aggiornati. L'attributo RecordCode all'interno di questo nodo conterrà il codice anagrafico univoco assegnato da AVES, che dovrà essere salvato nel sistema esterno per riferimenti futuri.
+
+(Nota: La documentazione di origine si riferisce a questo oggetto di risposta sia come ManageMasterRecordRS che come CustomerRecordRS. Il nome CustomerRecordRS è utilizzato nell'esempio di risposta ufficiale.)
+
+Una volta gestite le anagrafiche, è possibile procedere con il ciclo di vita delle pratiche di booking.
+
+4. Gestione Pratiche di Booking (Booking Files)
+
+Questo gruppo di endpoint permette di orchestrare l'intero ciclo di vita di una pratica di viaggio all'interno del sistema AVES. Le operazioni supportate vanno dalla creazione di un preventivo (QUOTATION) o di una prenotazione confermata (CONFIRMED), alla sua successiva modifica (aggiornamento dei passeggeri o dei servizi), fino alla gestione degli stati e alla cancellazione finale della pratica.
+
+La prima operazione del ciclo di vita è la creazione di una nuova pratica.
+
+4.1. Endpoint:
+
+Questo endpoint è il punto di partenza per ogni nuova pratica. Consente di creare un preventivo o una prenotazione confermata, includendo tutti i dettagli necessari: cliente, passeggeri, servizi del viaggio e stato iniziale. Questo endpoint rappresenta l'implementazione del flusso di creazione della pratica di viaggio, come delineato nel documento di integrazione, e costituisce il fulcro per la generazione della pratica contabile completa in AVES.
+
+- Metodo e URL:
+
+  - Metodo: POST
+  - Endpoint: <BaseAddress>/interop/booking/v2/rest/CreateBookingFile
+
+  4.1.1. Struttura della Richiesta ()
+
+La richiesta BookingFileRQ è un documento XML strutturato che aggrega diverse entità. I suoi nodi principali includono:
+
+- CustomerDetail: Specifica i dati del cliente associato alla pratica. È possibile fare riferimento a un cliente esistente tramite il suo RecordCode oppure inserire i dati per creare una nuova anagrafica contestualmente.
+- BookingFileStatus: Definisce lo stato iniziale della pratica. Tramite l'attributo @Value, si può impostare a QUOTATION (preventivo) o CONFIRMED (confermato). Se lo stato è OPTIONED, è possibile specificare una data di scadenza tramite @ExpiredDate.
+- SelectedServiceList: Questo è un nodo cruciale che contiene l'elenco di tutti i servizi (voli, hotel, trasferimenti, etc.) che compongono il pacchetto di viaggio.
+- PassengerList: Contiene l'elenco dettagliato di tutti i passeggeri che partecipano al viaggio.
+
+  4.1.2. Struttura della Risposta ()
+
+Una risposta con esito positivo (Status="OK") restituisce un nodo BookingFileDetail. Questo oggetto rappresenta la visione completa della pratica appena creata nel sistema AVES, incluso il BookingFileCode univoco assegnato dal sistema, che fungerà da identificativo per tutte le operazioni future su quella pratica.
+
+4.2. Endpoint:
+
+Questo endpoint permette di modificare i dati di intestazione ("header") di una pratica di booking già esistente. Le modifiche tipiche includono il cambio del cliente associato, l'aggiornamento dei riferimenti esterni o la modifica completa della lista dei passeggeri.
+
+- Metodo e URL:
+
+  - Metodo: POST
+  - Endpoint: <BaseAddress>/interop/booking/v2/rest/ModBookingFileHeader
+
+  4.2.1. Struttura della Richiesta ()
+
+La richiesta deve identificare la pratica da modificare e fornire i nuovi dati.
+
+Elemento Descrizione
+BookingFileCode Identificativo obbligatorio della pratica di booking da modificare.
+NewCustomerRecordCode Eventuale nuovo codice cliente da associare alla pratica.
+PassengerList Se presente, sostituisce completamente la lista passeggeri esistente con quella fornita.
+StatisticCodes Permette di modificare i codici statistici associati alla pratica.
+
+4.2.2. Struttura della Risposta ()
+
+In caso di successo, la risposta non contiene un corpo dati aggiuntivo ma solo la struttura RsStatus standard con @Status="OK".
+
+4.3. Endpoint:
+
+Questo endpoint è dedicato alla modifica dei servizi che compongono una pratica. Consente di aggiungere nuovi servizi, sostituirne di esistenti o cancellare servizi non più necessari.
+
+- Metodo e URL:
+
+  - Metodo: POST
+  - Endpoint: <BaseAddress>/interop/booking/v2/rest/ModBookingFileServices
+
+  4.3.1. Struttura della Richiesta ()
+
+La richiesta identifica la pratica e specifica le operazioni da eseguire sui servizi.
+
+- BookingFileCode: Identifica la pratica da modificare.
+- SelectedServiceList: Contiene l'elenco dei nuovi servizi da aggiungere o dei servizi da sostituire.
+- CancellableBookedServiceList: Specifica quali servizi esistenti devono essere rimossi. Ogni elemento CancellableBookedServiceDetail al suo interno richiede:
+
+  - @CancelOperationType: Definisce l'operazione di cancellazione (NULLIFY o DELETE).
+  - @ServiceRefType: Specifica come identificare il servizio (RPH o FILE).
+  - @ServiceRefValue: Il valore dell'identificativo (es. il numero RPH del servizio).
+
+  4.3.2. Struttura della Risposta ()
+
+A differenza della modifica dell'header, in caso di successo questa operazione restituisce l'intero oggetto BookingFileDetail aggiornato. Questo permette al sistema client di avere immediatamente una visione completa e attuale della pratica dopo le modifiche apportate ai servizi.
+
+4.4. Endpoint Correlati alla Gestione degli Stati e Cancellazione
+
+Esistono altri endpoint che gestiscono operazioni più specifiche sul ciclo di vita della pratica.
+
+- SetBookingFileStatus
+  - Scopo: Cambiare lo stato dell'intera pratica (es. da QUOTATION a CONFIRMED).
+  - Metodo: POST
+  - URL: <BaseAddress>/interop/booking/v2/rest/SetBookingFileStatus
+  - Richiesta: La SetStatusRQ richiede BookingFileCode e il nuovo FileStatus desiderato.
+- SetBookingFileServiceStatus
+  - Scopo: Modificare lo stato di un singolo servizio all'interno di una pratica (es. da REQUEST a CONFIRMED).
+  - Metodo: POST
+  - URL: <BaseAddress>/interop/booking/v2/rest/SetBookingFileServiceStatus
+  - Richiesta: La SetStatusServiceRQ richiede BookingFileCode, il riferimento al servizio (BookingServiceRef) e il nuovo stato (BookingFileServiceStatus).
+- CancelBookingFile
+  - Scopo: Eliminare fisicamente una pratica dal sistema AVES. Da non confondere con il cambio di stato in CANCELED, questa operazione è distruttiva.
+  - Metodo: POST
+  - URL: <BaseAddress>/interop/booking/v2/rest/CancelBookingFile
+  - Richiesta: La CancelFileRQ richiede semplicemente il BookingFileCode della pratica da cancellare.
+
+Completata la gestione della pratica, le operazioni successive riguardano gli aspetti finanziari e documentali.
+
+5. Operazioni Finanziarie e Documentali
+
+Oltre alla gestione del ciclo di vita della prenotazione, l'API di AVES espone endpoint per gestire aspetti ausiliari ma cruciali del processo, come la registrazione dei pagamenti ricevuti e la generazione di documenti di viaggio ufficiali.
+
+Vediamo ora l'endpoint per la registrazione degli incassi.
+
+5.1. Endpoint:
+
+Questo endpoint permette di registrare uno o più pagamenti ricevuti da un cliente e associarli a una specifica pratica di booking.
+
+- Metodo e URL:
+
+  - Metodo: POST
+  - Endpoint: <BaseAddress>/interop/booking/v2/rest/InsertFilePaymentList
+
+  5.1.1. Struttura della Richiesta ()
+
+La richiesta deve identificare la pratica e fornire i dettagli dei pagamenti. Il nodo principale è FilePaymentList, che agisce come contenitore e può includere più elementi FilePaymentDetail. Questo permette di registrare pagamenti multipli (es. acconto e saldo) in una singola chiamata API. I campi chiave per ogni pagamento sono:
+
+- PaymentDate: La data in cui è stato ricevuto il pagamento.
+- Amount: L'importo del pagamento.
+- PaymentType: Il tipo di pagamento. I valori possibili sono: C (contanti), B (banca 1), D (banca 2), T (banca 3), P (Atm), R (carta di credito), A (sconto/abbuono), e altri valori specifici (H, I, J, K, L, M, N, O, Q, S, U, V).
+
+  5.1.2. Struttura della Risposta ()
+
+In caso di successo, la risposta contiene unicamente la struttura RsStatus standard con @Status="OK", senza un corpo dati aggiuntivo.
+
+5.2. Endpoint:
+
+Questo endpoint consente di richiedere la generazione di uno o più documenti ufficiali relativi a una pratica di booking, come contratti, voucher, fatture proforma e altri documenti di viaggio.
+
+- Metodo e URL:
+
+  - Metodo: POST
+  - Endpoint: <BaseAddress>/interop/document/v2/rest/PrintBookingDocument
+
+  5.2.1. Struttura della Richiesta ()
+
+La richiesta specifica quale pratica e quali documenti generare, oltre a opzioni di output.
+
+Parametro Descrizione
+BookingFileCode Identificativo della pratica di booking per cui generare i documenti.
+InfoDocumentsToPrint Nodo contenitore che specifica quale/i DocumentType generare. È possibile richiedere più documenti in una sola chiamata. Valori possibili includono: VISA_REQUEST, TRAVEL_INFORMATION, VOUCHER, BOOKING_CONTRACT, BOOKING_CONFIRMATION, SUPPLIER_SERVICE_LIST, INVOICE, PROFORMA_INVOICE, ADEGUAMENTO, RESERVATION_FORM, TICKETING_TMASTER.
+GetDocumentContent Flag booleano. Se impostato a true, la risposta conterrà il contenuto del documento generato, codificato in base64.
+SendDocumentViaEmail Flag booleano. Se impostato a true, il sistema AVES invierà il documento generato direttamente all'indirizzo email associato alla pratica.
+
+5.2.2. Struttura della Risposta ()
+
+La struttura della risposta dipende dal valore del flag GetDocumentContent nella richiesta. Se era impostato a true, la risposta conterrà, oltre al nodo RsStatus, i seguenti elementi:
+
+- DocFileName: Il nome del file generato (es. Voucher_N_19_005235.pdf).
+- Base64DocContent: Il contenuto del documento, codificato in formato base64, pronto per essere decodificato e salvato o mostrato all'utente.
+
+6. Conclusione
+
+L'API REST di AVES offre un set completo e potente di endpoint per l'integrazione con sistemi esterni. Questa documentazione ha coperto gli elementi essenziali per costruire un SDK robusto, in grado di gestire la sincronizzazione delle anagrafiche, l'intero ciclo di vita delle pratiche di booking e le operazioni finanziarie e documentali correlate. Seguendo le linee guida e le strutture dati descritte, gli sviluppatori possono realizzare un'integrazione efficiente e automatizzata, migliorando i flussi di lavoro e garantendo la coerenza dei dati tra le piattaforme.

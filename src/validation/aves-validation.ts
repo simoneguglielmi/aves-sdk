@@ -6,7 +6,7 @@ export const LanguageCodeValidation = z.enum(['01', '02']);
 
 export const configValidationSchema = z.object({
   baseUrl: z.url(),
-  hostId: z.string().length(7),
+  hostId: z.string().length(6),
   xtoken: z.string(),
   languageCode: LanguageCodeValidation.optional(),
   timeout: z.number().optional(),
