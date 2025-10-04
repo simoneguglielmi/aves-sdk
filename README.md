@@ -314,7 +314,6 @@ Advanced validation class for comprehensive data validation scenarios.
 
 - `getErrorMessage(error, separator?)` - Format ZodError messages
 - `getSchema()` - Get current default schema
-- `setSchema(schema)` - Set new default schema
 
 **Static Methods:**
 
