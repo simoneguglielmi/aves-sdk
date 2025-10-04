@@ -35,7 +35,7 @@ export class XmlHttpClient implements IXmlHttpClient {
       attributeNamePrefix: '@',
       ignoreAttributes: false,
       suppressEmptyNode: true,
-      format: false,
+      format: process.env.NODE_ENV === 'development', // only in development mode
     });
 
     this.xmlParser = new XMLParser({
