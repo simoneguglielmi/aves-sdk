@@ -7,7 +7,7 @@ A comprehensive TypeScript SDK for integrating with the AVES XML REST API in Nes
 - **Full NestJS Integration** - Native module with `forRoot`/`forRootAsync` support and global availability
 - **Complete Type Safety** - Comprehensive TypeScript interfaces with clean API abstractions
 - **Advanced Validation** - Modern Zod validation with `AvesValidator` class and utility functions
-- **Enhanced Date Handling** - date-fns integration for robust date manipulation and validation
+- **Enhanced Date Handling** - Native JavaScript Date integration for robust date manipulation and validation
 - **Error Handling** - Structured error handling with AVES-specific error codes
 - **Configuration** - Environment-based configuration with validation
 - **Dependency Injection** - Interface-based DI following NestJS patterns
@@ -323,7 +323,7 @@ Advanced validation class for comprehensive data validation scenarios.
 **Utility Functions:**
 
 - `createValidator(schema)` - Create validator instance
-- Date utilities with date-fns integration for enhanced date manipulation
+- Date utilities with native JavaScript Date for enhanced date manipulation
 
 ### Configuration
 
@@ -356,7 +356,7 @@ type BookingType = 'individual' | 'group' | 'corporate';
 
 #### Date Utilities
 
-Enhanced date manipulation with date-fns integration:
+Enhanced date manipulation with native JavaScript Date:
 
 ```typescript
 import {
@@ -696,6 +696,6 @@ For issues and questions:
 
 - Replaced `class-validator` with Zod validation
 - Introduced clean API interfaces alongside XML interfaces
-- Enhanced date utilities with date-fns integration
+- Enhanced date utilities with native JavaScript Date
 - Updated module configuration with enhanced validation
 - Improved error handling structure

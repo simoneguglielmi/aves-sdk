@@ -96,9 +96,6 @@ export const communicationMethodTypeSchema = z.enum(['email', 'sms', 'phone']);
 const dateStringSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
-const timeStringSchema = z
-  .string()
-  .regex(/^\d{2}:\d{2}:\d{2}$/, 'Time must be in HH:MM:SS format');
 const dateTimeStringSchema = z
   .string()
   .regex(
