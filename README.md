@@ -153,7 +153,7 @@ const customer: Customer = {
     title: 'mr',
     firstName: 'John',
     lastName: 'Doe',
-    dateOfBirth: createstring('1990-01-01'),
+    dateOfBirth: '1990-01-01',
     gender: 'male',
   },
   address: {
