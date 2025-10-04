@@ -69,6 +69,6 @@ export class XmlHttpClient implements IXmlHttpClient {
     const xmlPayload = this.xmlBuilder.build({ [rootElementName]: request });
     const response = await this.httpClient.post(endpoint, xmlPayload, config);
     const data = this.xmlParser.parse(response.data);
-    return data as TResponse;
+    return data;
   }
 }
