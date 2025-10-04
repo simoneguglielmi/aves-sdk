@@ -7,6 +7,7 @@ export {
   mapPassengerToXml,
   mapServiceToXml,
   mapPaymentToXml,
+  mapCustomerToXml,
   mapSearchCustomerToXml,
   mapCreateBookingToXml,
   mapCancelBookingToXml,

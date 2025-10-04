@@ -168,7 +168,7 @@ export interface CreateBookingRequest {
   type: BookingType;
   priority: PriorityType;
   customerId?: string;
-  customerDetails?: any; // Will be mapped to MasterRecord
+  customerDetails?: Customer;
   passengers: BookingPassenger[];
   services: BookingService[];
   specialRequests?: {
