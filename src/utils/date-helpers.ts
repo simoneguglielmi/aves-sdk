@@ -1,7 +1,5 @@
-import { format, parseISO, isValid } from 'date-fns';
-
 /**
- * Creates a date string with validation using date-fns
+ * Creates a date string with validation using native Date
  * @param date - Date string in YYYY-MM-DD format or Date object
  * @returns string in YYYY-MM-DD format or throws error if invalid
  */
@@ -14,7 +12,8 @@ export const createDateString = (date: string | Date): string => {
     }
 
     try {
-      dateObj = parseISO(date);
+      // Parse ISO date string (YYYY-MM-DD)
+      dateObj = new Date(date + 'T00:00:00.000Z');
     } catch {
       throw new Error(`Invalid date string: ${date}`);
     }
@@ -22,16 +21,20 @@ export const createDateString = (date: string | Date): string => {
     dateObj = date;
   }
 
-  if (!isValid(dateObj)) {
+  if (isNaN(dateObj.getTime())) {
     throw new Error(`Invalid date value: ${date}`);
   }
 
-  const formattedDate = format(dateObj, 'yyyy-MM-dd');
-  return formattedDate;
+  // Format to YYYY-MM-DD
+  const year = dateObj.getUTCFullYear();
+  const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getUTCDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
 };
 
 /**
- * Creates a datetime string with validation using date-fns
+ * Creates a datetime string with validation using native Date
  * @param dateTime - DateTime string in ISO 8601 format or Date object
  * @returns string in ISO 8601 format or throws error if invalid
  */
@@ -46,7 +49,7 @@ export const createDateTimeString = (dateTime: string | Date): string => {
     }
 
     try {
-      dateObj = parseISO(dateTime);
+      dateObj = new Date(dateTime);
     } catch {
       throw new Error(`Invalid datetime string: ${dateTime}`);
     }
@@ -54,12 +57,12 @@ export const createDateTimeString = (dateTime: string | Date): string => {
     dateObj = dateTime;
   }
 
-  if (!isValid(dateObj)) {
+  if (isNaN(dateObj.getTime())) {
     throw new Error(`Invalid datetime value: ${dateTime}`);
   }
 
-  const formattedDateTime = format(dateObj, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-  return formattedDateTime;
+  // Return ISO string with milliseconds and Z
+  return dateObj.toISOString();
 };
 
 /**
