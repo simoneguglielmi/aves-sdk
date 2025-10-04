@@ -124,10 +124,12 @@ export interface HttpError extends Error {
   isAxiosError?: boolean;
 }
 
+export type LanguageCode = '01' | '02';
+
 export interface AvesSdkConfig {
   baseUrl: string;
   hostId: string;
   xtoken: string;
-  languageCode?: string;
+  languageCode?: LanguageCode;
   timeout?: number;
 }

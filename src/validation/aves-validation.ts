@@ -2,6 +2,16 @@ import { z } from 'zod';
 
 // ===== ZOD VALIDATION SCHEMAS =====
 
+export const LanguageCodeValidation = z.enum(['01', '02']);
+
+export const configValidationSchema = z.object({
+  baseUrl: z.url(),
+  hostId: z.string().length(7),
+  xtoken: z.string(),
+  languageCode: LanguageCodeValidation.optional(),
+  timeout: z.number().optional(),
+});
+
 export const AddressValidation = z.object({
   '@Type': z.enum(['HOME', 'WORK', 'BILLING', 'DELIVERY']).optional(),
   Street: z.string().max(100).optional(),
