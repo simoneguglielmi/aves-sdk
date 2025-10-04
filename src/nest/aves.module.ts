@@ -4,6 +4,7 @@ import {
   Provider,
   Type,
   ModuleMetadata,
+  Global,
 } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AvesService } from './aves.service';
@@ -41,6 +42,7 @@ import { configValidationSchema } from 'src/validation/aves-validation';
  * ```
  */
 
+@Global()
 @Module({})
 export class AvesModule {
   static readonly MODULE_NAME = 'AvesModule';
