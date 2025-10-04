@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AVES_SDK_CONFIG } from '../tokens';
 import type {
   AvesSdkConfig,
-  AvesRequestRoot,
   AvesResponseRoot,
   RqHeader,
 } from '../types/common';
