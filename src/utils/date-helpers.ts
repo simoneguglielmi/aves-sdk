@@ -1,58 +1,79 @@
-// Date validation and creation utilities
-import {
-  DateString,
-  DateTimeString,
-  TimeString,
-} from '../types/api-interfaces';
+import { format, parseISO, isValid } from 'date-fns';
 
 /**
- * Creates a DateString with validation
- * @param date - Date string in YYYY-MM-DD format
- * @returns DateString or throws error if invalid
+ * Creates a date string with validation using date-fns
+ * @param date - Date string in YYYY-MM-DD format or Date object
+ * @returns string in YYYY-MM-DD format or throws error if invalid
  */
-export const createDateString = (date: string): DateString => {
-  // Basic validation for YYYY-MM-DD format
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    throw new Error(`Invalid date format. Expected YYYY-MM-DD, got: ${date}`);
+export const createDateString = (date: string | Date): string => {
+  let dateObj: Date;
+
+  if (typeof date === 'string') {
+    // Validate format first
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new Error(`Invalid date format. Expected YYYY-MM-DD, got: ${date}`);
+    }
+
+    try {
+      dateObj = parseISO(date);
+    } catch {
+      throw new Error(`Invalid date string: ${date}`);
+    }
+  } else {
+    dateObj = date;
   }
 
-  // Additional validation - check if it's a valid date
-  const dateObj = new Date(date);
-  if (isNaN(dateObj.getTime())) {
+  // Enhanced validation using date-fns
+  if (!isValid(dateObj)) {
     throw new Error(`Invalid date value: ${date}`);
   }
 
-  return date as DateString;
+  // Format using date-fns for consistency
+  const formattedDate = format(dateObj, 'yyyy-MM-dd');
+  return formattedDate;
 };
 
 /**
- * Creates a DateTimeString with validation
- * @param dateTime - DateTime string in ISO 8601 format
- * @returns DateTimeString or throws error if invalid
+ * Creates a datetime string with validation using date-fns
+ * @param dateTime - DateTime string in ISO 8601 format or Date object
+ * @returns string in ISO 8601 format or throws error if invalid
  */
-export const createDateTimeString = (dateTime: string): DateTimeString => {
-  // Basic validation for ISO 8601 format
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/.test(dateTime)) {
-    throw new Error(
-      `Invalid datetime format. Expected ISO 8601, got: ${dateTime}`
-    );
+export const createDateTimeString = (dateTime: string | Date): string => {
+  let dateObj: Date;
+
+  if (typeof dateTime === 'string') {
+    // Validate format first
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/.test(dateTime)) {
+      throw new Error(
+        `Invalid datetime format. Expected ISO 8601, got: ${dateTime}`
+      );
+    }
+
+    try {
+      dateObj = parseISO(dateTime);
+    } catch {
+      throw new Error(`Invalid datetime string: ${dateTime}`);
+    }
+  } else {
+    dateObj = dateTime;
   }
 
-  // Additional validation - check if it's a valid datetime
-  const dateObj = new Date(dateTime);
-  if (isNaN(dateObj.getTime())) {
+  // Enhanced validation using date-fns
+  if (!isValid(dateObj)) {
     throw new Error(`Invalid datetime value: ${dateTime}`);
   }
 
-  return dateTime as DateTimeString;
+  // Format using date-fns for consistency
+  const formattedDateTime = format(dateObj, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+  return formattedDateTime;
 };
 
 /**
- * Creates a TimeString with validation
+ * Creates a time string with validation
  * @param time - Time string in HH:MM:SS format
- * @returns TimeString or throws error if invalid
+ * @returns string in HH:MM:SS format or throws error if invalid
  */
-export const createTimeString = (time: string): TimeString => {
+export const createTimeString = (time: string): string => {
   // Basic validation for HH:MM:SS format
   if (!/^\d{2}:\d{2}:\d{2}$/.test(time)) {
     throw new Error(`Invalid time format. Expected HH:MM:SS, got: ${time}`);
@@ -71,65 +92,5 @@ export const createTimeString = (time: string): TimeString => {
     throw new Error(`Invalid time value: ${time}`);
   }
 
-  return time as TimeString;
-};
-
-/**
- * Helper to get current date as DateString
- * @returns Current date in YYYY-MM-DD format
- */
-export const getCurrentDateString = (): DateString => {
-  return createDateString(new Date().toISOString().split('T')[0]);
-};
-
-/**
- * Helper to get current datetime as DateTimeString
- * @returns Current datetime in ISO 8601 format
- */
-export const getCurrentDateTimeString = (): DateTimeString => {
-  return createDateTimeString(new Date().toISOString());
-};
-
-/**
- * Validates if a string is a valid DateString without creating it
- * @param date - String to validate
- * @returns boolean
- */
-export const isValidDateString = (date: string): date is DateString => {
-  try {
-    createDateString(date);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Validates if a string is a valid DateTimeString without creating it
- * @param dateTime - String to validate
- * @returns boolean
- */
-export const isValidDateTimeString = (
-  dateTime: string
-): dateTime is DateTimeString => {
-  try {
-    createDateTimeString(dateTime);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Validates if a string is a valid TimeString without creating it
- * @param time - String to validate
- * @returns boolean
- */
-export const isValidTimeString = (time: string): time is TimeString => {
-  try {
-    createTimeString(time);
-    return true;
-  } catch {
-    return false;
-  }
+  return time;
 };

@@ -1,9 +1,5 @@
 // ===== TYPE DEFINITIONS =====
 
-export type DateString = string & { readonly __brand: 'DateString' }; // YYYY-MM-DD format
-export type DateTimeString = string & { readonly __brand: 'DateTimeString' }; // ISO 8601 format
-export type TimeString = string & { readonly __brand: 'TimeString' }; // HH:MM:SS format
-
 export type AddressType = 'home' | 'work' | 'billing' | 'delivery';
 export type ContactType = 'home' | 'work' | 'mobile' | 'fax';
 export type EmailType = 'home' | 'work';
@@ -82,7 +78,7 @@ export interface Customer {
     firstName: string;
     lastName: string;
     middleName?: string;
-    dateOfBirth?: DateString;
+    dateOfBirth?: string;
     gender?: GenderType;
     nationality?: string;
   };
@@ -107,12 +103,12 @@ export interface BookingPassenger {
   firstName: string;
   lastName: string;
   middleName?: string;
-  dateOfBirth?: DateString;
+  dateOfBirth?: string;
   gender?: GenderType;
   nationality?: string;
   passport?: {
     number: string;
-    expiryDate: DateString;
+    expiryDate: string;
     issuingCountry: string;
   };
   address?: CustomerAddress;
@@ -126,8 +122,8 @@ export interface BookingService {
   code?: string;
   name?: string;
   description?: string;
-  startDate?: DateString;
-  endDate?: DateString;
+  startDate?: string;
+  endDate?: string;
   price?: {
     currency: string;
     amount: number;
@@ -209,8 +205,8 @@ export interface AddPaymentRequest {
 export interface BookingResponse {
   id: string;
   status: BookingStatusType;
-  createdAt: DateTimeString;
-  updatedAt: DateTimeString;
+  createdAt: string;
+  updatedAt: string;
   customer: Customer;
   passengers: BookingPassenger[];
   services: BookingService[];
@@ -242,7 +238,7 @@ export interface DocumentResponse {
   type: string;
   format: string;
   size: number;
-  createdAt: DateTimeString;
+  createdAt: string;
   downloadUrl?: string;
   deliveryStatus?: {
     status: DeliveryStatusType;
