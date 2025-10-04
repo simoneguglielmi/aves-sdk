@@ -50,11 +50,10 @@
   "peerDependencies": {
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
-    "@nestjs/config": "^3.2.3",
-    "class-validator": "^0.14.0",
-    "class-transformer": "^0.5.1",
-    "reflect-metadata": "^0.2.0",
-    "rxjs": "^7.1.0"
+    "@nestjs/config": "^4.0.2",
+    "zod": "^4.1.11",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",
@@ -65,17 +64,16 @@
     "@types/node": "^24.6.2",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
-    "@swc/core": "^1.7.42",
-    "eslint": "^9.36.0",
+    "@swc/core": "^1.13.5",
+    "eslint": "^9.37.0",
     "rimraf": "^6.0.1",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4",
-    "@nestjs/config": "^3.2.3",
-    "class-validator": "^0.14.0",
-    "class-transformer": "^0.5.1",
-    "reflect-metadata": "^0.2.0",
-    "rxjs": "^7.1.0"
+    "@nestjs/config": "^4.0.2",
+    "zod": "^4.1.11",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
   },
   "tsup": {
     "entry": [

@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { XMLBuilder, XMLParser } from 'fast-xml-parser';
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import type { AvesSdkConfig } from '../types/common';
-import { AVES_SDK_CONFIG, XML_HTTP_CLIENT } from '../tokens';
+import { AVES_SDK_CONFIG } from '../tokens';
 
 export interface IXmlHttpClient {
   postXml<TRequest extends object, TResponse = unknown>(
@@ -19,10 +19,7 @@ export class XmlHttpClient implements IXmlHttpClient {
   private readonly xmlBuilder: XMLBuilder;
   private readonly xmlParser: XMLParser;
 
-  constructor(
-    @Inject(AVES_SDK_CONFIG) private readonly config: AvesSdkConfig,
-    @Inject(XML_HTTP_CLIENT) private readonly xmlHttpClient: IXmlHttpClient
-  ) {
+  constructor(@Inject(AVES_SDK_CONFIG) private readonly config: AvesSdkConfig) {
     this.httpClient = axios.create({
       baseURL: config.baseUrl,
       timeout: typeof config.timeout === 'number' ? config.timeout : 30000,
@@ -46,7 +43,20 @@ export class XmlHttpClient implements IXmlHttpClient {
       ignoreAttributes: false,
       parseAttributeValue: false,
       trimValues: true,
-      isArray: (name) => false,
+      isArray: (name) => {
+        const arrayNames = [
+          'Field',
+          'Item',
+          'Service',
+          'Passenger',
+          'Payment',
+          'MasterRecord',
+          'Request',
+          'Notes',
+          'ServiceID',
+        ];
+        return arrayNames.includes(name);
+      },
     });
   }
 
