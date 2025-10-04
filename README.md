@@ -4,15 +4,15 @@ A comprehensive TypeScript SDK for integrating with the AVES XML REST API in Nes
 
 ## Features
 
-- 🚀 **Full NestJS Integration** - Native module with `forRoot`/`forRootAsync` support and global availability
-- 🔒 **Complete Type Safety** - Comprehensive TypeScript interfaces with clean API abstractions
-- ✅ **Advanced Validation** - Modern Zod validation with `AvesValidator` class and utility functions
-- 🛡️ **Error Handling** - Structured error handling with AVES-specific error codes
-- ⚙️ **Configuration** - Environment-based configuration with validation
-- 🔄 **Dependency Injection** - Interface-based DI following NestJS patterns
-- 🎯 **Clean APIs** - Developer-friendly interfaces abstracting XML complexity
-- 🔄 **Bidirectional Mappers** - Seamless conversion between clean and XML interfaces
-- 📦 **Production Ready** - Built for npm deployment with proper exports
+- **Full NestJS Integration** - Native module with `forRoot`/`forRootAsync` support and global availability
+- **Complete Type Safety** - Comprehensive TypeScript interfaces with clean API abstractions
+- **Advanced Validation** - Modern Zod validation with `AvesValidator` class and utility functions
+- **Error Handling** - Structured error handling with AVES-specific error codes
+- **Configuration** - Environment-based configuration with validation
+- **Dependency Injection** - Interface-based DI following NestJS patterns
+- **Clean APIs** - Developer-friendly interfaces abstracting XML complexity
+- **Bidirectional Mappers** - Seamless conversion between clean and XML interfaces
+- **Production Ready** - Built for npm deployment with proper exports
 
 ## Installation
 
@@ -669,15 +669,15 @@ For issues and questions:
 
 ### v1.0.0
 
-- 🎯 **Clean API Interfaces** - Developer-friendly interfaces abstracting XML complexity
-- 🔄 **Bidirectional Mappers** - Seamless conversion between clean and XML formats
-- ✅ **AvesValidator Class** - Comprehensive validation class with sync/async methods and utility functions
-- 🏷️ **Complete Type Safety** - Full TypeScript coverage with comprehensive interfaces for both clean API objects and XML structures, ensuring type safety throughout the entire request/response lifecycle
-- 🗺️ **Customer Mapper** - Full `Customer` to `MasterRecord` conversion with `mapCustomerToXml`
-- 🌍 **Global Module** - NestJS global module for application-wide availability
-- 🛡️ **Enhanced Error Handling** - Structured error handling with AVES-specific codes
-- 📚 **Comprehensive Documentation** - Complete API reference and examples
-- 🔧 **Production Ready** - Enterprise-grade implementation following NestJS best practices
+- **Clean API Interfaces** - Developer-friendly interfaces abstracting XML complexity
+- **Bidirectional Mappers** - Seamless conversion between clean and XML formats
+- **AvesValidator Class** - Comprehensive validation class with sync/async methods and utility functions
+- **Complete Type Safety** - Full TypeScript coverage with comprehensive interfaces for both clean API objects and XML structures, ensuring type safety throughout the entire request/response lifecycle
+- **Customer Mapper** - Full `Customer` to `MasterRecord` conversion with `mapCustomerToXml`
+- **Global Module** - NestJS global module for application-wide availability
+- **Enhanced Error Handling** - Structured error handling with AVES-specific codes
+- **Comprehensive Documentation** - Complete API reference and examples
+- **Production Ready** - Enterprise-grade implementation following NestJS best practices
 
 ### Breaking Changes from v0.x
 
