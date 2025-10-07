@@ -1,4 +1,22 @@
 import { z } from 'zod';
+import {
+  PassengerType,
+  GenderType,
+  CustomerType,
+  CustomerStatusType,
+  BookingStatusType,
+  DocumentType,
+  ServiceType,
+  ServiceStatusType,
+  PaymentType,
+  PaymentStatusType,
+  DocumentFormatType,
+  DeliveryMethodType,
+  CancelReasonType,
+  RefundMethodType,
+  PricingItemType,
+  DeliveryStatusType,
+} from '../types/api-interfaces';
 
 // ===== TYPE SCHEMAS (Based on Aves XML Documentation) =====
 
@@ -10,43 +28,14 @@ export const addressTypeSchema = z.enum([
 ]);
 export const contactTypeSchema = z.enum(['home', 'work', 'mobile', 'fax']);
 export const emailTypeSchema = z.enum(['home', 'work']);
-export const passengerTypeSchema = z.enum([
-  'adult',
-  'child',
-  'infant',
-  'senior',
-]);
+export const passengerTypeSchema = z.enum(PassengerType);
 export const titleTypeSchema = z.enum(['mr', 'mrs', 'ms', 'dr', 'prof']);
-export const genderTypeSchema = z.enum(['male', 'female']);
-export const serviceTypeSchema = z.enum([
-  'flight',
-  'hotel',
-  'car',
-  'transfer',
-  'insurance',
-]);
-export const serviceStatusTypeSchema = z.enum([
-  'confirmed',
-  'pending',
-  'cancelled',
-]);
-export const paymentTypeSchema = z.enum([
-  'credit_card',
-  'debit_card',
-  'bank_transfer',
-  'cash',
-]);
-export const paymentStatusTypeSchema = z.enum([
-  'pending',
-  'confirmed',
-  'failed',
-]);
-export const customerTypeSchema = z.enum([
-  'customer',
-  'supplier',
-  'voucher',
-  'supplier_voucher',
-]);
+export const genderTypeSchema = z.enum(GenderType);
+export const serviceTypeSchema = z.enum(ServiceType);
+export const serviceStatusTypeSchema = z.enum(ServiceStatusType);
+export const paymentTypeSchema = z.enum(PaymentType);
+export const paymentStatusTypeSchema = z.enum(PaymentStatusType);
+export const customerTypeSchema = z.enum(CustomerType);
 export const searchOperatorTypeSchema = z.enum([
   'equals',
   'contains',
@@ -61,56 +50,15 @@ export const specialRequestTypeSchema = z.enum([
   'wheelchair',
   'other',
 ]);
-export const cancelReasonTypeSchema = z.enum([
-  'customer_request',
-  'no_show',
-  'operational',
-  'other',
-]);
-export const refundMethodTypeSchema = z.enum([
-  'original_payment',
-  'credit',
-  'cash',
-]);
-export const documentTypeSchema = z.enum([
-  'visa_request',
-  'travel_information',
-  'voucher',
-  'booking_contract',
-  'booking_confirmation',
-  'supplier_service_list',
-  'invoice',
-  'proforma_invoice',
-  'adeguamento',
-  'reservation_form',
-  'open_xml',
-  'sales_invoice',
-  'ticketing_tmaster',
-  'summary_form',
-]);
-export const documentFormatTypeSchema = z.enum(['pdf', 'html', 'xml']);
-export const deliveryMethodTypeSchema = z.enum(['email', 'sms', 'download']);
-export const bookingStatusTypeSchema = z.enum([
-  'quotation',
-  'work_in_progress',
-  'confirmed',
-  'optioned',
-  'nullified',
-  'canceled',
-]);
-export const pricingItemTypeSchema = z.enum([
-  'service',
-  'tax',
-  'fee',
-  'discount',
-]);
-export const deliveryStatusTypeSchema = z.enum(['sent', 'pending', 'failed']);
-export const customerStatusTypeSchema = z.enum([
-  'enabled',
-  'warning',
-  'blacklisted',
-  'disabled',
-]);
+export const cancelReasonTypeSchema = z.enum(CancelReasonType);
+export const refundMethodTypeSchema = z.enum(RefundMethodType);
+export const documentTypeSchema = z.enum(DocumentType);
+export const documentFormatTypeSchema = z.enum(DocumentFormatType);
+export const deliveryMethodTypeSchema = z.enum(DeliveryMethodType);
+export const bookingStatusTypeSchema = z.enum(BookingStatusType);
+export const pricingItemTypeSchema = z.enum(PricingItemType);
+export const deliveryStatusTypeSchema = z.enum(DeliveryStatusType);
+export const customerStatusTypeSchema = z.enum(CustomerStatusType);
 export const communicationMethodTypeSchema = z.enum(['email', 'sms', 'phone']);
 
 // ===== DATE VALIDATION HELPERS =====

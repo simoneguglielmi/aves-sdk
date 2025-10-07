@@ -8,6 +8,10 @@ import {
   PrintDocumentRequest,
   AddPaymentRequest,
   BookingStatusType,
+  PassengerType,
+  GenderType,
+  ServiceType,
+  ServiceStatusType,
 } from '../types/api-interfaces';
 import { createDateString } from '../utils/date-helpers';
 import {
@@ -42,21 +46,21 @@ export function mapPassengerFromXml(xml: PassengerDetail): BookingPassenger {
   const lastName = nameParts.pop() || '';
   const firstName = nameParts.join(' ') || xml.Name;
 
-  const typeMap: Record<string, 'adult' | 'child' | 'infant' | 'senior'> = {
-    AD: 'adult',
-    CH: 'child',
-    IN: 'infant',
-    OV: 'senior',
+  const typeMap: Record<string, PassengerType> = {
+    AD: PassengerType.ADULT,
+    CH: PassengerType.CHILD,
+    IN: PassengerType.INFANT,
+    OV: PassengerType.SENIOR,
   };
 
   return {
     id: xml['@RPH'],
-    type: typeMap[xml.CategoryCode] || 'adult',
+    type: typeMap[xml.CategoryCode] || PassengerType.ADULT,
     title: undefined,
     firstName,
     lastName,
     dateOfBirth: xml.BirthDate ? createDateString(xml.BirthDate) : undefined,
-    gender: xml.Sex === 'M' ? 'male' : xml.Sex === 'F' ? 'female' : undefined,
+    gender: xml.Sex === 'M' ? GenderType.MALE : xml.Sex === 'F' ? GenderType.FEMALE : undefined,
     nationality: xml.NationCode || xml.CitizenshipCode,
     passport: xml.IDDocInfo
       ? {
@@ -81,8 +85,8 @@ export function mapPassengerFromXml(xml: PassengerDetail): BookingPassenger {
 export function mapServiceFromXml(xml: BookedServiceDetail): BookingService {
   return {
     id: xml['@ServiceCode'],
-    type: 'hotel', // Default, should be determined from TOServiceType
-    status: 'pending',
+    type: ServiceType.HOTEL, // Default, should be determined from TOServiceType
+    status: ServiceStatusType.PENDING,
     code: xml['@ServiceCode'],
     name: xml.FirstDescription,
     description: xml.SecondDescription,
@@ -282,14 +286,14 @@ function mapPassengerToAvesXml(
     '@RPH': String(index).padStart(3, '0'), // 001, 002, 003...
     Name: `${passenger.firstName} ${passenger.lastName}`,
     CategoryCode:
-      passenger.type === 'adult'
+      passenger.type === PassengerType.ADULT
         ? 'AD'
-        : passenger.type === 'child'
+        : passenger.type === PassengerType.CHILD
         ? 'CH'
-        : passenger.type === 'infant'
+        : passenger.type === PassengerType.INFANT
         ? 'IN'
         : 'OV',
-    Sex: passenger.gender === 'male' ? 'M' : 'F',
+    Sex: passenger.gender === GenderType.MALE ? 'M' : 'F',
     BirthDate: passenger.dateOfBirth,
     eMail: passenger.contact?.email?.address,
     PhoneNumber: passenger.contact?.phone?.number,

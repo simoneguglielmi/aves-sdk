@@ -1,7 +1,7 @@
 // ===== CUSTOMER TYPE MAPPERS =====
 
-import { CustomerStatusType } from 'src/types/api-interfaces';
-import { PrintBookingDocumentRQ } from 'src/types/interfaces';
+import { CustomerStatusType, CustomerType, BookingStatusType } from '../types/api-interfaces';
+import { PrintBookingDocumentRQ } from '../types/interfaces';
 
 export function mapCustomerTypeToXml(
   type: string
@@ -10,27 +10,24 @@ export function mapCustomerTypeToXml(
     string,
     'CUSTOMER' | 'SUPPLIER' | 'VOUCHER' | 'SUPPLIER_VOUCHER'
   > = {
-    customer: 'CUSTOMER',
-    supplier: 'SUPPLIER',
-    voucher: 'VOUCHER',
-    supplier_voucher: 'SUPPLIER_VOUCHER',
+    [CustomerType.CUSTOMER]: 'CUSTOMER',
+    [CustomerType.SUPPLIER]: 'SUPPLIER',
+    [CustomerType.VOUCHER]: 'VOUCHER',
+    [CustomerType.SUPPLIER_VOUCHER]: 'SUPPLIER_VOUCHER',
   };
   return mapping[type] || 'CUSTOMER';
 }
 
 export function mapCustomerTypeFromXml(
   type: string
-): 'customer' | 'supplier' | 'voucher' | 'supplier_voucher' {
-  const mapping: Record<
-    string,
-    'customer' | 'supplier' | 'voucher' | 'supplier_voucher'
-  > = {
-    CUSTOMER: 'customer',
-    SUPPLIER: 'supplier',
-    VOUCHER: 'voucher',
-    SUPPLIER_VOUCHER: 'supplier_voucher',
+): CustomerType {
+  const mapping: Record<string, CustomerType> = {
+    CUSTOMER: CustomerType.CUSTOMER,
+    SUPPLIER: CustomerType.SUPPLIER,
+    VOUCHER: CustomerType.VOUCHER,
+    SUPPLIER_VOUCHER: CustomerType.SUPPLIER_VOUCHER,
   };
-  return mapping[type] || 'customer';
+  return mapping[type] || CustomerType.CUSTOMER;
 }
 
 export function mapCustomerStatusToXml(
@@ -40,22 +37,22 @@ export function mapCustomerStatusToXml(
     string,
     'ENABLED' | 'WARNING' | 'BLACKLISTED' | 'DISABLED'
   > = {
-    enabled: 'ENABLED',
-    warning: 'WARNING',
-    blacklisted: 'BLACKLISTED',
-    disabled: 'DISABLED',
+    [CustomerStatusType.ENABLED]: 'ENABLED',
+    [CustomerStatusType.WARNING]: 'WARNING',
+    [CustomerStatusType.BLACKLISTED]: 'BLACKLISTED',
+    [CustomerStatusType.DISABLED]: 'DISABLED',
   };
   return mapping[status] || 'ENABLED';
 }
 
 export function mapCustomerStatusFromXml(status: string): CustomerStatusType {
   const mapping: Record<string, CustomerStatusType> = {
-    ENABLED: 'enabled',
-    WARNING: 'warning',
-    BLACKLISTED: 'blacklisted',
-    DISABLED: 'disabled',
+    ENABLED: CustomerStatusType.ENABLED,
+    WARNING: CustomerStatusType.WARNING,
+    BLACKLISTED: CustomerStatusType.BLACKLISTED,
+    DISABLED: CustomerStatusType.DISABLED,
   };
-  return mapping[status] || 'enabled';
+  return mapping[status] || CustomerStatusType.ENABLED;
 }
 
 // ===== BOOKING STATUS MAPPERS =====
@@ -78,42 +75,28 @@ export function mapBookingStatusToXml(
     | 'NULLIFIED'
     | 'CANCELED'
   > = {
-    quotation: 'QUOTATION',
-    work_in_progress: 'WORK_IN_PROGRESS',
-    confirmed: 'CONFIRMED',
-    optioned: 'OPTIONED',
-    nullified: 'NULLIFIED',
-    canceled: 'CANCELED',
+    [BookingStatusType.QUOTATION]: 'QUOTATION',
+    [BookingStatusType.WORK_IN_PROGRESS]: 'WORK_IN_PROGRESS',
+    [BookingStatusType.CONFIRMED]: 'CONFIRMED',
+    [BookingStatusType.OPTIONED]: 'OPTIONED',
+    [BookingStatusType.NULLIFIED]: 'NULLIFIED',
+    [BookingStatusType.CANCELED]: 'CANCELED',
   };
   return mapping[status] || 'QUOTATION';
 }
 
 export function mapBookingStatusFromXml(
   status: string
-):
-  | 'quotation'
-  | 'work_in_progress'
-  | 'confirmed'
-  | 'optioned'
-  | 'nullified'
-  | 'canceled' {
-  const mapping: Record<
-    string,
-    | 'quotation'
-    | 'work_in_progress'
-    | 'confirmed'
-    | 'optioned'
-    | 'nullified'
-    | 'canceled'
-  > = {
-    QUOTATION: 'quotation',
-    WORK_IN_PROGRESS: 'work_in_progress',
-    CONFIRMED: 'confirmed',
-    OPTIONED: 'optioned',
-    NULLIFIED: 'nullified',
-    CANCELED: 'canceled',
+): BookingStatusType {
+  const mapping: Record<string, BookingStatusType> = {
+    QUOTATION: BookingStatusType.QUOTATION,
+    WORK_IN_PROGRESS: BookingStatusType.WORK_IN_PROGRESS,
+    CONFIRMED: BookingStatusType.CONFIRMED,
+    OPTIONED: BookingStatusType.OPTIONED,
+    NULLIFIED: BookingStatusType.NULLIFIED,
+    CANCELED: BookingStatusType.CANCELED,
   };
-  return mapping[status] || 'quotation';
+  return mapping[status] || BookingStatusType.QUOTATION;
 }
 
 // ===== DOCUMENT TYPE MAPPERS =====

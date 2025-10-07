@@ -6,6 +6,9 @@ import {
   Customer,
   CancelResponseData,
   PaymentResponseData,
+  GenderType,
+  CustomerStatusType,
+  PricingItemType,
 } from '../types/api-interfaces';
 import { createDateTimeString, createDateString } from '../utils/date-helpers';
 import {
@@ -42,7 +45,7 @@ export function mapCustomerFromXml(xml: MasterRecordDetail): Customer {
       lastName,
       dateOfBirth: xml.BirthDate ? createDateString(xml.BirthDate) : undefined,
       gender:
-        xml.Gender === 'M' ? 'male' : xml.Gender === 'F' ? 'female' : undefined,
+        xml.Gender === 'M' ? GenderType.MALE : xml.Gender === 'F' ? GenderType.FEMALE : undefined,
       nationality: xml.CitizenshipCode,
     },
     contact: {

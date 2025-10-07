@@ -13,7 +13,7 @@ import { XML_HTTP_CLIENT } from '../tokens';
 import { avesConfig } from '../config/aves.config';
 import { AvesSdkConfig } from '../types/common';
 import { AVES_SDK_CONFIG } from '../tokens';
-import { configValidationSchema } from 'src/validation/aves-validation';
+import { configValidationSchema } from '../validation/aves-validation';
 
 /**
  * AvesModule - Dynamic module for AVES SDK integration
