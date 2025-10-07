@@ -45,7 +45,11 @@ export function mapCustomerFromXml(xml: MasterRecordDetail): Customer {
       lastName,
       dateOfBirth: xml.BirthDate ? createDateString(xml.BirthDate) : undefined,
       gender:
-        xml.Gender === 'M' ? GenderType.MALE : xml.Gender === 'F' ? GenderType.FEMALE : undefined,
+        xml.Gender === 'M'
+          ? GenderType.MALE
+          : xml.Gender === 'F'
+          ? GenderType.FEMALE
+          : undefined,
       nationality: xml.CitizenshipCode,
     },
     contact: {

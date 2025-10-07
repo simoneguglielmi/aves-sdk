@@ -60,7 +60,12 @@ export function mapPassengerFromXml(xml: PassengerDetail): BookingPassenger {
     firstName,
     lastName,
     dateOfBirth: xml.BirthDate ? createDateString(xml.BirthDate) : undefined,
-    gender: xml.Sex === 'M' ? GenderType.MALE : xml.Sex === 'F' ? GenderType.FEMALE : undefined,
+    gender:
+      xml.Sex === 'M'
+        ? GenderType.MALE
+        : xml.Sex === 'F'
+        ? GenderType.FEMALE
+        : undefined,
     nationality: xml.NationCode || xml.CitizenshipCode,
     passport: xml.IDDocInfo
       ? {

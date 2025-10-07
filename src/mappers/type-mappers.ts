@@ -1,6 +1,10 @@
 // ===== CUSTOMER TYPE MAPPERS =====
 
-import { CustomerStatusType, CustomerType, BookingStatusType } from '../types/api-interfaces';
+import {
+  CustomerStatusType,
+  CustomerType,
+  BookingStatusType,
+} from '../types/api-interfaces';
 import { PrintBookingDocumentRQ } from '../types/interfaces';
 
 export function mapCustomerTypeToXml(
@@ -18,9 +22,7 @@ export function mapCustomerTypeToXml(
   return mapping[type] || 'CUSTOMER';
 }
 
-export function mapCustomerTypeFromXml(
-  type: string
-): CustomerType {
+export function mapCustomerTypeFromXml(type: string): CustomerType {
   const mapping: Record<string, CustomerType> = {
     CUSTOMER: CustomerType.CUSTOMER,
     SUPPLIER: CustomerType.SUPPLIER,
@@ -85,9 +87,7 @@ export function mapBookingStatusToXml(
   return mapping[status] || 'QUOTATION';
 }
 
-export function mapBookingStatusFromXml(
-  status: string
-): BookingStatusType {
+export function mapBookingStatusFromXml(status: string): BookingStatusType {
   const mapping: Record<string, BookingStatusType> = {
     QUOTATION: BookingStatusType.QUOTATION,
     WORK_IN_PROGRESS: BookingStatusType.WORK_IN_PROGRESS,
