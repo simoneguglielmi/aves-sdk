@@ -1,58 +1,36 @@
-// Mapper exports for clean API to XML conversion
-
-// Request mappers (clean -> XML)
+// Request mappers
 export {
-  mapAddressToXml,
-  mapContactToXml,
-  mapPassengerToXml,
-  mapServiceToXml,
-  mapPaymentToXml,
   mapCustomerToXml,
   mapSearchCustomerToXml,
   mapCreateBookingToXml,
   mapCancelBookingToXml,
   mapPrintDocumentToXml,
   mapAddPaymentToXml,
+  mapCreateCustomerToXml,
+  mapUpdateCustomerToXml,
+  mapUpsertCustomerToXml,
+  mapUpdateBookingHeaderToXml,
+  mapUpdateBookingServicesToXml,
+  mapSetBookingStatusToXml,
+  mapSetBookingServiceStatusToXml,
 } from './request-mappers';
 
-// Response mappers (XML -> clean)
+// Response mappers
 export {
   mapBookingFromXml,
   mapBookingResponseFromXml,
+  mapCustomerResponseFromXml,
   mapSearchResponseFromXml,
   mapDocumentResponseFromXml,
   mapCancelResponseFromXml,
   mapPaymentResponseFromXml,
-  mapMasterRecordFromXml,
 } from './response-mappers';
 
+// Type mappers
 export {
-  mapAddressTypeToXml,
-  mapAddressTypeFromXml,
-  mapContactTypeToXml,
-  mapContactTypeFromXml,
-  mapEmailTypeToXml,
-  mapEmailTypeFromXml,
-  mapPassengerTypeToXml,
-  mapPassengerTypeFromXml,
-  mapTitleToXml,
-  mapTitleFromXml,
-  mapServiceTypeToXml,
-  mapServiceTypeFromXml,
-  mapServiceStatusToXml,
-  mapServiceStatusFromXml,
-  mapPaymentTypeToXml,
-  mapPaymentTypeFromXml,
-  mapPaymentStatusToXml,
-  mapPaymentStatusFromXml,
   mapCustomerTypeToXml,
-  mapBookingTypeToXml,
-  mapPriorityToXml,
-  mapSpecialRequestTypeToXml,
-  mapCancelReasonToXml,
-  mapRefundMethodToXml,
+  mapCustomerStatusToXml,
+  mapBookingStatusToXml,
   mapDocumentTypeToXml,
-  mapDocumentFormatToXml,
-  mapDeliveryMethodToXml,
-  mapSearchOperatorToXml,
+  mapGenderToXml,
 } from './type-mappers';

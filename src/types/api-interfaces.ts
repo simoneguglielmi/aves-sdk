@@ -3,7 +3,7 @@
 export type AddressType = 'home' | 'work' | 'billing' | 'delivery';
 export type ContactType = 'home' | 'work' | 'mobile' | 'fax';
 export type EmailType = 'home' | 'work';
-export type PassengerType = 'adult' | 'child' | 'infant';
+export type PassengerType = 'adult' | 'child' | 'infant' | 'senior';
 export type TitleType = 'mr' | 'mrs' | 'ms' | 'dr' | 'prof';
 export type GenderType = 'male' | 'female';
 export type ServiceType = 'flight' | 'hotel' | 'car' | 'transfer' | 'insurance';
@@ -14,7 +14,11 @@ export type PaymentType =
   | 'bank_transfer'
   | 'cash';
 export type PaymentStatusType = 'pending' | 'confirmed' | 'failed';
-export type CustomerType = 'customer' | 'agent' | 'supplier';
+export type CustomerType =
+  | 'customer'
+  | 'supplier'
+  | 'voucher'
+  | 'supplier_voucher';
 export type SearchOperatorType =
   | 'equals'
   | 'contains'
@@ -30,21 +34,36 @@ export type CancelReasonType =
   | 'other';
 export type RefundMethodType = 'original_payment' | 'credit' | 'cash';
 export type DocumentType =
-  | 'confirmation'
-  | 'invoice'
+  | 'visa_request'
+  | 'travel_information'
   | 'voucher'
-  | 'ticket'
-  | 'all';
+  | 'booking_contract'
+  | 'booking_confirmation'
+  | 'supplier_service_list'
+  | 'invoice'
+  | 'proforma_invoice'
+  | 'adeguamento'
+  | 'reservation_form'
+  | 'open_xml'
+  | 'sales_invoice'
+  | 'ticketing_tmaster'
+  | 'summary_form';
 export type DocumentFormatType = 'pdf' | 'html' | 'xml';
 export type DeliveryMethodType = 'email' | 'sms' | 'download';
 export type BookingStatusType =
-  | 'pending'
+  | 'quotation'
+  | 'work_in_progress'
   | 'confirmed'
-  | 'cancelled'
-  | 'completed';
+  | 'optioned'
+  | 'nullified'
+  | 'canceled';
 export type PricingItemType = 'service' | 'tax' | 'fee' | 'discount';
 export type DeliveryStatusType = 'sent' | 'pending' | 'failed';
-export type CustomerStatusType = 'active' | 'inactive' | 'suspended';
+export type CustomerStatusType =
+  | 'enabled'
+  | 'warning'
+  | 'blacklisted'
+  | 'disabled';
 export type CommunicationMethodType = 'email' | 'sms' | 'phone';
 
 // ===== COMMON API TYPES =====
@@ -63,6 +82,10 @@ export interface CustomerContact {
     type?: ContactType;
     number: string;
   };
+  mobile?: {
+    type?: ContactType;
+    number: string;
+  };
   email?: {
     type?: EmailType;
     address: string;
@@ -77,7 +100,6 @@ export interface Customer {
     title?: string;
     firstName: string;
     lastName: string;
-    middleName?: string;
     dateOfBirth?: string;
     gender?: GenderType;
     nationality?: string;
@@ -96,13 +118,17 @@ export interface Customer {
   };
 }
 
+export interface Price {
+  currency: string;
+  amount: number;
+}
+
 export interface BookingPassenger {
   id: string;
   type: PassengerType;
   title?: TitleType;
   firstName: string;
   lastName: string;
-  middleName?: string;
   dateOfBirth?: string;
   gender?: GenderType;
   nationality?: string;
@@ -124,20 +150,15 @@ export interface BookingService {
   description?: string;
   startDate?: string;
   endDate?: string;
-  price?: {
-    currency: string;
-    amount: number;
-  };
+  price?: Price;
 }
 
+// ===== PAYMENT MANAGEMENT =====
 export interface BookingPayment {
   id: string;
   type: PaymentType;
   status: PaymentStatusType;
-  amount: {
-    currency: string;
-    amount: number;
-  };
+  amount: Price;
   details?: {
     cardNumber?: string;
     expiryDate?: string;
@@ -147,35 +168,101 @@ export interface BookingPayment {
 
 // ===== REQUEST INTERFACES =====
 
-export interface SearchCustomerRequest {
-  type: CustomerType;
-  fields: {
-    name: string;
-    value: string;
-    operator?: SearchOperatorType;
-  }[];
-  pagination?: {
-    pageSize: number;
-    pageNumber: number;
-  };
-}
+export type SearchCustomerRequest =
+  | {
+      type: 'code';
+      code: string;
+      pagination?: { pages: number; page: number };
+    }
+  | {
+      type: 'name';
+      name: string;
+      city?: string;
+      pagination?: { pages: number; page: number };
+    }
+  | {
+      type: 'vat_code';
+      vatCode: string;
+      phoneNumber?: string;
+      pagination?: { pages: number; page: number };
+    }
+  | {
+      type: 'zone';
+      zipCode: string;
+      city?: string;
+      countyCode?: string;
+      pagination?: { pages: number; page: number };
+    }
+  | {
+      type: 'category';
+      categoryCode: string;
+      pagination?: { pages: number; page: number };
+    }
+  | {
+      type: 'email';
+      email: string;
+      pagination?: { pages: number; page: number };
+    }
+  | {
+      type: 'last_mod_date';
+      from: string;
+      to: string;
+      pagination?: { pages: number; page: number };
+    }
+  | {
+      type: 'search_field';
+      searchField: string;
+      pagination?: { pages: number; page: number };
+    }
+  | {
+      type: 'external_ref_code';
+      externalRefCode: string;
+      pagination?: { pages: number; page: number };
+    };
 
-export interface CreateBookingRequest {
-  type: BookingType;
-  priority: PriorityType;
-  customerId?: string;
-  customerDetails?: Customer;
+type BaseBookingRequest = {
+  description?: string;
+  startDate: string;
+  endDate: string;
+  currency?: string;
   passengers: BookingPassenger[];
   services: BookingService[];
-  specialRequests?: {
-    type: SpecialRequestType;
-    description: string;
+  statisticCodes?: {
+    code1?: string;
+    code2?: string;
+    code3?: string;
+    code4?: string;
+    code5?: string;
+    code6?: string;
+  };
+  destination?: {
+    code?: string;
+    iataCode?: string;
+    nationCode?: string;
+  };
+  deadlines?: {
+    code: string;
+    description?: string;
+    expireDate?: string;
   }[];
-}
+  printDocument?: boolean;
+  sendDocumentViaEmail?: boolean;
+};
+
+export type CreateBookingRequest =
+  | (BaseBookingRequest & {
+      customerId: string;
+      customerDetails?: never;
+    })
+  | (BaseBookingRequest & {
+      customerId?: never;
+      customerDetails: Customer;
+    });
 
 export interface CancelBookingRequest {
   bookingId: string;
-  reason: CancelReasonType;
+  customerId: string; // Required by Aves API
+  reason?: CancelReasonType;
   description?: string;
   refundRequest?: {
     amount: number;
@@ -186,8 +273,9 @@ export interface CancelBookingRequest {
 
 export interface PrintDocumentRequest {
   bookingId: string;
+  customerId: string; // Required by Aves API
   documentType: DocumentType;
-  format: DocumentFormatType;
+  format?: DocumentFormatType;
   language?: string;
   deliveryMethod?: {
     type: DeliveryMethodType;
@@ -195,10 +283,21 @@ export interface PrintDocumentRequest {
   };
 }
 
-export interface AddPaymentRequest {
-  bookingId: string;
+type BasePaymentRequest = {
   payments: BookingPayment[];
-}
+  enableMultiple?: boolean;
+  operationType?: 'absolute' | 'final' | 'final_no_controls';
+};
+
+export type AddPaymentRequest =
+  | (BasePaymentRequest & {
+      bookingId: string;
+      bookingRefCode?: never;
+    })
+  | (BasePaymentRequest & {
+      bookingId?: never;
+      bookingRefCode: string;
+    });
 
 // ===== RESPONSE INTERFACES =====
 
@@ -211,10 +310,7 @@ export interface BookingResponse {
   passengers: BookingPassenger[];
   services: BookingService[];
   pricing: {
-    totalAmount: {
-      currency: string;
-      amount: number;
-    };
+    totalAmount: Price;
     breakdowns?: {
       type: PricingItemType;
       description: string;
@@ -223,32 +319,57 @@ export interface BookingResponse {
   };
 }
 
-export interface SearchResponse {
-  results: Customer[];
-  pagination?: {
-    totalRecords: number;
-    pageSize: number;
-    pageNumber: number;
-    totalPages: number;
+export interface CustomerSearchResult {
+  customers: Customer[];
+  pagination: {
+    page: number;
+    pages: number;
+    totalItems: number;
+    hasMore: boolean;
   };
 }
 
-export interface DocumentResponse {
-  id: string;
-  type: string;
-  format: string;
-  size: number;
-  createdAt: string;
-  downloadUrl?: string;
-  deliveryStatus?: {
-    status: DeliveryStatusType;
-    method: string;
-    address?: string;
-  };
+export interface PrintedDocument {
+  fileName: string;
+  content?: string;
+  contentSize: number;
 }
 
-export interface OperationResponse {
+export interface DocumentPrintResult {
+  emailRecipient?: string;
+  documents: PrintedDocument[];
+  additionalDocuments?: {
+    emailRecipient: string;
+    documents: PrintedDocument[];
+  }[];
+}
+
+export type CancelResponseData = {
+  refundInfo?: {
+    refundAmount: number;
+    currency: string;
+    refundMethod: string;
+    processingTime: string;
+  };
+};
+
+export type PaymentResponseData = {
+  booking: BookingResponse;
+  paymentSummary: {
+    totalPaid: {
+      currency: string;
+      amount: number;
+    };
+    outstandingAmount: {
+      currency: string;
+      amount: number;
+    };
+    paymentHistory: BookingPayment[];
+  };
+};
+
+export interface OperationResponse<T> {
   success: boolean;
   message?: string;
-  data?: any;
+  data?: T;
 }

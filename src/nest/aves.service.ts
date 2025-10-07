@@ -7,6 +7,24 @@ import type {
 } from '../types/common';
 import type { IXmlHttpClient } from '../http/xml-http-client';
 import { XML_HTTP_CLIENT } from '../tokens';
+import { RootElementNames } from '../config/root-elements';
+import { AvesEndpoints } from '../config/endpoints';
+import type {
+  SearchCustomerRequest,
+  CreateBookingRequest,
+  CancelBookingRequest,
+  PrintDocumentRequest,
+  AddPaymentRequest,
+  Customer,
+  BookingResponse,
+  CustomerSearchResult,
+  DocumentPrintResult,
+  OperationResponse,
+  BookingStatusType,
+  BookingService,
+  CancelResponseData,
+  PaymentResponseData,
+} from '../types/api-interfaces';
 import type {
   SearchMasterRecordRQ,
   SearchMasterRecordRS,
@@ -18,6 +36,7 @@ import type {
   ModiFileHeaderRS,
   ModFileServicesRQ,
   SetStatusRQ,
+  SetStatusServiceRQ,
   SetStatusServiceRS,
   CancelFileRQ,
   CancelFileRS,
@@ -27,6 +46,28 @@ import type {
   PrintBookingDocumentRS,
 } from '../types/interfaces';
 import { WrapRequestDto } from './dto/wrap-request.dto';
+import {
+  mapSearchCustomerToXml,
+  mapCreateBookingToXml,
+  mapCancelBookingToXml,
+  mapPrintDocumentToXml,
+  mapAddPaymentToXml,
+  mapCreateCustomerToXml,
+  mapUpdateCustomerToXml,
+  mapUpdateBookingHeaderToXml,
+  mapUpdateBookingServicesToXml,
+  mapSetBookingStatusToXml,
+  mapSetBookingServiceStatusToXml,
+  mapUpsertCustomerToXml,
+} from '../mappers/request-mappers';
+import {
+  mapSearchResponseFromXml,
+  mapCustomerResponseFromXml,
+  mapBookingResponseFromXml,
+  mapDocumentResponseFromXml,
+  mapCancelResponseFromXml,
+  mapPaymentResponseFromXml,
+} from '../mappers/response-mappers';
 
 @Injectable()
 export class AvesService {
@@ -40,8 +81,8 @@ export class AvesService {
     return {
       '@HostID': hostId,
       '@Xtoken': xtoken,
-      '@Interface': 'WEB', // THIS IS THE DEFAULT VALUE FOR THE INTERFACE
-      '@UserName': 'WEB', // THIS IS THE DEFAULT VALUE FOR THE USERNAME
+      '@Interface': 'WEB', // default
+      '@UserName': 'WEB', // default
       '@LanguageCode': languageCode,
     };
   }
@@ -53,95 +94,360 @@ export class AvesService {
     });
   }
 
-  // Master Records
+  // ===== CUSTOMER MANAGEMENT =====
+
+  /**
+   * Search for customers
+   */
+  async searchCustomers(
+    request: SearchCustomerRequest
+  ): Promise<CustomerSearchResult> {
+    const xmlRequest = mapSearchCustomerToXml(request);
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<SearchMasterRecordRQ>,
+      AvesResponseRoot<SearchMasterRecordRS>
+    >(
+      AvesEndpoints.SEARCH_MASTER_RECORDS,
+      RootElementNames.SEARCH_MASTER_RECORD,
+      this.wrapRequest(xmlRequest)
+    );
+    return mapSearchResponseFromXml(
+      xmlResponse.Response.Body,
+      request.pagination
+    );
+  }
+
+  /**
+   * Create a new customer
+   */
+  async createCustomer(
+    customer: Customer
+  ): Promise<OperationResponse<Customer>> {
+    const xmlRequest = mapCreateCustomerToXml(customer);
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<ManageMasterRecordRQ>,
+      AvesResponseRoot<CustomerRecordRS>
+    >(
+      AvesEndpoints.INSERT_OR_UPDATE_MASTER_RECORD,
+      RootElementNames.MANAGE_MASTER_RECORD,
+      this.wrapRequest(xmlRequest)
+    );
+    return mapCustomerResponseFromXml(xmlResponse.Response.Body);
+  }
+
+  /**
+   * Update an existing customer
+   */
+  async updateCustomer(
+    customer: Customer
+  ): Promise<OperationResponse<Customer>> {
+    const xmlRequest = mapUpdateCustomerToXml(customer);
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<ManageMasterRecordRQ>,
+      AvesResponseRoot<CustomerRecordRS>
+    >(
+      AvesEndpoints.INSERT_OR_UPDATE_MASTER_RECORD,
+      RootElementNames.MANAGE_MASTER_RECORD,
+      this.wrapRequest(xmlRequest)
+    );
+    return mapCustomerResponseFromXml(xmlResponse.Response.Body);
+  }
+
+  /**
+   * Upsert a customer
+   */
+  async upsertCustomer(
+    customer: Customer
+  ): Promise<OperationResponse<Customer>> {
+    const xmlRequest = mapUpsertCustomerToXml(customer);
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<ManageMasterRecordRQ>,
+      AvesResponseRoot<CustomerRecordRS>
+    >(
+      AvesEndpoints.INSERT_OR_UPDATE_MASTER_RECORD,
+      RootElementNames.MANAGE_MASTER_RECORD,
+      this.wrapRequest(xmlRequest)
+    );
+    return mapCustomerResponseFromXml(xmlResponse.Response.Body);
+  }
+
+  // ===== BOOKING MANAGEMENT =====
+
+  /**
+   * Create a new booking
+   */
+  async createBooking(
+    request: CreateBookingRequest
+  ): Promise<OperationResponse<BookingResponse>> {
+    const xmlRequest = mapCreateBookingToXml(request);
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<BookFileRQ>,
+      AvesResponseRoot<BookingFileRS>
+    >(
+      AvesEndpoints.CREATE_BOOKING_FILE,
+      RootElementNames.BOOK_FILE,
+      this.wrapRequest(xmlRequest)
+    );
+    return mapBookingResponseFromXml(xmlResponse.Response.Body);
+  }
+
+  /**
+   * Update booking header information
+   */
+  async updateBookingHeader(
+    customerRecordCode: string,
+    bookingFileCode: string,
+    bookingFileStartDate: string,
+    updates?: {
+      newCustomerRecordCode?: string;
+      passengers?: any[];
+      notes?: string;
+    }
+  ): Promise<OperationResponse<void>> {
+    const xmlRequest = mapUpdateBookingHeaderToXml(
+      customerRecordCode,
+      bookingFileCode,
+      bookingFileStartDate,
+      updates
+    );
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<ModiFileHeaderRQ>,
+      AvesResponseRoot<ModiFileHeaderRS>
+    >(
+      AvesEndpoints.MOD_BOOKING_FILE_HEADER,
+      RootElementNames.MODI_FILE_HEADER,
+      this.wrapRequest(xmlRequest)
+    );
+    return {
+      success: xmlResponse.Response.RsStatus['@Status'] === 'OK',
+      message: xmlResponse.Response.RsStatus.ErrorDescription,
+    };
+  }
+
+  /**
+   * Update booking services
+   */
+  async updateBookingServices(
+    customerRecordCode: string,
+    bookingFileCode: string,
+    services: BookingService[]
+  ): Promise<OperationResponse<BookingResponse>> {
+    const xmlRequest = mapUpdateBookingServicesToXml(
+      customerRecordCode,
+      bookingFileCode,
+      services
+    );
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<ModFileServicesRQ>,
+      AvesResponseRoot<BookingFileRS>
+    >(
+      AvesEndpoints.MOD_BOOKING_FILE_SERVICES,
+      RootElementNames.MOD_FILE_SERVICES,
+      this.wrapRequest(xmlRequest)
+    );
+    return mapBookingResponseFromXml(xmlResponse.Response.Body);
+  }
+
+  /**
+   * Set booking status
+   */
+  async setBookingStatus(
+    customerRecordCode: string,
+    bookingFileCode: string,
+    status: BookingStatusType,
+    options?: {
+      expiredDate?: string;
+      optionedFileExpireDatePolicy?:
+        | 'NOT_SET'
+        | 'CONSIDER_HOLIDAY'
+        | 'CONSIDER_HOLIDAY_AND_SATURDAY';
+      backOfficeRequest?: boolean;
+      printDoc?: boolean;
+      sendDocViaEmail?: boolean;
+      applyPenalty?: boolean;
+      penaltyCode?: string;
+      simulateCancelAndGetPenalty?: boolean;
+    }
+  ): Promise<OperationResponse<BookingResponse>> {
+    const xmlRequest = mapSetBookingStatusToXml(
+      customerRecordCode,
+      bookingFileCode,
+      status,
+      options
+    );
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<SetStatusRQ>,
+      AvesResponseRoot<SetStatusServiceRS>
+    >(
+      AvesEndpoints.SET_BOOKING_FILE_STATUS,
+      RootElementNames.SET_STATUS,
+      this.wrapRequest(xmlRequest)
+    );
+    return mapBookingResponseFromXml(xmlResponse.Response.Body);
+  }
+
+  /**
+   * Set booking service status (nullify a specific service)
+   */
+  async setBookingServiceStatus(
+    customerRecordCode: string,
+    bookingFileCode: string,
+    serviceRef: string,
+    statusDate?: string
+  ): Promise<OperationResponse<BookingResponse>> {
+    const xmlRequest = mapSetBookingServiceStatusToXml(
+      customerRecordCode,
+      bookingFileCode,
+      serviceRef,
+      statusDate
+    );
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<SetStatusServiceRQ>,
+      AvesResponseRoot<SetStatusServiceRS>
+    >(
+      AvesEndpoints.SET_BOOKING_FILE_SERVICE_STATUS,
+      RootElementNames.SET_STATUS_SERVICE,
+      this.wrapRequest(xmlRequest)
+    );
+    return mapBookingResponseFromXml(xmlResponse.Response.Body);
+  }
+
+  /**
+   * Cancel a booking
+   */
+  async cancelBooking(
+    request: CancelBookingRequest
+  ): Promise<OperationResponse<CancelResponseData>> {
+    const xmlRequest = mapCancelBookingToXml(request);
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<CancelFileRQ>,
+      AvesResponseRoot<CancelFileRS>
+    >(
+      AvesEndpoints.CANCEL_BOOKING_FILE,
+      RootElementNames.CANCEL_FILE,
+      this.wrapRequest(xmlRequest)
+    );
+    return mapCancelResponseFromXml(xmlResponse.Response.Body);
+  }
+
+  // ===== PAYMENT MANAGEMENT =====
+
+  /**
+   * Add payment to a booking
+   */
+  async addPayment(
+    request: AddPaymentRequest
+  ): Promise<OperationResponse<PaymentResponseData>> {
+    const xmlRequest = mapAddPaymentToXml(request);
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<FilePaymentListRQ>,
+      AvesResponseRoot<FilePaymentListRS>
+    >(
+      AvesEndpoints.INSERT_FILE_PAYMENT_LIST,
+      RootElementNames.FILE_PAYMENT_LIST,
+      this.wrapRequest(xmlRequest)
+    );
+    return mapPaymentResponseFromXml(xmlResponse.Response.Body);
+  }
+
+  // ===== DOCUMENT MANAGEMENT =====
+
+  /**
+   * Generate and print booking documents
+   */
+  async printDocument(
+    request: PrintDocumentRequest
+  ): Promise<OperationResponse<DocumentPrintResult>> {
+    const xmlRequest = mapPrintDocumentToXml(request);
+    const xmlResponse = await this.http.postXml<
+      WrapRequestDto<PrintBookingDocumentRQ>,
+      AvesResponseRoot<PrintBookingDocumentRS>
+    >(
+      AvesEndpoints.PRINT_BOOKING_DOCUMENT,
+      RootElementNames.PRINT_BOOKING_DOCUMENT,
+      this.wrapRequest(xmlRequest)
+    );
+    return mapDocumentResponseFromXml(xmlResponse.Response.Body);
+  }
+
+  // ===== LEGACY METHODS (for backward compatibility) =====
+
+  /**
+   * @deprecated Use searchCustomers instead
+   */
   async searchMasterRecord(
     payload: SearchMasterRecordRQ
   ): Promise<AvesResponseRoot<SearchMasterRecordRS>> {
-    return this.http.postXml(
-      '/interop/masterRecords/v2/rest/Search',
-      'SearchMasterRecordRQ',
+    return this.http.postXml<
+      WrapRequestDto<SearchMasterRecordRQ>,
+      AvesResponseRoot<SearchMasterRecordRS>
+    >(
+      AvesEndpoints.SEARCH_MASTER_RECORDS,
+      RootElementNames.SEARCH_MASTER_RECORD,
       this.wrapRequest(payload)
     );
   }
 
+  /**
+   * @deprecated Use createCustomer or updateCustomer instead
+   */
   async insertOrUpdateMasterRecord(
     payload: ManageMasterRecordRQ
   ): Promise<AvesResponseRoot<CustomerRecordRS>> {
-    return this.http.postXml(
-      '/interop/masterRecords/v2/rest/InsertOrUpdate',
-      'ManageMasterRecordRQ',
+    return this.http.postXml<
+      WrapRequestDto<ManageMasterRecordRQ>,
+      AvesResponseRoot<CustomerRecordRS>
+    >(
+      AvesEndpoints.INSERT_OR_UPDATE_MASTER_RECORD,
+      RootElementNames.MANAGE_MASTER_RECORD,
       this.wrapRequest(payload)
     );
   }
 
-  // Booking
+  /**
+   * @deprecated Use createBooking instead
+   */
   async createBookingFile(
     payload: BookFileRQ
   ): Promise<AvesResponseRoot<BookingFileRS>> {
-    return this.http.postXml(
-      '/interop/booking/v2/rest/CreateBookingFile',
-      'BookFileRQ',
+    return this.http.postXml<
+      WrapRequestDto<BookFileRQ>,
+      AvesResponseRoot<BookingFileRS>
+    >(
+      AvesEndpoints.CREATE_BOOKING_FILE,
+      RootElementNames.BOOK_FILE,
       this.wrapRequest(payload)
     );
   }
 
-  async modBookingFileHeader(
-    payload: ModiFileHeaderRQ
-  ): Promise<AvesResponseRoot<ModiFileHeaderRS>> {
-    return this.http.postXml(
-      '/interop/booking/v2/rest/ModBookingFileHeader',
-      'ModiFileHeaderRQ',
-      this.wrapRequest(payload)
-    );
-  }
-
-  async modBookingFileServices(
-    payload: ModFileServicesRQ
-  ): Promise<AvesResponseRoot<BookingFileRS>> {
-    return this.http.postXml(
-      '/interop/booking/v2/rest/ModBookingFileServices',
-      'ModFileServicesRQ',
-      this.wrapRequest(payload)
-    );
-  }
-
-  async setBookingFileStatus(
-    payload: SetStatusRQ
-  ): Promise<AvesResponseRoot<SetStatusServiceRS>> {
-    return this.http.postXml(
-      '/interop/booking/v2/rest/SetBookingFileStatus',
-      'SetStatusRQ',
-      this.wrapRequest(payload)
-    );
-  }
-
+  /**
+   * @deprecated Use cancelBooking instead
+   */
   async cancelBookingFile(
     payload: CancelFileRQ
   ): Promise<AvesResponseRoot<CancelFileRS>> {
-    return this.http.postXml(
-      '/interop/booking/v2/rest/CancelBookingFile',
-      'CancelFileRQ',
+    return this.http.postXml<
+      WrapRequestDto<CancelFileRQ>,
+      AvesResponseRoot<CancelFileRS>
+    >(
+      AvesEndpoints.CANCEL_BOOKING_FILE,
+      RootElementNames.CANCEL_FILE,
       this.wrapRequest(payload)
     );
   }
 
-  async insertFilePaymentList(
-    payload: FilePaymentListRQ
-  ): Promise<AvesResponseRoot<FilePaymentListRS>> {
-    return this.http.postXml(
-      '/interop/booking/v2/rest/InsertFilePaymentList',
-      'FilePaymentListRQ',
-      this.wrapRequest(payload)
-    );
-  }
-
-  // Documents
+  /**
+   * @deprecated Use printDocument instead
+   */
   async printBookingDocument(
     payload: PrintBookingDocumentRQ
   ): Promise<AvesResponseRoot<PrintBookingDocumentRS>> {
-    return this.http.postXml(
-      '/interop/document/v2/rest/PrintBookingDocument',
-      'PrintBookingDocumentRQ',
+    return this.http.postXml<
+      WrapRequestDto<PrintBookingDocumentRQ>,
+      AvesResponseRoot<PrintBookingDocumentRS>
+    >(
+      AvesEndpoints.PRINT_BOOKING_DOCUMENT,
+      RootElementNames.PRINT_BOOKING_DOCUMENT,
       this.wrapRequest(payload)
     );
   }

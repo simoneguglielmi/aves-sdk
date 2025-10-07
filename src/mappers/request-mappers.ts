@@ -1,264 +1,97 @@
 import {
   Customer,
-  CustomerAddress,
-  CustomerContact,
   BookingPassenger,
   BookingService,
-  BookingPayment,
   SearchCustomerRequest,
   CreateBookingRequest,
   CancelBookingRequest,
   PrintDocumentRequest,
   AddPaymentRequest,
+  BookingStatusType,
 } from '../types/api-interfaces';
 import { createDateString } from '../utils/date-helpers';
 import {
-  mapAddressTypeToXml,
-  mapAddressTypeFromXml,
-  mapContactTypeToXml,
-  mapContactTypeFromXml,
-  mapEmailTypeToXml,
-  mapEmailTypeFromXml,
-  mapPassengerTypeToXml,
-  mapPassengerTypeFromXml,
-  mapTitleToXml,
-  mapTitleFromXml,
-  mapServiceTypeToXml,
-  mapServiceTypeFromXml,
-  mapServiceStatusToXml,
-  mapServiceStatusFromXml,
-  mapPaymentTypeToXml,
-  mapPaymentTypeFromXml,
-  mapPaymentStatusToXml,
-  mapPaymentStatusFromXml,
   mapCustomerTypeToXml,
   mapCustomerStatusToXml,
-  mapCommunicationMethodToXml,
-  mapBookingTypeToXml,
-  mapPriorityToXml,
-  mapSpecialRequestTypeToXml,
-  mapCancelReasonToXml,
-  mapRefundMethodToXml,
+  mapBookingStatusToXml,
   mapDocumentTypeToXml,
-  mapDocumentFormatToXml,
-  mapDeliveryMethodToXml,
-  mapSearchOperatorToXml,
   mapGenderToXml,
-  mapGenderFromXml,
 } from './type-mappers';
 import {
-  MasterRecord,
-  Address as XmlAddress,
-  ContactInfo as XmlContactInfo,
-  Passenger as XmlPassenger,
-  Service as XmlService,
-  Payment as XmlPayment,
+  MasterRecordDetail,
+  PassengerDetail,
   SearchMasterRecordRQ,
   BookFileRQ,
   CancelFileRQ,
   PrintBookingDocumentRQ,
   FilePaymentListRQ,
+  ManageMasterRecordRQ,
+  ModiFileHeaderRQ,
+  ModFileServicesRQ,
+  SetStatusRQ,
+  SetStatusServiceRQ,
+  SelectedServiceDetail,
+  BookedServiceDetail,
 } from '../types/interfaces';
+import { InsertCriteria } from '../types/common';
 
-// ===== ADDRESS MAPPERS =====
+// ===== AVES XML MAPPERS =====
 
-export function mapAddressToXml(clean: CustomerAddress): XmlAddress {
-  return {
-    '@Type': clean.type ? mapAddressTypeToXml(clean.type) : undefined,
-    Street: clean.street,
-    City: clean.city,
-    State: clean.state,
-    PostalCode: clean.postalCode,
-    Country: clean.country,
+export function mapPassengerFromXml(xml: PassengerDetail): BookingPassenger {
+  const nameParts = (xml.Name || '').split(' ');
+  const lastName = nameParts.pop() || '';
+  const firstName = nameParts.join(' ') || xml.Name;
+
+  const typeMap: Record<string, 'adult' | 'child' | 'infant' | 'senior'> = {
+    AD: 'adult',
+    CH: 'child',
+    IN: 'infant',
+    OV: 'senior',
   };
-}
 
-export function mapAddressFromXml(xml: XmlAddress): CustomerAddress {
   return {
-    type: xml['@Type'] ? mapAddressTypeFromXml(xml['@Type']) : undefined,
-    street: xml.Street,
-    city: xml.City,
-    state: xml.State,
-    postalCode: xml.PostalCode,
-    country: xml.Country,
-  };
-}
-
-// ===== CONTACT MAPPERS =====
-
-export function mapContactToXml(clean: CustomerContact): XmlContactInfo {
-  return {
-    Phone: clean.phone
+    id: xml['@RPH'],
+    type: typeMap[xml.CategoryCode] || 'adult',
+    title: undefined,
+    firstName,
+    lastName,
+    dateOfBirth: xml.BirthDate ? createDateString(xml.BirthDate) : undefined,
+    gender: xml.Sex === 'M' ? 'male' : xml.Sex === 'F' ? 'female' : undefined,
+    nationality: xml.NationCode || xml.CitizenshipCode,
+    passport: xml.IDDocInfo
       ? {
-          '@Type': clean.phone.type
-            ? mapContactTypeToXml(clean.phone.type)
-            : undefined,
-          '@Number': clean.phone.number,
+          number: xml.IDDocInfo['@IDCode'] || '',
+          expiryDate: createDateString(xml.IDDocInfo['@IDExpireDate'] || ''),
+          issuingCountry: '',
         }
       : undefined,
-    Email: clean.email
-      ? {
-          '@Type': clean.email.type
-            ? mapEmailTypeToXml(clean.email.type)
-            : undefined,
-          '@Address': clean.email.address,
-        }
-      : undefined,
-  };
-}
-
-export function mapContactFromXml(xml: XmlContactInfo): CustomerContact {
-  return {
-    phone: xml.Phone
-      ? {
-          type: xml.Phone['@Type']
-            ? mapContactTypeFromXml(xml.Phone['@Type'])
-            : undefined,
-          number: xml.Phone['@Number'],
-        }
-      : undefined,
-    email: xml.Email
-      ? {
-          type: xml.Email['@Type']
-            ? mapEmailTypeFromXml(xml.Email['@Type'])
-            : undefined,
-          address: xml.Email['@Address'],
-        }
-      : undefined,
-  };
-}
-
-// ===== PASSENGER MAPPERS =====
-
-export function mapPassengerToXml(clean: BookingPassenger): XmlPassenger {
-  return {
-    '@PassengerID': clean.id,
-    '@Type': mapPassengerTypeToXml(clean.type),
-    '@Title': clean.title ? mapTitleToXml(clean.title) : undefined,
-    FirstName: clean.firstName,
-    LastName: clean.lastName,
-    MiddleName: clean.middleName,
-    DateOfBirth: clean.dateOfBirth,
-    Gender: clean.gender ? mapGenderToXml(clean.gender) : undefined,
-    Nationality: clean.nationality,
-    Passport: clean.passport
-      ? {
-          '@Number': clean.passport.number,
-          '@ExpiryDate': clean.passport.expiryDate,
-          '@IssuingCountry': clean.passport.issuingCountry,
-        }
-      : undefined,
-    Address: clean.address ? mapAddressToXml(clean.address) : undefined,
-    ContactInfo: clean.contact ? mapContactToXml(clean.contact) : undefined,
-  };
-}
-
-export function mapPassengerFromXml(xml: XmlPassenger): BookingPassenger {
-  return {
-    id: xml['@PassengerID'],
-    type: mapPassengerTypeFromXml(xml['@Type']),
-    title: xml['@Title'] ? mapTitleFromXml(xml['@Title']) : undefined,
-    firstName: xml.FirstName,
-    lastName: xml.LastName,
-    middleName: xml.MiddleName,
-    dateOfBirth: xml.DateOfBirth
-      ? createDateString(xml.DateOfBirth)
-      : undefined,
-    gender: xml.Gender ? mapGenderFromXml(xml.Gender) : undefined,
-    nationality: xml.Nationality,
-    passport: xml.Passport
-      ? {
-          number: xml.Passport['@Number'],
-          expiryDate: createDateString(xml.Passport['@ExpiryDate']),
-          issuingCountry: xml.Passport['@IssuingCountry'],
-        }
-      : undefined,
-    address: xml.Address ? mapAddressFromXml(xml.Address) : undefined,
-    contact: xml.ContactInfo ? mapContactFromXml(xml.ContactInfo) : undefined,
+    address: undefined,
+    contact:
+      xml.eMail || xml.PhoneNumber
+        ? {
+            email: xml.eMail ? { address: xml.eMail } : undefined,
+            phone: xml.PhoneNumber ? { number: xml.PhoneNumber } : undefined,
+          }
+        : undefined,
   };
 }
 
 // ===== SERVICE MAPPERS =====
 
-export function mapServiceToXml(clean: BookingService): XmlService {
+export function mapServiceFromXml(xml: BookedServiceDetail): BookingService {
   return {
-    '@ServiceID': clean.id,
-    '@Type': mapServiceTypeToXml(clean.type),
-    '@Status': mapServiceStatusToXml(clean.status),
-    ServiceDetails: {
-      Code: clean.code,
-      Name: clean.name,
-      Description: clean.description,
-      StartDate: clean.startDate,
-      EndDate: clean.endDate,
-      Price: clean.price
-        ? {
-            '@Currency': clean.price.currency,
-            '@Amount': clean.price.amount,
-          }
-        : undefined,
-    },
-  };
-}
-
-export function mapServiceFromXml(xml: XmlService): BookingService {
-  return {
-    id: xml['@ServiceID'],
-    type: mapServiceTypeFromXml(xml['@Type']),
-    status: mapServiceStatusFromXml(xml['@Status']),
-    code: xml.ServiceDetails.Code,
-    name: xml.ServiceDetails.Name,
-    description: xml.ServiceDetails.Description,
-    startDate: xml.ServiceDetails.StartDate
-      ? createDateString(xml.ServiceDetails.StartDate)
-      : undefined,
-    endDate: xml.ServiceDetails.EndDate
-      ? createDateString(xml.ServiceDetails.EndDate)
-      : undefined,
-    price: xml.ServiceDetails.Price
+    id: xml['@ServiceCode'],
+    type: 'hotel', // Default, should be determined from TOServiceType
+    status: 'pending',
+    code: xml['@ServiceCode'],
+    name: xml.FirstDescription,
+    description: xml.SecondDescription,
+    startDate: xml.StartDate ? createDateString(xml.StartDate) : undefined,
+    endDate: xml.EndDate ? createDateString(xml.EndDate) : undefined,
+    price: xml.ServiceTotalAmountDetail?.ServiceTotalPrice
       ? {
-          currency: xml.ServiceDetails.Price['@Currency'],
-          amount: xml.ServiceDetails.Price['@Amount'],
-        }
-      : undefined,
-  };
-}
-
-// ===== PAYMENT MAPPERS =====
-
-export function mapPaymentToXml(clean: BookingPayment): XmlPayment {
-  return {
-    '@PaymentID': clean.id,
-    '@Type': mapPaymentTypeToXml(clean.type),
-    '@Status': mapPaymentStatusToXml(clean.status),
-    Amount: {
-      '@Currency': clean.amount.currency,
-      '@Amount': clean.amount.amount,
-    },
-    PaymentDetails: clean.details
-      ? {
-          CardNumber: clean.details.cardNumber,
-          ExpiryDate: clean.details.expiryDate,
-          CardHolderName: clean.details.cardHolderName,
-        }
-      : undefined,
-  };
-}
-
-export function mapPaymentFromXml(xml: XmlPayment): BookingPayment {
-  return {
-    id: xml['@PaymentID'],
-    type: mapPaymentTypeFromXml(xml['@Type']),
-    status: mapPaymentStatusFromXml(xml['@Status']),
-    amount: {
-      currency: xml.Amount['@Currency'],
-      amount: xml.Amount['@Amount'],
-    },
-    details: xml.PaymentDetails
-      ? {
-          cardNumber: xml.PaymentDetails.CardNumber,
-          expiryDate: xml.PaymentDetails.ExpiryDate,
-          cardHolderName: xml.PaymentDetails.CardHolderName,
+          currency: 'EUR',
+          amount: parseFloat(xml.ServiceTotalAmountDetail.ServiceTotalPrice),
         }
       : undefined,
   };
@@ -266,144 +99,444 @@ export function mapPaymentFromXml(xml: XmlPayment): BookingPayment {
 
 // ===== REQUEST MAPPERS =====
 
+const buildSearchMasterRecordRQ = (
+  request: SearchCustomerRequest,
+  data: SearchMasterRecordRQ
+): SearchMasterRecordRQ => {
+  switch (request.type) {
+    case 'code':
+      data.RecordCode = request.code;
+      break;
+    case 'name':
+      data.Name = request.name;
+      if (request.city) {
+        data.City = request.city;
+      }
+      break;
+    case 'vat_code':
+      data.VatCode = request.vatCode;
+      if (request.phoneNumber) {
+        data.PhoneNumber = request.phoneNumber;
+      }
+      break;
+    case 'zone':
+      data.ZipCode = request.zipCode;
+      if (request.city) {
+        data.City = request.city;
+      }
+      if (request.countyCode) {
+        data.CountyCode = request.countyCode;
+      }
+      break;
+    case 'category':
+      data.CategoryCode = request.categoryCode;
+      break;
+    case 'email':
+      data.Email = request.email;
+      break;
+    case 'last_mod_date':
+      data.LastModificationDate = {
+        '@MinDate': request.from,
+        '@MaxDate': request.to,
+      };
+      break;
+    case 'search_field':
+      data.SearchFieldValue = request.searchField;
+      break;
+    case 'external_ref_code':
+      data.SearchFieldValue = request.externalRefCode;
+      break;
+  }
+  return data;
+};
+
 export function mapSearchCustomerToXml(
-  clean: SearchCustomerRequest
+  request: SearchCustomerRequest
 ): SearchMasterRecordRQ {
-  return {
-    SearchCriteria: {
-      MasterRecordType: mapCustomerTypeToXml(clean.type),
-      SearchFields: {
-        Field: clean.fields.map((field) => ({
-          '@Name': field.name,
-          '@Value': field.value,
-          '@Operator': field.operator
-            ? mapSearchOperatorToXml(field.operator)
-            : undefined,
-        })),
-      },
-      Pagination: clean.pagination
-        ? {
-            '@PageSize': clean.pagination.pageSize,
-            '@PageNumber': clean.pagination.pageNumber,
-          }
-        : undefined,
-    },
+  const result: SearchMasterRecordRQ = {
+    SearchType:
+      request.type.toUpperCase() as SearchMasterRecordRQ['SearchType'],
   };
+
+  return buildSearchMasterRecordRQ(request, result);
 }
 
-export function mapCustomerToXml(clean: Customer): MasterRecord {
+export function mapCustomerToXml(data: Customer): MasterRecordDetail {
+  const fullName = data.personalInfo
+    ? `${data.personalInfo.firstName} ${data.personalInfo.lastName}`.trim()
+    : data.id;
+
   return {
-    '@MasterRecordID': clean.id,
-    '@Type': mapCustomerTypeToXml(clean.type),
-    '@Status': mapCustomerStatusToXml(clean.status),
-    PersonalInfo: clean.personalInfo
-      ? {
-          Title: clean.personalInfo.title,
-          FirstName: clean.personalInfo.firstName,
-          LastName: clean.personalInfo.lastName,
-          MiddleName: clean.personalInfo.middleName,
-          DateOfBirth: clean.personalInfo.dateOfBirth,
-          Gender: clean.personalInfo.gender
-            ? mapGenderToXml(clean.personalInfo.gender)
-            : undefined,
-          Nationality: clean.personalInfo.nationality,
-        }
+    '@RecordCode': data.id,
+    RecordType: mapCustomerTypeToXml(data.type),
+    Name: fullName,
+    LanguageCode: data.preferences?.language || '01',
+
+    // Personal Info
+    Moniker: data.personalInfo?.title,
+    Gender: data.personalInfo?.gender
+      ? mapGenderToXml(data.personalInfo?.gender)
       : undefined,
-    ContactInfo: clean.contact ? mapContactToXml(clean.contact) : undefined,
-    Address: clean.address ? mapAddressToXml(clean.address) : undefined,
-    BusinessInfo: clean.businessInfo
+    BirthDate: data.personalInfo?.dateOfBirth,
+    CitizenshipCode: data.personalInfo?.nationality,
+
+    // Contact Info
+    Email: data.contact?.email?.address,
+    FirstPhoneNumber: data.contact?.phone?.number,
+    MobilePhone: data.contact?.phone?.number,
+
+    // Address
+    Address: data.address?.street,
+    CityName: data.address?.city,
+    StateCode: data.address?.country,
+    ZipCode: data.address?.postalCode,
+
+    // Business Info
+    FiscalCode: data.businessInfo?.taxId,
+    VatCode: data.businessInfo?.taxId,
+
+    // Status
+    RecordStatus: mapCustomerStatusToXml(data.status),
+
+    // Preferences
+    FinancialDetail: data.preferences?.currency
       ? {
-          CompanyName: clean.businessInfo.companyName,
-          TaxID: clean.businessInfo.taxId,
-          LicenseNumber: clean.businessInfo.licenseNumber,
-        }
-      : undefined,
-    Preferences: clean.preferences
-      ? {
-          Language: clean.preferences.language,
-          Currency: clean.preferences.currency,
-          CommunicationMethod: clean.preferences.communicationMethod
-            ? mapCommunicationMethodToXml(clean.preferences.communicationMethod)
-            : undefined,
+          '@CurrencyCode': data.preferences.currency,
         }
       : undefined,
   };
 }
 
-export function mapCreateBookingToXml(clean: CreateBookingRequest): BookFileRQ {
+export function mapCreateBookingToXml(data: CreateBookingRequest): BookFileRQ {
+  const customerDetail: MasterRecordDetail = data.customerDetails
+    ? mapCustomerToXml(data.customerDetails)
+    : ({
+        '@RecordCode': data.customerId || '',
+        RecordType: 'CUSTOMER',
+        Name: 'Customer',
+        LanguageCode: '01',
+      } as MasterRecordDetail);
+
   return {
-    BookingDetails: {
-      '@BookingType': mapBookingTypeToXml(clean.type),
-      '@Priority': mapPriorityToXml(clean.priority),
-      CustomerInfo: {
-        '@CustomerID': clean.customerId,
-        CustomerDetails: clean.customerDetails
-          ? mapCustomerToXml(clean.customerDetails)
-          : undefined,
-      },
-      PassengerList: {
-        Passenger: clean.passengers.map(mapPassengerToXml),
-      },
-      SelectedServiceList: {
-        Service: clean.services.map(mapServiceToXml),
-      },
-      SpecialRequests: clean.specialRequests
+    CustomerDetail: customerDetail,
+    CurrencyCode: data.currency,
+    BookingFileStatus: {
+      '@Value': 'QUOTATION',
+    },
+    StatisticCodes: data.statisticCodes
+      ? {
+          '@sCode1': data.statisticCodes.code1,
+          '@sCode2': data.statisticCodes.code2,
+          '@sCode3': data.statisticCodes.code3,
+          '@sCode4': data.statisticCodes.code4,
+          '@sCode5': data.statisticCodes.code5,
+          '@sCode6': data.statisticCodes.code6,
+        }
+      : undefined,
+    Destination: data.destination
+      ? {
+          '@Code': data.destination.code,
+          '@IataCode': data.destination.iataCode,
+          '@NationCode': data.destination.nationCode,
+        }
+      : undefined,
+    BookingFileDescription: data.description,
+    StartDate: data.startDate,
+    EndDate: data.endDate,
+    BookingFileDocument:
+      data.printDocument !== undefined ||
+      data.sendDocumentViaEmail !== undefined
         ? {
-            Request: clean.specialRequests.map((req) => ({
-              '@Type': mapSpecialRequestTypeToXml(req.type),
-              '@Description': req.description,
-            })),
+            '@PrintDoc': data.printDocument || false,
+            '@SendDocViaEmail': data.sendDocumentViaEmail || false,
           }
         : undefined,
+    DeadlineList: data.deadlines
+      ? {
+          DeadlineDetail: data.deadlines.map((d) => ({
+            '@DeadlineCode': d.code,
+            '@Description': d.description,
+            '@ExpireDate': d.expireDate,
+          })),
+        }
+      : undefined,
+    PassengerList: {
+      PassengerDetail: data.passengers.map((p, index) =>
+        mapPassengerToAvesXml(p, index + 1)
+      ),
     },
+    SelectedServiceList: {
+      SelectedServiceDetail: data.services.map((s, index) =>
+        mapServiceToAvesXml(s, index + 1)
+      ),
+    },
+  };
+}
+
+// Helper function to map API passenger to Aves PassengerDetail
+function mapPassengerToAvesXml(
+  passenger: BookingPassenger,
+  index: number
+): PassengerDetail {
+  return {
+    '@RPH': String(index).padStart(3, '0'), // 001, 002, 003...
+    Name: `${passenger.firstName} ${passenger.lastName}`,
+    CategoryCode:
+      passenger.type === 'adult'
+        ? 'AD'
+        : passenger.type === 'child'
+        ? 'CH'
+        : passenger.type === 'infant'
+        ? 'IN'
+        : 'OV',
+    Sex: passenger.gender === 'male' ? 'M' : 'F',
+    BirthDate: passenger.dateOfBirth,
+    eMail: passenger.contact?.email?.address,
+    PhoneNumber: passenger.contact?.phone?.number,
+  };
+}
+
+// Helper function to map API service to Aves SelectedServiceDetail
+function mapServiceToAvesXml(
+  service: BookingService,
+  sessionNumber: number
+): SelectedServiceDetail {
+  return {
+    '@sCode': service.id,
+    AvesServiceType: 'TOP', // Default - should be determined from service type
+    StartDate: service.startDate || new Date().toISOString(),
+    EndDate: service.endDate || new Date().toISOString(),
+    Qty: 1, // Default quantity
+    Pax: 1, // Default passengers
+    AvesSession: sessionNumber,
   };
 }
 
 export function mapCancelBookingToXml(
-  clean: CancelBookingRequest
+  data: CancelBookingRequest
 ): CancelFileRQ {
   return {
-    '@BookingFileID': clean.bookingId,
-    CancellationDetails: {
-      '@Reason': mapCancelReasonToXml(clean.reason),
-      '@Description': clean.description,
-      RefundRequest: clean.refundRequest
-        ? {
-            '@Amount': clean.refundRequest.amount,
-            '@Currency': clean.refundRequest.currency,
-            '@Method': mapRefundMethodToXml(clean.refundRequest.method),
-          }
-        : undefined,
-    },
+    BookingFileCode: data.bookingId,
+    CustomerRecordCode: data.customerId || '', // Required field
   };
 }
 
 export function mapPrintDocumentToXml(
-  clean: PrintDocumentRequest
+  data: PrintDocumentRequest
 ): PrintBookingDocumentRQ {
   return {
-    '@BookingFileID': clean.bookingId,
-    DocumentRequest: {
-      '@DocumentType': mapDocumentTypeToXml(clean.documentType),
-      '@Format': mapDocumentFormatToXml(clean.format),
-      '@Language': clean.language,
-      DeliveryMethod: clean.deliveryMethod
-        ? {
-            '@Type': mapDeliveryMethodToXml(clean.deliveryMethod.type),
-            '@Address': clean.deliveryMethod.address,
-          }
-        : undefined,
+    RefMasterRecordCode: data.customerId || '', // Required
+    LanguageCode: data.language || '01', // Required
+    BookingFileCode: data.bookingId, // Required
+    InfoDocumentsToPrint: {
+      InfoDocumentToPrint: [
+        {
+          DocumentType: mapDocumentTypeToXml(data.documentType),
+        },
+      ],
+    },
+    GetDocumentContent: data.deliveryMethod?.type === 'download',
+    SendDocumentViaEmail: data.deliveryMethod?.type === 'email',
+  };
+}
+
+export function mapAddPaymentToXml(data: AddPaymentRequest): FilePaymentListRQ {
+  let operationType: FilePaymentListRQ['OperationType'] =
+    'AbsoluteAmountsInsertion';
+  if (data.operationType === 'final') {
+    operationType = 'FinalAmountToAchieve';
+  } else if (data.operationType === 'final_no_controls') {
+    operationType = 'FinalAmountToAchieveWithoutControls';
+  }
+
+  return {
+    BookingFileCode: data.bookingId,
+    BookingFileRefCode: data.bookingRefCode,
+    EnableMultiplePayments: data.enableMultiple ?? data.payments.length > 1,
+    OperationType: operationType,
+    FilePaymentList: {
+      FilePaymentDetail: data.payments.map((payment) => ({
+        '@PaymentDate': new Date().toISOString(),
+        '@Amount': String(payment.amount?.amount || 0),
+        '@PaymentType': mapPaymentTypeToAvesXml(payment.type),
+      })),
     },
   };
 }
 
-export function mapAddPaymentToXml(
-  clean: AddPaymentRequest
-): FilePaymentListRQ {
+// Helper to map payment type to Aves format
+function mapPaymentTypeToAvesXml(
+  type: string
+):
+  | 'C'
+  | 'B'
+  | 'D'
+  | 'T'
+  | 'P'
+  | 'R'
+  | 'A'
+  | 'H'
+  | 'I'
+  | 'J'
+  | 'K'
+  | 'L'
+  | 'M'
+  | 'N'
+  | 'O'
+  | 'Q'
+  | 'S'
+  | 'U'
+  | 'V' {
+  const typeMap: Record<string, string> = {
+    cash: 'C',
+    bank: 'B',
+    bank2: 'D',
+    bank3: 'T',
+    atm: 'P',
+    creditCard: 'R',
+    credit_card: 'R',
+    rebate: 'A',
+  };
+  return (typeMap[type] || 'C') as any;
+}
+
+// ===== MASTER RECORD MANAGEMENT MAPPERS =====
+
+export function mapCreateCustomerToXml(
+  customer: Customer
+): ManageMasterRecordRQ {
+  const masterRecord = mapCustomerToXml(customer);
+  masterRecord['@InsertCriteria'] = 'S'; // S = Insert always new record
   return {
-    '@BookingFileID': clean.bookingId,
-    PaymentList: {
-      Payment: clean.payments.map(mapPaymentToXml),
+    MasterRecordDetail: masterRecord,
+  };
+}
+
+export function mapUpdateCustomerToXml(
+  customer: Customer
+): ManageMasterRecordRQ {
+  const masterRecord = mapCustomerToXml(customer);
+  masterRecord['@InsertCriteria'] = 'T'; // T = If record exists update all fields
+  return {
+    MasterRecordDetail: masterRecord,
+  };
+}
+
+export function mapUpsertCustomerToXml(
+  customer: Customer
+): ManageMasterRecordRQ {
+  const masterRecord = mapCustomerToXml(customer);
+  masterRecord['@InsertCriteria'] = 'M'; // M = If record exists update only secondary fields
+  return {
+    MasterRecordDetail: masterRecord,
+  };
+}
+
+export function mapUpdateBookingHeaderToXml(
+  customerRecordCode: string,
+  bookingFileCode: string,
+  bookingFileStartDate: string,
+  updates?: {
+    newCustomerRecordCode?: string;
+    passengers?: BookingPassenger[];
+    notes?: string;
+  }
+): ModiFileHeaderRQ {
+  return {
+    BookingFileCode: bookingFileCode,
+    BookingFileStartDate: bookingFileStartDate,
+    CustomerRecordCode: customerRecordCode,
+    NewCustomerRecordCode: updates?.newCustomerRecordCode,
+    BookingNote: updates?.notes,
+    PassengerList: updates?.passengers
+      ? {
+          PassengerDetail: updates.passengers.map((p, index) =>
+            mapPassengerToAvesXml(p, index + 1)
+          ),
+        }
+      : undefined,
+  };
+}
+
+export function mapUpdateBookingServicesToXml(
+  customerRecordCode: string,
+  bookingFileCode: string,
+  services: BookingService[]
+): ModFileServicesRQ {
+  return {
+    CustomerRecordCode: customerRecordCode,
+    BookingFileCode: bookingFileCode,
+    SelectedServiceList: {
+      SelectedServiceDetail: services.map((s, index) =>
+        mapServiceToAvesXml(s, index + 1)
+      ),
     },
+  };
+}
+
+export function mapSetBookingStatusToXml(
+  customerRecordCode: string,
+  bookingFileCode: string,
+  status: BookingStatusType,
+  options?: {
+    expiredDate?: string;
+    optionedFileExpireDatePolicy?:
+      | 'NOT_SET'
+      | 'CONSIDER_HOLIDAY'
+      | 'CONSIDER_HOLIDAY_AND_SATURDAY';
+    backOfficeRequest?: boolean;
+    printDoc?: boolean;
+    sendDocViaEmail?: boolean;
+    applyPenalty?: boolean;
+    penaltyCode?: string;
+    simulateCancelAndGetPenalty?: boolean;
+  }
+): SetStatusRQ {
+  return {
+    CustomerRecordCode: customerRecordCode,
+    BookingFileCode: bookingFileCode,
+    FileStatus: {
+      '@Value': mapBookingStatusToXml(status),
+      ...(options?.expiredDate && { '@ExpiredDate': options.expiredDate }),
+      ...(options?.optionedFileExpireDatePolicy && {
+        '@OptionedFileExpireDatePolicy': options.optionedFileExpireDatePolicy,
+      }),
+    },
+    ...(options?.backOfficeRequest !== undefined && {
+      BackOfficeRequest: options.backOfficeRequest,
+    }),
+    ...(options?.printDoc !== undefined ||
+    options?.sendDocViaEmail !== undefined
+      ? {
+          BookingFileDocument: {
+            '@PrintDoc': options.printDoc || false,
+            '@SendDocViaEmail': options.sendDocViaEmail || false,
+          },
+        }
+      : {}),
+    ...(options?.applyPenalty !== undefined && {
+      Penalty: {
+        '@Apply': options.applyPenalty,
+        ...(options.penaltyCode && { '@SpecificCode': options.penaltyCode }),
+      },
+    }),
+    ...(options?.simulateCancelAndGetPenalty !== undefined && {
+      SimulateCancelAndGetPenaltyAmount: options.simulateCancelAndGetPenalty,
+    }),
+  };
+}
+
+export function mapSetBookingServiceStatusToXml(
+  customerRecordCode: string,
+  bookingFileCode: string,
+  serviceRef: string,
+  statusDate?: string
+): SetStatusServiceRQ {
+  return {
+    CustomerRecordCode: customerRecordCode,
+    BookingFileCode: bookingFileCode,
+    BookingServiceRef: serviceRef,
+    BookingFileServiceStatus: 'NULLIFIED',
+    ...(statusDate && { BookingFileServiceStatusDate: statusDate }),
   };
 }

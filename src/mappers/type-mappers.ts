@@ -1,475 +1,149 @@
-// ===== ADDRESS TYPE MAPPERS =====
-
-export function mapAddressTypeToXml(
-  type: string
-): 'HOME' | 'WORK' | 'BILLING' | 'DELIVERY' {
-  const mapping: Record<string, 'HOME' | 'WORK' | 'BILLING' | 'DELIVERY'> = {
-    home: 'HOME',
-    work: 'WORK',
-    billing: 'BILLING',
-    delivery: 'DELIVERY',
-  };
-  return mapping[type] || 'HOME';
-}
-
-export function mapAddressTypeFromXml(
-  type: string
-): 'home' | 'work' | 'billing' | 'delivery' {
-  const mapping: Record<string, 'home' | 'work' | 'billing' | 'delivery'> = {
-    HOME: 'home',
-    WORK: 'work',
-    BILLING: 'billing',
-    DELIVERY: 'delivery',
-  };
-  return mapping[type] || 'home';
-}
-
-// ===== CONTACT TYPE MAPPERS =====
-
-export function mapContactTypeToXml(
-  type: string
-): 'HOME' | 'WORK' | 'MOBILE' | 'FAX' {
-  const mapping: Record<string, 'HOME' | 'WORK' | 'MOBILE' | 'FAX'> = {
-    home: 'HOME',
-    work: 'WORK',
-    mobile: 'MOBILE',
-    fax: 'FAX',
-  };
-  return mapping[type] || 'HOME';
-}
-
-export function mapContactTypeFromXml(
-  type: string
-): 'home' | 'work' | 'mobile' | 'fax' {
-  const mapping: Record<string, 'home' | 'work' | 'mobile' | 'fax'> = {
-    HOME: 'home',
-    WORK: 'work',
-    MOBILE: 'mobile',
-    FAX: 'fax',
-  };
-  return mapping[type] || 'home';
-}
-
-export function mapEmailTypeToXml(type: string): 'HOME' | 'WORK' {
-  const mapping: Record<string, 'HOME' | 'WORK'> = {
-    home: 'HOME',
-    work: 'WORK',
-  };
-  return mapping[type] || 'HOME';
-}
-
-export function mapEmailTypeFromXml(type: string): 'home' | 'work' {
-  const mapping: Record<string, 'home' | 'work'> = {
-    HOME: 'home',
-    WORK: 'work',
-  };
-  return mapping[type] || 'home';
-}
-
-// ===== PASSENGER TYPE MAPPERS =====
-
-export function mapPassengerTypeToXml(type: string): 'ADT' | 'CHD' | 'INF' {
-  const mapping: Record<string, 'ADT' | 'CHD' | 'INF'> = {
-    adult: 'ADT',
-    child: 'CHD',
-    infant: 'INF',
-  };
-  return mapping[type] || 'ADT';
-}
-
-export function mapPassengerTypeFromXml(
-  type: string
-): 'adult' | 'child' | 'infant' {
-  const mapping: Record<string, 'adult' | 'child' | 'infant'> = {
-    ADT: 'adult',
-    CHD: 'child',
-    INF: 'infant',
-  };
-  return mapping[type] || 'adult';
-}
-
-export function mapTitleToXml(
-  title: string
-): 'MR' | 'MRS' | 'MS' | 'DR' | 'PROF' {
-  const mapping: Record<string, 'MR' | 'MRS' | 'MS' | 'DR' | 'PROF'> = {
-    mr: 'MR',
-    mrs: 'MRS',
-    ms: 'MS',
-    dr: 'DR',
-    prof: 'PROF',
-  };
-  return mapping[title] || 'MR';
-}
-
-export function mapTitleFromXml(
-  title: string
-): 'mr' | 'mrs' | 'ms' | 'dr' | 'prof' {
-  const mapping: Record<string, 'mr' | 'mrs' | 'ms' | 'dr' | 'prof'> = {
-    MR: 'mr',
-    MRS: 'mrs',
-    MS: 'ms',
-    DR: 'dr',
-    PROF: 'prof',
-  };
-  return mapping[title] || 'mr';
-}
-
-// ===== SERVICE TYPE MAPPERS =====
-
-export function mapServiceTypeToXml(
-  type: string
-): 'FLIGHT' | 'HOTEL' | 'CAR' | 'TRANSFER' | 'INSURANCE' {
-  const mapping: Record<
-    string,
-    'FLIGHT' | 'HOTEL' | 'CAR' | 'TRANSFER' | 'INSURANCE'
-  > = {
-    flight: 'FLIGHT',
-    hotel: 'HOTEL',
-    car: 'CAR',
-    transfer: 'TRANSFER',
-    insurance: 'INSURANCE',
-  };
-  return mapping[type] || 'FLIGHT';
-}
-
-export function mapServiceTypeFromXml(
-  type: string
-): 'flight' | 'hotel' | 'car' | 'transfer' | 'insurance' {
-  const mapping: Record<
-    string,
-    'flight' | 'hotel' | 'car' | 'transfer' | 'insurance'
-  > = {
-    FLIGHT: 'flight',
-    HOTEL: 'hotel',
-    CAR: 'car',
-    TRANSFER: 'transfer',
-    INSURANCE: 'insurance',
-  };
-  return mapping[type] || 'flight';
-}
-
-export function mapServiceStatusToXml(
-  status: string
-): 'CONFIRMED' | 'PENDING' | 'CANCELLED' {
-  const mapping: Record<string, 'CONFIRMED' | 'PENDING' | 'CANCELLED'> = {
-    confirmed: 'CONFIRMED',
-    pending: 'PENDING',
-    cancelled: 'CANCELLED',
-  };
-  return mapping[status] || 'PENDING';
-}
-
-export function mapServiceStatusFromXml(
-  status: string
-): 'confirmed' | 'pending' | 'cancelled' {
-  const mapping: Record<string, 'confirmed' | 'pending' | 'cancelled'> = {
-    CONFIRMED: 'confirmed',
-    PENDING: 'pending',
-    CANCELLED: 'cancelled',
-  };
-  return mapping[status] || 'pending';
-}
-
-// ===== PAYMENT TYPE MAPPERS =====
-
-export function mapPaymentTypeToXml(
-  type: string
-): 'CREDIT_CARD' | 'DEBIT_CARD' | 'BANK_TRANSFER' | 'CASH' {
-  const mapping: Record<
-    string,
-    'CREDIT_CARD' | 'DEBIT_CARD' | 'BANK_TRANSFER' | 'CASH'
-  > = {
-    credit_card: 'CREDIT_CARD',
-    debit_card: 'DEBIT_CARD',
-    bank_transfer: 'BANK_TRANSFER',
-    cash: 'CASH',
-  };
-  return mapping[type] || 'CASH';
-}
-
-export function mapPaymentTypeFromXml(
-  type: string
-): 'credit_card' | 'debit_card' | 'bank_transfer' | 'cash' {
-  const mapping: Record<
-    string,
-    'credit_card' | 'debit_card' | 'bank_transfer' | 'cash'
-  > = {
-    CREDIT_CARD: 'credit_card',
-    DEBIT_CARD: 'debit_card',
-    BANK_TRANSFER: 'bank_transfer',
-    CASH: 'cash',
-  };
-  return mapping[type] || 'cash';
-}
-
-export function mapPaymentStatusToXml(
-  status: string
-): 'PENDING' | 'CONFIRMED' | 'FAILED' {
-  const mapping: Record<string, 'PENDING' | 'CONFIRMED' | 'FAILED'> = {
-    pending: 'PENDING',
-    confirmed: 'CONFIRMED',
-    failed: 'FAILED',
-  };
-  return mapping[status] || 'PENDING';
-}
-
-export function mapPaymentStatusFromXml(
-  status: string
-): 'pending' | 'confirmed' | 'failed' {
-  const mapping: Record<string, 'pending' | 'confirmed' | 'failed'> = {
-    PENDING: 'pending',
-    CONFIRMED: 'confirmed',
-    FAILED: 'failed',
-  };
-  return mapping[status] || 'pending';
-}
-
 // ===== CUSTOMER TYPE MAPPERS =====
+
+import { CustomerStatusType } from 'src/types/api-interfaces';
+import { PrintBookingDocumentRQ } from 'src/types/interfaces';
 
 export function mapCustomerTypeToXml(
   type: string
-): 'CUSTOMER' | 'AGENT' | 'SUPPLIER' {
-  const mapping: Record<string, 'CUSTOMER' | 'AGENT' | 'SUPPLIER'> = {
+): 'CUSTOMER' | 'SUPPLIER' | 'VOUCHER' | 'SUPPLIER_VOUCHER' {
+  const mapping: Record<
+    string,
+    'CUSTOMER' | 'SUPPLIER' | 'VOUCHER' | 'SUPPLIER_VOUCHER'
+  > = {
     customer: 'CUSTOMER',
-    agent: 'AGENT',
     supplier: 'SUPPLIER',
+    voucher: 'VOUCHER',
+    supplier_voucher: 'SUPPLIER_VOUCHER',
   };
   return mapping[type] || 'CUSTOMER';
 }
 
 export function mapCustomerTypeFromXml(
   type: string
-): 'customer' | 'agent' | 'supplier' {
-  const mapping: Record<string, 'customer' | 'agent' | 'supplier'> = {
+): 'customer' | 'supplier' | 'voucher' | 'supplier_voucher' {
+  const mapping: Record<
+    string,
+    'customer' | 'supplier' | 'voucher' | 'supplier_voucher'
+  > = {
     CUSTOMER: 'customer',
-    AGENT: 'agent',
     SUPPLIER: 'supplier',
+    VOUCHER: 'voucher',
+    SUPPLIER_VOUCHER: 'supplier_voucher',
   };
   return mapping[type] || 'customer';
 }
 
 export function mapCustomerStatusToXml(
   status: string
-): 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' {
-  const mapping: Record<string, 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'> = {
-    active: 'ACTIVE',
-    inactive: 'INACTIVE',
-    suspended: 'SUSPENDED',
+): 'ENABLED' | 'WARNING' | 'BLACKLISTED' | 'DISABLED' {
+  const mapping: Record<
+    string,
+    'ENABLED' | 'WARNING' | 'BLACKLISTED' | 'DISABLED'
+  > = {
+    enabled: 'ENABLED',
+    warning: 'WARNING',
+    blacklisted: 'BLACKLISTED',
+    disabled: 'DISABLED',
   };
-  return mapping[status] || 'ACTIVE';
+  return mapping[status] || 'ENABLED';
 }
 
-export function mapCustomerStatusFromXml(
-  status: string
-): 'active' | 'inactive' | 'suspended' {
-  const mapping: Record<string, 'active' | 'inactive' | 'suspended'> = {
-    ACTIVE: 'active',
-    INACTIVE: 'inactive',
-    SUSPENDED: 'suspended',
+export function mapCustomerStatusFromXml(status: string): CustomerStatusType {
+  const mapping: Record<string, CustomerStatusType> = {
+    ENABLED: 'enabled',
+    WARNING: 'warning',
+    BLACKLISTED: 'blacklisted',
+    DISABLED: 'disabled',
   };
-  return mapping[status] || 'active';
+  return mapping[status] || 'enabled';
 }
 
-export function mapCommunicationMethodToXml(
-  method: string
-): 'EMAIL' | 'SMS' | 'PHONE' {
-  const mapping: Record<string, 'EMAIL' | 'SMS' | 'PHONE'> = {
-    email: 'EMAIL',
-    sms: 'SMS',
-    phone: 'PHONE',
-  };
-  return mapping[method] || 'EMAIL';
-}
-
-export function mapCommunicationMethodFromXml(
-  method: string
-): 'email' | 'sms' | 'phone' {
-  const mapping: Record<string, 'email' | 'sms' | 'phone'> = {
-    EMAIL: 'email',
-    SMS: 'sms',
-    PHONE: 'phone',
-  };
-  return mapping[method] || 'email';
-}
-
-// ===== BOOKING TYPE MAPPERS =====
-
-export function mapBookingTypeToXml(
-  type: string
-): 'INDIVIDUAL' | 'GROUP' | 'CORPORATE' {
-  const mapping: Record<string, 'INDIVIDUAL' | 'GROUP' | 'CORPORATE'> = {
-    individual: 'INDIVIDUAL',
-    group: 'GROUP',
-    corporate: 'CORPORATE',
-  };
-  return mapping[type] || 'INDIVIDUAL';
-}
+// ===== BOOKING STATUS MAPPERS =====
 
 export function mapBookingStatusToXml(
   status: string
-): 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' {
+):
+  | 'QUOTATION'
+  | 'WORK_IN_PROGRESS'
+  | 'CONFIRMED'
+  | 'OPTIONED'
+  | 'NULLIFIED'
+  | 'CANCELED' {
   const mapping: Record<
     string,
-    'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED'
+    | 'QUOTATION'
+    | 'WORK_IN_PROGRESS'
+    | 'CONFIRMED'
+    | 'OPTIONED'
+    | 'NULLIFIED'
+    | 'CANCELED'
   > = {
-    pending: 'PENDING',
+    quotation: 'QUOTATION',
+    work_in_progress: 'WORK_IN_PROGRESS',
     confirmed: 'CONFIRMED',
-    cancelled: 'CANCELLED',
-    completed: 'COMPLETED',
+    optioned: 'OPTIONED',
+    nullified: 'NULLIFIED',
+    canceled: 'CANCELED',
   };
-  return mapping[status] || 'PENDING';
+  return mapping[status] || 'QUOTATION';
 }
 
 export function mapBookingStatusFromXml(
   status: string
-): 'pending' | 'confirmed' | 'cancelled' | 'completed' {
+):
+  | 'quotation'
+  | 'work_in_progress'
+  | 'confirmed'
+  | 'optioned'
+  | 'nullified'
+  | 'canceled' {
   const mapping: Record<
     string,
-    'pending' | 'confirmed' | 'cancelled' | 'completed'
+    | 'quotation'
+    | 'work_in_progress'
+    | 'confirmed'
+    | 'optioned'
+    | 'nullified'
+    | 'canceled'
   > = {
-    PENDING: 'pending',
+    QUOTATION: 'quotation',
+    WORK_IN_PROGRESS: 'work_in_progress',
     CONFIRMED: 'confirmed',
-    CANCELLED: 'cancelled',
-    COMPLETED: 'completed',
+    OPTIONED: 'optioned',
+    NULLIFIED: 'nullified',
+    CANCELED: 'canceled',
   };
-  return mapping[status] || 'pending';
-}
-
-export function mapPriorityToXml(
-  priority: string
-): 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT' {
-  const mapping: Record<string, 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'> = {
-    low: 'LOW',
-    normal: 'NORMAL',
-    high: 'HIGH',
-    urgent: 'URGENT',
-  };
-  return mapping[priority] || 'NORMAL';
-}
-
-// ===== SPECIAL REQUEST TYPE MAPPERS =====
-
-export function mapSpecialRequestTypeToXml(
-  type: string
-): 'MEAL' | 'SEAT' | 'WHEELCHAIR' | 'OTHER' {
-  const mapping: Record<string, 'MEAL' | 'SEAT' | 'WHEELCHAIR' | 'OTHER'> = {
-    meal: 'MEAL',
-    seat: 'SEAT',
-    wheelchair: 'WHEELCHAIR',
-    other: 'OTHER',
-  };
-  return mapping[type] || 'OTHER';
-}
-
-// ===== CANCEL REASON TYPE MAPPERS =====
-
-export function mapCancelReasonToXml(
-  reason: string
-): 'CUSTOMER_REQUEST' | 'NO_SHOW' | 'OPERATIONAL' | 'OTHER' {
-  const mapping: Record<
-    string,
-    'CUSTOMER_REQUEST' | 'NO_SHOW' | 'OPERATIONAL' | 'OTHER'
-  > = {
-    customer_request: 'CUSTOMER_REQUEST',
-    no_show: 'NO_SHOW',
-    operational: 'OPERATIONAL',
-    other: 'OTHER',
-  };
-  return mapping[reason] || 'OTHER';
-}
-
-export function mapRefundMethodToXml(
-  method: string
-): 'ORIGINAL_PAYMENT' | 'CREDIT' | 'CASH' {
-  const mapping: Record<string, 'ORIGINAL_PAYMENT' | 'CREDIT' | 'CASH'> = {
-    original_payment: 'ORIGINAL_PAYMENT',
-    credit: 'CREDIT',
-    cash: 'CASH',
-  };
-  return mapping[method] || 'CASH';
+  return mapping[status] || 'quotation';
 }
 
 // ===== DOCUMENT TYPE MAPPERS =====
 
 export function mapDocumentTypeToXml(
   type: string
-): 'CONFIRMATION' | 'INVOICE' | 'VOUCHER' | 'TICKET' | 'ALL' {
+): PrintBookingDocumentRQ['InfoDocumentsToPrint']['InfoDocumentToPrint'][number]['DocumentType'] {
   const mapping: Record<
     string,
-    'CONFIRMATION' | 'INVOICE' | 'VOUCHER' | 'TICKET' | 'ALL'
+    PrintBookingDocumentRQ['InfoDocumentsToPrint']['InfoDocumentToPrint'][number]['DocumentType']
   > = {
-    confirmation: 'CONFIRMATION',
-    invoice: 'INVOICE',
+    visa_request: 'VISA_REQUEST',
+    travel_information: 'TRAVEL_INFORMATION',
     voucher: 'VOUCHER',
-    ticket: 'TICKET',
-    all: 'ALL',
+    booking_contract: 'BOOKING_CONTRACT',
+    booking_confirmation: 'BOOKING_CONFIRMATION',
+    supplier_service_list: 'SUPPLIER_SERVICE_LIST',
+    invoice: 'INVOICE',
+    proforma_invoice: 'PROFORMA_INVOICE',
+    adeguamento: 'ADEGUAMENTO',
+    reservation_form: 'RESERVATION_FORM',
+    open_xml: 'OPEN_XML',
+    sales_invoice: 'SALES_INVOICE',
+    ticketing_tmaster: 'TICKETING_TMASTER',
+    summary_form: 'SUMMARY_FORM',
   };
-  return mapping[type] || 'ALL';
+  return mapping[type] || 'VOUCHER';
 }
 
-export function mapDocumentFormatToXml(format: string): 'PDF' | 'HTML' | 'XML' {
-  const mapping: Record<string, 'PDF' | 'HTML' | 'XML'> = {
-    pdf: 'PDF',
-    html: 'HTML',
-    xml: 'XML',
-  };
-  return mapping[format] || 'PDF';
-}
-
-export function mapDeliveryMethodToXml(
-  method: string
-): 'EMAIL' | 'SMS' | 'DOWNLOAD' {
-  const mapping: Record<string, 'EMAIL' | 'SMS' | 'DOWNLOAD'> = {
-    email: 'EMAIL',
-    sms: 'SMS',
-    download: 'DOWNLOAD',
-  };
-  return mapping[method] || 'EMAIL';
-}
-
-// ===== SEARCH OPERATOR TYPE MAPPERS =====
-
-export function mapSearchOperatorToXml(
-  operator: string
-): 'EQUALS' | 'CONTAINS' | 'STARTS_WITH' | 'ENDS_WITH' {
-  const mapping: Record<
-    string,
-    'EQUALS' | 'CONTAINS' | 'STARTS_WITH' | 'ENDS_WITH'
-  > = {
-    equals: 'EQUALS',
-    contains: 'CONTAINS',
-    starts_with: 'STARTS_WITH',
-    ends_with: 'ENDS_WITH',
-  };
-  return mapping[operator] || 'EQUALS';
-}
-
-// ===== PRICING ITEM TYPE MAPPERS =====
-
-export function mapPricingItemTypeFromXml(
-  type: string
-): 'service' | 'tax' | 'fee' | 'discount' {
-  const mapping: Record<string, 'service' | 'tax' | 'fee' | 'discount'> = {
-    SERVICE: 'service',
-    TAX: 'tax',
-    FEE: 'fee',
-    DISCOUNT: 'discount',
-  };
-  return mapping[type] || 'service';
-}
-
-// ===== DELIVERY STATUS TYPE MAPPERS =====
-
-export function mapDeliveryStatusFromXml(
-  status: string
-): 'sent' | 'pending' | 'failed' {
-  const mapping: Record<string, 'sent' | 'pending' | 'failed'> = {
-    SENT: 'sent',
-    PENDING: 'pending',
-    FAILED: 'failed',
-  };
-  return mapping[status] || 'pending';
-}
+// ===== GENDER MAPPERS =====
 
 export function mapGenderToXml(gender: string): 'M' | 'F' {
   const mapping: Record<string, 'M' | 'F'> = {
@@ -477,12 +151,4 @@ export function mapGenderToXml(gender: string): 'M' | 'F' {
     female: 'F',
   };
   return mapping[gender] || 'M';
-}
-
-export function mapGenderFromXml(gender: string): 'male' | 'female' {
-  const mapping: Record<string, 'male' | 'female'> = {
-    M: 'male',
-    F: 'female',
-  };
-  return mapping[gender] || 'male';
 }

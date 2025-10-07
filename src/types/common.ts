@@ -63,6 +63,12 @@ export enum AvesErrorCodes {
   RATE_LIMIT_EXCEEDED = 'AVES_503',
 }
 
+export enum InsertCriteria {
+  INSERT = 'INSERT',
+  UPDATE = 'UPDATE',
+  UPSERT = 'UPSERT',
+}
+
 export interface AvesRequestRoot<TBody> {
   Request: {
     RqHeader: RqHeader;
