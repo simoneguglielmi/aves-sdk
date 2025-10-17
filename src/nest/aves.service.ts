@@ -26,6 +26,14 @@ import type {
   PaymentResponseData,
   BookingStatusTypeValue,
 } from '../validation/api-schemas';
+import {
+  searchCustomerRequestSchema,
+  createBookingRequestSchema,
+  cancelBookingRequestSchema,
+  printDocumentRequestSchema,
+  addPaymentRequestSchema,
+  customerSchema,
+} from '../validation/api-schemas';
 import type {
   SearchMasterRecordRQ,
   SearchMasterRecordRS,
@@ -103,7 +111,9 @@ export class AvesService {
   async searchCustomers(
     request: SearchCustomerRequest
   ): Promise<CustomerSearchResult> {
-    const xmlRequest = mapSearchCustomerToXml(request);
+    const validatedRequest = searchCustomerRequestSchema.parse(request);
+
+    const xmlRequest = mapSearchCustomerToXml(validatedRequest);
     const xmlResponse = await this.http.postXml<
       WrapRequestDto<SearchMasterRecordRQ>,
       AvesResponseRoot<SearchMasterRecordRS>
@@ -114,7 +124,7 @@ export class AvesService {
     );
     return mapSearchResponseFromXml(
       xmlResponse.Response.Body,
-      request.pagination
+      validatedRequest.pagination
     );
   }
 
@@ -124,7 +134,9 @@ export class AvesService {
   async createCustomer(
     customer: Customer
   ): Promise<OperationResponse<Customer>> {
-    const xmlRequest = mapCreateCustomerToXml(customer);
+    const validatedCustomer = customerSchema.parse(customer);
+
+    const xmlRequest = mapCreateCustomerToXml(validatedCustomer);
     const xmlResponse = await this.http.postXml<
       WrapRequestDto<ManageMasterRecordRQ>,
       AvesResponseRoot<CustomerRecordRS>
@@ -142,7 +154,9 @@ export class AvesService {
   async updateCustomer(
     customer: Customer
   ): Promise<OperationResponse<Customer>> {
-    const xmlRequest = mapUpdateCustomerToXml(customer);
+    const validatedCustomer = customerSchema.parse(customer);
+
+    const xmlRequest = mapUpdateCustomerToXml(validatedCustomer);
     const xmlResponse = await this.http.postXml<
       WrapRequestDto<ManageMasterRecordRQ>,
       AvesResponseRoot<CustomerRecordRS>
@@ -160,7 +174,10 @@ export class AvesService {
   async upsertCustomer(
     customer: Customer
   ): Promise<OperationResponse<Customer>> {
-    const xmlRequest = mapUpsertCustomerToXml(customer);
+    // Validate customer data
+    const validatedCustomer = customerSchema.parse(customer);
+
+    const xmlRequest = mapUpsertCustomerToXml(validatedCustomer);
     const xmlResponse = await this.http.postXml<
       WrapRequestDto<ManageMasterRecordRQ>,
       AvesResponseRoot<CustomerRecordRS>
@@ -180,7 +197,9 @@ export class AvesService {
   async createBooking(
     request: CreateBookingRequest
   ): Promise<OperationResponse<BookingResponse>> {
-    const xmlRequest = mapCreateBookingToXml(request);
+    const validatedRequest = createBookingRequestSchema.parse(request);
+
+    const xmlRequest = mapCreateBookingToXml(validatedRequest);
     const xmlResponse = await this.http.postXml<
       WrapRequestDto<BookFileRQ>,
       AvesResponseRoot<BookingFileRS>
@@ -319,7 +338,9 @@ export class AvesService {
   async cancelBooking(
     request: CancelBookingRequest
   ): Promise<OperationResponse<CancelResponseData>> {
-    const xmlRequest = mapCancelBookingToXml(request);
+    const validatedRequest = cancelBookingRequestSchema.parse(request);
+
+    const xmlRequest = mapCancelBookingToXml(validatedRequest);
     const xmlResponse = await this.http.postXml<
       WrapRequestDto<CancelFileRQ>,
       AvesResponseRoot<CancelFileRS>
@@ -339,7 +360,9 @@ export class AvesService {
   async addPayment(
     request: AddPaymentRequest
   ): Promise<OperationResponse<PaymentResponseData>> {
-    const xmlRequest = mapAddPaymentToXml(request);
+    const validatedRequest = addPaymentRequestSchema.parse(request);
+
+    const xmlRequest = mapAddPaymentToXml(validatedRequest);
     const xmlResponse = await this.http.postXml<
       WrapRequestDto<FilePaymentListRQ>,
       AvesResponseRoot<FilePaymentListRS>
@@ -359,7 +382,9 @@ export class AvesService {
   async printDocument(
     request: PrintDocumentRequest
   ): Promise<OperationResponse<DocumentPrintResult>> {
-    const xmlRequest = mapPrintDocumentToXml(request);
+    const validatedRequest = printDocumentRequestSchema.parse(request);
+
+    const xmlRequest = mapPrintDocumentToXml(validatedRequest);
     const xmlResponse = await this.http.postXml<
       WrapRequestDto<PrintBookingDocumentRQ>,
       AvesResponseRoot<PrintBookingDocumentRS>
