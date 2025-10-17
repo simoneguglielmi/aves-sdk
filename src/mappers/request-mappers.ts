@@ -12,7 +12,9 @@ import {
   GenderType,
   ServiceType,
   ServiceStatusType,
-} from '../types/api-interfaces';
+  PassengerTypeValue,
+  BookingStatusTypeValue,
+} from '../validation/api-schemas';
 import { createDateString } from '../utils/date-helpers';
 import {
   mapCustomerTypeToXml,
@@ -46,7 +48,7 @@ export function mapPassengerFromXml(xml: PassengerDetail): BookingPassenger {
   const lastName = nameParts.pop() || '';
   const firstName = nameParts.join(' ') || xml.Name;
 
-  const typeMap: Record<string, PassengerType> = {
+  const typeMap: Record<string, PassengerTypeValue> = {
     AD: PassengerType.ADULT,
     CH: PassengerType.CHILD,
     IN: PassengerType.INFANT,
@@ -486,7 +488,7 @@ export function mapUpdateBookingServicesToXml(
 export function mapSetBookingStatusToXml(
   customerRecordCode: string,
   bookingFileCode: string,
-  status: BookingStatusType,
+  status: BookingStatusTypeValue,
   options?: {
     expiredDate?: string;
     optionedFileExpireDatePolicy?:

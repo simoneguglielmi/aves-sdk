@@ -4,7 +4,10 @@ import {
   CustomerStatusType,
   CustomerType,
   BookingStatusType,
-} from '../types/api-interfaces';
+  CustomerStatusTypeValue,
+  CustomerTypeValue,
+  BookingStatusTypeValue,
+} from '../validation/api-schemas';
 import { PrintBookingDocumentRQ } from '../types/interfaces';
 
 export function mapCustomerTypeToXml(
@@ -22,8 +25,8 @@ export function mapCustomerTypeToXml(
   return mapping[type] || 'CUSTOMER';
 }
 
-export function mapCustomerTypeFromXml(type: string): CustomerType {
-  const mapping: Record<string, CustomerType> = {
+export function mapCustomerTypeFromXml(type: string): CustomerTypeValue {
+  const mapping: Record<string, CustomerTypeValue> = {
     CUSTOMER: CustomerType.CUSTOMER,
     SUPPLIER: CustomerType.SUPPLIER,
     VOUCHER: CustomerType.VOUCHER,
@@ -47,8 +50,10 @@ export function mapCustomerStatusToXml(
   return mapping[status] || 'ENABLED';
 }
 
-export function mapCustomerStatusFromXml(status: string): CustomerStatusType {
-  const mapping: Record<string, CustomerStatusType> = {
+export function mapCustomerStatusFromXml(
+  status: string
+): CustomerStatusTypeValue {
+  const mapping: Record<string, CustomerStatusTypeValue> = {
     ENABLED: CustomerStatusType.ENABLED,
     WARNING: CustomerStatusType.WARNING,
     BLACKLISTED: CustomerStatusType.BLACKLISTED,
@@ -87,8 +92,10 @@ export function mapBookingStatusToXml(
   return mapping[status] || 'QUOTATION';
 }
 
-export function mapBookingStatusFromXml(status: string): BookingStatusType {
-  const mapping: Record<string, BookingStatusType> = {
+export function mapBookingStatusFromXml(
+  status: string
+): BookingStatusTypeValue {
+  const mapping: Record<string, BookingStatusTypeValue> = {
     QUOTATION: BookingStatusType.QUOTATION,
     WORK_IN_PROGRESS: BookingStatusType.WORK_IN_PROGRESS,
     CONFIRMED: BookingStatusType.CONFIRMED,

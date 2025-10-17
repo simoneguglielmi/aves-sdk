@@ -1,5 +1,5 @@
 // Types
-export * from './types/api-interfaces';
+export * from './validation/api-schemas';
 export * from './mappers';
 export * from './utils';
 

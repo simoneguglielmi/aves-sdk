@@ -9,7 +9,7 @@ import {
   GenderType,
   CustomerStatusType,
   PricingItemType,
-} from '../types/api-interfaces';
+} from '../validation/api-schemas';
 import { createDateTimeString, createDateString } from '../utils/date-helpers';
 import {
   mapCustomerTypeFromXml,

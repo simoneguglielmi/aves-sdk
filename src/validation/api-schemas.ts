@@ -1,22 +1,156 @@
 import { z } from 'zod';
-import {
-  PassengerType,
-  GenderType,
-  CustomerType,
-  CustomerStatusType,
-  BookingStatusType,
-  DocumentType,
-  ServiceType,
-  ServiceStatusType,
-  PaymentType,
-  PaymentStatusType,
-  DocumentFormatType,
-  DeliveryMethodType,
-  CancelReasonType,
-  RefundMethodType,
-  PricingItemType,
-  DeliveryStatusType,
-} from '../types/api-interfaces';
+
+// ===== CONST OBJECTS (Single Source of Truth) =====
+
+export const PassengerType = {
+  ADULT: 'adult',
+  CHILD: 'child',
+  INFANT: 'infant',
+  SENIOR: 'senior',
+} as const;
+
+export const GenderType = {
+  MALE: 'male',
+  FEMALE: 'female',
+} as const;
+
+export const ServiceType = {
+  FLIGHT: 'flight',
+  HOTEL: 'hotel',
+  CAR: 'car',
+  TRANSFER: 'transfer',
+  INSURANCE: 'insurance',
+} as const;
+
+export const ServiceStatusType = {
+  CONFIRMED: 'confirmed',
+  PENDING: 'pending',
+  CANCELLED: 'cancelled',
+} as const;
+
+export const PaymentType = {
+  CREDIT_CARD: 'credit_card',
+  DEBIT_CARD: 'debit_card',
+  BANK_TRANSFER: 'bank_transfer',
+  CASH: 'cash',
+} as const;
+
+export const PaymentStatusType = {
+  PENDING: 'pending',
+  CONFIRMED: 'confirmed',
+  FAILED: 'failed',
+} as const;
+
+export const CustomerType = {
+  CUSTOMER: 'customer',
+  SUPPLIER: 'supplier',
+  VOUCHER: 'voucher',
+  SUPPLIER_VOUCHER: 'supplier_voucher',
+} as const;
+
+export const CustomerStatusType = {
+  ENABLED: 'enabled',
+  WARNING: 'warning',
+  BLACKLISTED: 'blacklisted',
+  DISABLED: 'disabled',
+} as const;
+
+export const BookingStatusType = {
+  QUOTATION: 'quotation',
+  WORK_IN_PROGRESS: 'work_in_progress',
+  CONFIRMED: 'confirmed',
+  OPTIONED: 'optioned',
+  NULLIFIED: 'nullified',
+  CANCELED: 'canceled',
+} as const;
+
+export const DocumentType = {
+  VISA_REQUEST: 'visa_request',
+  TRAVEL_INFORMATION: 'travel_information',
+  VOUCHER: 'voucher',
+  BOOKING_CONTRACT: 'booking_contract',
+  BOOKING_CONFIRMATION: 'booking_confirmation',
+  SUPPLIER_SERVICE_LIST: 'supplier_service_list',
+  INVOICE: 'invoice',
+  PROFORMA_INVOICE: 'proforma_invoice',
+  ADEGUAMENTO: 'adeguamento',
+  RESERVATION_FORM: 'reservation_form',
+  OPEN_XML: 'open_xml',
+  SALES_INVOICE: 'sales_invoice',
+  TICKETING_TMASTER: 'ticketing_tmaster',
+  SUMMARY_FORM: 'summary_form',
+} as const;
+
+export const DocumentFormatType = {
+  PDF: 'pdf',
+  HTML: 'html',
+  XML: 'xml',
+} as const;
+
+export const DeliveryMethodType = {
+  EMAIL: 'email',
+  SMS: 'sms',
+  DOWNLOAD: 'download',
+} as const;
+
+export const CancelReasonType = {
+  CUSTOMER_REQUEST: 'customer_request',
+  NO_SHOW: 'no_show',
+  OPERATIONAL: 'operational',
+  OTHER: 'other',
+} as const;
+
+export const RefundMethodType = {
+  ORIGINAL_PAYMENT: 'original_payment',
+  CREDIT: 'credit',
+  CASH: 'cash',
+} as const;
+
+export const PricingItemType = {
+  SERVICE: 'service',
+  TAX: 'tax',
+  FEE: 'fee',
+  DISCOUNT: 'discount',
+} as const;
+
+export const DeliveryStatusType = {
+  SENT: 'sent',
+  PENDING: 'pending',
+  FAILED: 'failed',
+} as const;
+
+// ===== TYPE ALIASES FOR CONST OBJECTS =====
+// These are needed for type inference from const object values
+
+export type PassengerTypeValue =
+  (typeof PassengerType)[keyof typeof PassengerType];
+export type GenderTypeValue = (typeof GenderType)[keyof typeof GenderType];
+export type ServiceTypeValue = (typeof ServiceType)[keyof typeof ServiceType];
+export type ServiceStatusTypeValue =
+  (typeof ServiceStatusType)[keyof typeof ServiceStatusType];
+export type PaymentTypeValue = (typeof PaymentType)[keyof typeof PaymentType];
+export type PaymentStatusTypeValue =
+  (typeof PaymentStatusType)[keyof typeof PaymentStatusType];
+export type CustomerTypeValue =
+  (typeof CustomerType)[keyof typeof CustomerType];
+export type CustomerStatusTypeValue =
+  (typeof CustomerStatusType)[keyof typeof CustomerStatusType];
+export type BookingStatusTypeValue =
+  (typeof BookingStatusType)[keyof typeof BookingStatusType];
+export type DocumentTypeValue =
+  (typeof DocumentType)[keyof typeof DocumentType];
+export type DocumentFormatTypeValue =
+  (typeof DocumentFormatType)[keyof typeof DocumentFormatType];
+export type DeliveryMethodTypeValue =
+  (typeof DeliveryMethodType)[keyof typeof DeliveryMethodType];
+export type CancelReasonTypeValue =
+  (typeof CancelReasonType)[keyof typeof CancelReasonType];
+export type RefundMethodTypeValue =
+  (typeof RefundMethodType)[keyof typeof RefundMethodType];
+export type PricingItemTypeValue =
+  (typeof PricingItemType)[keyof typeof PricingItemType];
+export type DeliveryStatusTypeValue =
+  (typeof DeliveryStatusType)[keyof typeof DeliveryStatusType];
 
 // ===== TYPE SCHEMAS (Based on Aves XML Documentation) =====
 
@@ -28,14 +162,43 @@ export const addressTypeSchema = z.enum([
 ]);
 export const contactTypeSchema = z.enum(['home', 'work', 'mobile', 'fax']);
 export const emailTypeSchema = z.enum(['home', 'work']);
-export const passengerTypeSchema = z.enum(PassengerType);
+export const passengerTypeSchema = z.enum([
+  PassengerType.ADULT,
+  PassengerType.CHILD,
+  PassengerType.INFANT,
+  PassengerType.SENIOR,
+]);
 export const titleTypeSchema = z.enum(['mr', 'mrs', 'ms', 'dr', 'prof']);
-export const genderTypeSchema = z.enum(GenderType);
-export const serviceTypeSchema = z.enum(ServiceType);
-export const serviceStatusTypeSchema = z.enum(ServiceStatusType);
-export const paymentTypeSchema = z.enum(PaymentType);
-export const paymentStatusTypeSchema = z.enum(PaymentStatusType);
-export const customerTypeSchema = z.enum(CustomerType);
+export const genderTypeSchema = z.enum([GenderType.MALE, GenderType.FEMALE]);
+export const serviceTypeSchema = z.enum([
+  ServiceType.FLIGHT,
+  ServiceType.HOTEL,
+  ServiceType.CAR,
+  ServiceType.TRANSFER,
+  ServiceType.INSURANCE,
+]);
+export const serviceStatusTypeSchema = z.enum([
+  ServiceStatusType.CONFIRMED,
+  ServiceStatusType.PENDING,
+  ServiceStatusType.CANCELLED,
+]);
+export const paymentTypeSchema = z.enum([
+  PaymentType.CREDIT_CARD,
+  PaymentType.DEBIT_CARD,
+  PaymentType.BANK_TRANSFER,
+  PaymentType.CASH,
+]);
+export const paymentStatusTypeSchema = z.enum([
+  PaymentStatusType.PENDING,
+  PaymentStatusType.CONFIRMED,
+  PaymentStatusType.FAILED,
+]);
+export const customerTypeSchema = z.enum([
+  CustomerType.CUSTOMER,
+  CustomerType.SUPPLIER,
+  CustomerType.VOUCHER,
+  CustomerType.SUPPLIER_VOUCHER,
+]);
 export const searchOperatorTypeSchema = z.enum([
   'equals',
   'contains',
@@ -50,15 +213,68 @@ export const specialRequestTypeSchema = z.enum([
   'wheelchair',
   'other',
 ]);
-export const cancelReasonTypeSchema = z.enum(CancelReasonType);
-export const refundMethodTypeSchema = z.enum(RefundMethodType);
-export const documentTypeSchema = z.enum(DocumentType);
-export const documentFormatTypeSchema = z.enum(DocumentFormatType);
-export const deliveryMethodTypeSchema = z.enum(DeliveryMethodType);
-export const bookingStatusTypeSchema = z.enum(BookingStatusType);
-export const pricingItemTypeSchema = z.enum(PricingItemType);
-export const deliveryStatusTypeSchema = z.enum(DeliveryStatusType);
-export const customerStatusTypeSchema = z.enum(CustomerStatusType);
+export const cancelReasonTypeSchema = z.enum([
+  CancelReasonType.CUSTOMER_REQUEST,
+  CancelReasonType.NO_SHOW,
+  CancelReasonType.OPERATIONAL,
+  CancelReasonType.OTHER,
+]);
+export const refundMethodTypeSchema = z.enum([
+  RefundMethodType.ORIGINAL_PAYMENT,
+  RefundMethodType.CREDIT,
+  RefundMethodType.CASH,
+]);
+export const documentTypeSchema = z.enum([
+  DocumentType.VISA_REQUEST,
+  DocumentType.TRAVEL_INFORMATION,
+  DocumentType.VOUCHER,
+  DocumentType.BOOKING_CONTRACT,
+  DocumentType.BOOKING_CONFIRMATION,
+  DocumentType.SUPPLIER_SERVICE_LIST,
+  DocumentType.INVOICE,
+  DocumentType.PROFORMA_INVOICE,
+  DocumentType.ADEGUAMENTO,
+  DocumentType.RESERVATION_FORM,
+  DocumentType.OPEN_XML,
+  DocumentType.SALES_INVOICE,
+  DocumentType.TICKETING_TMASTER,
+  DocumentType.SUMMARY_FORM,
+]);
+export const documentFormatTypeSchema = z.enum([
+  DocumentFormatType.PDF,
+  DocumentFormatType.HTML,
+  DocumentFormatType.XML,
+]);
+export const deliveryMethodTypeSchema = z.enum([
+  DeliveryMethodType.EMAIL,
+  DeliveryMethodType.SMS,
+  DeliveryMethodType.DOWNLOAD,
+]);
+export const bookingStatusTypeSchema = z.enum([
+  BookingStatusType.QUOTATION,
+  BookingStatusType.WORK_IN_PROGRESS,
+  BookingStatusType.CONFIRMED,
+  BookingStatusType.OPTIONED,
+  BookingStatusType.NULLIFIED,
+  BookingStatusType.CANCELED,
+]);
+export const pricingItemTypeSchema = z.enum([
+  PricingItemType.SERVICE,
+  PricingItemType.TAX,
+  PricingItemType.FEE,
+  PricingItemType.DISCOUNT,
+]);
+export const deliveryStatusTypeSchema = z.enum([
+  DeliveryStatusType.SENT,
+  DeliveryStatusType.PENDING,
+  DeliveryStatusType.FAILED,
+]);
+export const customerStatusTypeSchema = z.enum([
+  CustomerStatusType.ENABLED,
+  CustomerStatusType.WARNING,
+  CustomerStatusType.BLACKLISTED,
+  CustomerStatusType.DISABLED,
+]);
 export const communicationMethodTypeSchema = z.enum(['email', 'sms', 'phone']);
 
 // ===== DATE VALIDATION HELPERS =====
@@ -709,3 +925,80 @@ export const apiSchemas = {
   documentPrintResult: documentPrintResultSchema,
   operationResponse: operationResponseSchema,
 } as const;
+
+// ===== INFERRED TYPES =====
+
+export type AddressType = z.infer<typeof addressTypeSchema>;
+export type ContactType = z.infer<typeof contactTypeSchema>;
+export type EmailType = z.infer<typeof emailTypeSchema>;
+export type TitleType = z.infer<typeof titleTypeSchema>;
+export type SearchOperatorType = z.infer<typeof searchOperatorTypeSchema>;
+export type BookingType = z.infer<typeof bookingTypeSchema>;
+export type PriorityType = z.infer<typeof priorityTypeSchema>;
+export type SpecialRequestType = z.infer<typeof specialRequestTypeSchema>;
+export type CommunicationMethodType = z.infer<
+  typeof communicationMethodTypeSchema
+>;
+
+export type CustomerAddress = z.infer<typeof customerAddressSchema>;
+export type CustomerContact = z.infer<typeof customerContactSchema>;
+export type Customer = z.infer<typeof customerSchema>;
+export type Price = {
+  currency: string;
+  amount: number;
+};
+export type BookingPassenger = z.infer<typeof bookingPassengerSchema>;
+export type BookingService = z.infer<typeof bookingServiceSchema>;
+export type BookingPayment = z.infer<typeof bookingPaymentSchema>;
+
+export type SearchCustomerRequest = z.infer<typeof searchCustomerRequestSchema>;
+export type CreateBookingRequest = z.infer<typeof createBookingRequestSchema>;
+export type CancelBookingRequest = z.infer<typeof cancelBookingRequestSchema>;
+export type PrintDocumentRequest = z.infer<typeof printDocumentRequestSchema>;
+export type AddPaymentRequest = z.infer<typeof addPaymentRequestSchema>;
+export type UpdateBookingHeaderRequest = z.infer<
+  typeof updateBookingHeaderSchema
+>;
+export type UpdateBookingServicesRequest = z.infer<
+  typeof updateBookingServicesSchema
+>;
+export type SetBookingStatusRequest = z.infer<typeof setBookingStatusSchema>;
+
+export type BookingResponse = z.infer<typeof bookingResponseSchema>;
+export type CustomerSearchResult = z.infer<typeof customerSearchResultSchema>;
+export type PrintedDocument = z.infer<typeof printedDocumentSchema>;
+export type DocumentPrintResult = z.infer<typeof documentPrintResultSchema>;
+export type OperationResponse<T = unknown> = {
+  success: boolean;
+  message?: string;
+  data?: T;
+};
+
+export type CancelResponseData = {
+  refundInfo?: {
+    refundAmount: number;
+    currency: string;
+    refundMethod: string;
+    processingTime: string;
+  };
+};
+
+export type PaymentResponseData = {
+  booking: BookingResponse;
+  paymentSummary: {
+    totalPaid: {
+      currency: string;
+      amount: number;
+    };
+    outstandingAmount: {
+      currency: string;
+      amount: number;
+    };
+    paymentHistory: BookingPayment[];
+  };
+};
+
+export type DocumentFormatType =
+  (typeof DocumentFormatType)[keyof typeof DocumentFormatType];
+export type DeliveryMethodType =
+  (typeof DeliveryMethodType)[keyof typeof DeliveryMethodType];

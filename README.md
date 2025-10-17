@@ -382,16 +382,15 @@ Optimized for production:
 
 ```
 aves-sdk/
+├── validation/
+│   └── api-schemas.ts         # Zod schemas + inferred types (single source of truth)
 ├── types/
-│   ├── api-interfaces.ts      # Clean API layer (your code)
 │   ├── interfaces.ts           # XML layer (Aves API)
 │   └── common.ts              # Shared types
 ├── mappers/
 │   ├── request-mappers.ts     # API → XML
 │   ├── response-mappers.ts    # XML → API
 │   └── type-mappers.ts        # Enum conversions
-├── validation/
-│   └── api-schemas.ts         # Zod validation schemas
 ├── nest/
 │   ├── aves.module.ts         # NestJS module
 │   └── aves.service.ts        # Main service

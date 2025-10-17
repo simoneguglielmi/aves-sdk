@@ -24,7 +24,8 @@ import type {
   BookingService,
   CancelResponseData,
   PaymentResponseData,
-} from '../types/api-interfaces';
+  BookingStatusTypeValue,
+} from '../validation/api-schemas';
 import type {
   SearchMasterRecordRQ,
   SearchMasterRecordRS,
@@ -254,7 +255,7 @@ export class AvesService {
   async setBookingStatus(
     customerRecordCode: string,
     bookingFileCode: string,
-    status: BookingStatusType,
+    status: BookingStatusTypeValue,
     options?: {
       expiredDate?: string;
       optionedFileExpireDatePolicy?:
