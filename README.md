@@ -1,6 +1,6 @@
 # Aves SDK
 
-TypeScript SDK for integrating with the Aves XML 1.8.0 Booking API in NestJS applications. 100% type-safe, fully validated, and compliant with the official Aves XML specification.
+TypeScript SDK for integrating with the Aves
 
 ## Features
 
