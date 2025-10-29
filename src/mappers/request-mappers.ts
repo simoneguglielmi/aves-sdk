@@ -43,6 +43,46 @@ import { InsertCriteria } from '../types/common';
 
 // ===== AVES XML MAPPERS =====
 
+// Helper: map internal booking status to the subset allowed by BookFileRQ
+const BOOKING_STATUS_ALLOWED = new Set([
+  'QUOTATION',
+  'WORK_IN_PROGRESS',
+  'CONFIRMED',
+  'OPTIONED',
+  'CANCELED',
+]);
+
+const BOOKING_STATUS_ALIASES: Record<string, AllowedStatus> = {
+  CONFIRM: 'CONFIRMED',
+  OPTION: 'OPTIONED',
+  REQUEST: 'WORK_IN_PROGRESS',
+  NULLIFIED: 'CANCELED',
+};
+
+type AllowedStatus =
+  | 'QUOTATION'
+  | 'WORK_IN_PROGRESS'
+  | 'CONFIRMED'
+  | 'OPTIONED'
+  | 'NULLIFIED'
+  | 'CANCELED';
+
+function normalizeBookingStatus(input: string): AllowedStatus {
+  const upper = input.toUpperCase();
+  const alias = BOOKING_STATUS_ALIASES[upper];
+  if (alias) return alias;
+  if (BOOKING_STATUS_ALLOWED.has(upper)) return upper as AllowedStatus;
+  return 'QUOTATION';
+}
+
+function mapBookingFileStatusForRQ(
+  status: BookingStatusTypeValue | string
+): AllowedStatus {
+  const raw =
+    typeof status === 'string' ? status : mapBookingStatusToXml(status);
+  return normalizeBookingStatus(raw);
+}
+
 export function mapPassengerFromXml(xml: PassengerDetail): BookingPassenger {
   const nameParts = (xml.Name || '').split(' ');
   const lastName = nameParts.pop() || '';
@@ -229,11 +269,23 @@ export function mapCreateBookingToXml(data: CreateBookingRequest): BookFileRQ {
       } as MasterRecordDetail);
 
   return {
+    CreateDate: data.createDate,
+    BookingFileRefCode: data.bookingFileRefCode,
+    TravelAgentCode: data.travelAgentCode,
+    ClerkName: data.clerkName,
     CustomerDetail: customerDetail,
     CurrencyCode: data.currency,
-    BookingFileStatus: {
-      '@Value': 'QUOTATION',
-    },
+    MarkupCode: data.markupCode,
+    BookingFileStatus: data.bookingFileStatus
+      ? {
+          '@Value': mapBookingFileStatusForRQ(data.bookingFileStatus.value),
+          ...(data.bookingFileStatus.expiredDate && {
+            '@ExpiredDate': data.bookingFileStatus.expiredDate,
+          }),
+        }
+      : {
+          '@Value': 'QUOTATION',
+        },
     StatisticCodes: data.statisticCodes
       ? {
           '@sCode1': data.statisticCodes.code1,
@@ -254,6 +306,12 @@ export function mapCreateBookingToXml(data: CreateBookingRequest): BookFileRQ {
     BookingFileDescription: data.description,
     StartDate: data.startDate,
     EndDate: data.endDate,
+    EarlyBookingDate: data.earlyBookingDate,
+    CupCode: data.cupCode,
+    CigCode: data.cigCode,
+    CustomerPromoterCode: data.customerPromoterCode,
+    BillingReferenceCode: data.billingReferenceCode,
+    PaymentReferenceCode: data.paymentReferenceCode,
     BookingFileDocument:
       data.printDocument !== undefined ||
       data.sendDocumentViaEmail !== undefined
@@ -271,6 +329,18 @@ export function mapCreateBookingToXml(data: CreateBookingRequest): BookFileRQ {
           })),
         }
       : undefined,
+    BookingFinancialInfo: data.bookingFinancialInfo
+      ? {
+          '@Customer_PaymentType':
+            data.bookingFinancialInfo.customerPaymentType || 'NOT_SET',
+          '@Customer_SpecPaymentTypeCode':
+            data.bookingFinancialInfo.customerSpecPaymentTypeCode,
+        }
+      : undefined,
+    GroupingPaxPolicy: data.groupingPaxPolicy,
+    GroupBookingFile: data.groupBookingFile,
+    TypeDownloadFile: data.typeDownloadFile,
+    SetBookingFileCodeFromStartDate: data.setBookingFileCodeFromStartDate,
     PassengerList: {
       PassengerDetail: data.passengers.map((p, index) =>
         mapPassengerToAvesXml(p, index + 1)

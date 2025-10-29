@@ -337,6 +337,20 @@ export const customerContactSchema = z.object({
         .max(30, 'Mobile number must be 30 characters or less'),
     })
     .optional(),
+  fax: z
+    .object({
+      type: contactTypeSchema.optional(),
+      number: z
+        .string()
+        .min(1, 'Fax number is required')
+        .max(30, 'Fax number must be 30 characters or less'),
+    })
+    .optional(),
+  webUrl: z
+    .string()
+    .url('Valid URL is required')
+    .max(200, 'Web URL must be 200 characters or less')
+    .optional(),
 });
 
 export const customerSchema = z.object({
@@ -362,6 +376,14 @@ export const customerSchema = z.object({
       nationality: z
         .string()
         .max(3, 'Nationality code must be 3 characters or less')
+        .optional(),
+      birthCity: z
+        .string()
+        .max(50, 'Birth city must be 50 characters or less')
+        .optional(),
+      birthCounty: z
+        .string()
+        .max(10, 'Birth county code must be 10 characters or less')
         .optional(),
     })
     .optional(),
@@ -389,6 +411,10 @@ export const customerSchema = z.object({
         .string()
         .max(50, 'License number must be 50 characters or less')
         .optional(),
+      priceListCode: z
+        .string()
+        .max(30, 'Price list code must be 30 characters or less')
+        .optional(),
     })
     .optional(),
   preferences: z
@@ -402,6 +428,65 @@ export const customerSchema = z.object({
         .length(3, 'Currency code must be exactly 3 characters')
         .optional(),
       communicationMethod: communicationMethodTypeSchema.optional(),
+    })
+    .optional(),
+  meta: z
+    .object({
+      createdDate: z.string().optional(),
+      modifiedDate: z.string().optional(),
+      loginType: z
+        .enum([
+          'WEB_BOOKING',
+          'BUSINESS_TRAVEL',
+          'GROUP_TRAVEL',
+          'SUPPLIER',
+          'ADMINISTRATOR',
+        ])
+        .optional(),
+      thirdPartRecordCode: z
+        .string()
+        .max(50, 'Third part record code must be 50 characters or less')
+        .optional(),
+      searchField: z
+        .string()
+        .max(100, 'Search field must be 100 characters or less')
+        .optional(),
+      extraInfo: z
+        .string()
+        .max(500, 'Extra info must be 500 characters or less')
+        .optional(),
+    })
+    .optional(),
+  codes: z
+    .object({
+      zoneCode: z
+        .string()
+        .max(10, 'Zone code must be 10 characters or less')
+        .optional(),
+      areaCode: z
+        .string()
+        .max(10, 'Area code must be 10 characters or less')
+        .optional(),
+      branchOfficeCode: z
+        .string()
+        .max(10, 'Branch office code must be 10 characters or less')
+        .optional(),
+      categoryCode: z
+        .string()
+        .max(10, 'Category code must be 10 characters or less')
+        .optional(),
+      activityCode: z
+        .string()
+        .max(10, 'Activity code must be 10 characters or less')
+        .optional(),
+      promoterCode: z
+        .string()
+        .max(10, 'Promoter code must be 10 characters or less')
+        .optional(),
+      networkCode: z
+        .string()
+        .max(10, 'Network code must be 10 characters or less')
+        .optional(),
     })
     .optional(),
 });
@@ -579,6 +664,10 @@ export const searchCustomerRequestSchema = z.discriminatedUnion('type', [
 ]);
 
 const baseBookingRequestSchema = z.object({
+  createDate: z.string().optional(),
+  bookingFileRefCode: z.string().max(50).optional(),
+  travelAgentCode: z.string().max(30).optional(),
+  clerkName: z.string().max(60).optional(),
   description: z
     .string()
     .max(200, 'Description must be 200 characters or less')
@@ -588,6 +677,13 @@ const baseBookingRequestSchema = z.object({
   currency: z
     .string()
     .max(3, 'Currency code must be 3 characters or less')
+    .optional(),
+  markupCode: z.string().max(20).optional(),
+  bookingFileStatus: z
+    .object({
+      value: bookingStatusTypeSchema,
+      expiredDate: dateStringSchema.optional(),
+    })
     .optional(),
   passengers: z
     .array(bookingPassengerSchema)
@@ -632,6 +728,12 @@ const baseBookingRequestSchema = z.object({
       nationCode: z.string().optional(),
     })
     .optional(),
+  earlyBookingDate: dateStringSchema.optional(),
+  cupCode: z.string().max(30).optional(),
+  cigCode: z.string().max(30).optional(),
+  customerPromoterCode: z.string().max(20).optional(),
+  billingReferenceCode: z.string().max(20).optional(),
+  paymentReferenceCode: z.string().max(20).optional(),
   deadlines: z
     .array(
       z.object({
@@ -643,6 +745,22 @@ const baseBookingRequestSchema = z.object({
     .optional(),
   printDocument: z.boolean().optional(),
   sendDocumentViaEmail: z.boolean().optional(),
+  bookingFinancialInfo: z
+    .object({
+      customerPaymentType: z
+        .enum(['CASH', 'BANK', 'RID', 'RIBA', 'SPECIFIC_CODE', 'NOT_SET'])
+        .optional(),
+      customerSpecPaymentTypeCode: z.string().max(20).optional(),
+    })
+    .optional(),
+  groupingPaxPolicy: z
+    .enum(['GROUPED_PAX', 'NOT_GROUPED_PAX', 'ONE_PAX_ONLY'])
+    .optional(),
+  groupBookingFile: z.boolean().optional(),
+  typeDownloadFile: z
+    .enum(['AVES2AVES', 'AVES2AVESVIA', 'AVES2AVESITA'])
+    .optional(),
+  setBookingFileCodeFromStartDate: z.boolean().optional(),
 });
 
 export const createBookingRequestSchema = z.union([
@@ -811,6 +929,13 @@ export const bookingResponseSchema = z.object({
   status: bookingStatusTypeSchema,
   createdAt: dateTimeStringSchema,
   updatedAt: dateTimeStringSchema,
+  description: z.string().optional(),
+  nation: z.string().optional(),
+  destination: z.string().optional(),
+  firstConfirmationDate: dateTimeStringSchema.optional(),
+  paxNumber: z.number().int().nonnegative().optional(),
+  reference: z.string().optional(),
+  clerkName: z.string().optional(),
   customer: customerSchema,
   passengers: z.array(bookingPassengerSchema),
   services: z.array(bookingServiceSchema),
@@ -829,6 +954,17 @@ export const bookingResponseSchema = z.object({
           amount: z.number(),
         })
       )
+      .optional(),
+    totals: z
+      .object({
+        beforeDiscount: z.number().optional(),
+        afterDiscount: z.number().optional(),
+        discount: z.number().optional(),
+        withoutVat: z.number().optional(),
+        dueAmount: z.number().optional(),
+        paidAmount: z.number().optional(),
+        balance: z.number().optional(),
+      })
       .optional(),
   }),
 });
@@ -870,9 +1006,8 @@ export const operationResponseSchema = z.object({
   data: z.any().optional(),
 });
 
-// ===== EXPORT ALL SCHEMAS =====
-
-export const apiSchemas = {
+// ===== INTERNAL SCHEMAS (Not exported publicly) =====
+const apiSchemas = {
   // Type schemas
   addressType: addressTypeSchema,
   contactType: contactTypeSchema,
@@ -956,13 +1091,6 @@ export type CreateBookingRequest = z.infer<typeof createBookingRequestSchema>;
 export type CancelBookingRequest = z.infer<typeof cancelBookingRequestSchema>;
 export type PrintDocumentRequest = z.infer<typeof printDocumentRequestSchema>;
 export type AddPaymentRequest = z.infer<typeof addPaymentRequestSchema>;
-export type UpdateBookingHeaderRequest = z.infer<
-  typeof updateBookingHeaderSchema
->;
-export type UpdateBookingServicesRequest = z.infer<
-  typeof updateBookingServicesSchema
->;
-export type SetBookingStatusRequest = z.infer<typeof setBookingStatusSchema>;
 
 export type BookingResponse = z.infer<typeof bookingResponseSchema>;
 export type CustomerSearchResult = z.infer<typeof customerSearchResultSchema>;

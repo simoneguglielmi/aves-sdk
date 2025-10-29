@@ -1,7 +1,3 @@
-// AVES XML Schema Interfaces - Exact Aves API 1.8.0 specification
-
-import { InsertCriteria } from './common';
-
 // ===== PASSENGER STRUCTURES =====
 
 export interface PassengerDetail {
@@ -71,7 +67,7 @@ export interface SearchMasterRecordRQ {
 
 export interface MasterRecordDetail {
   '@RecordCode': string;
-  '@InsertCriteria'?: 'S' | 'N' | 'T' | 'M';
+  '@InsertCriteria'?: 'S' | 'N' | 'T' | 'M'; // S = Insert always new record, N = Insert only if not exists, T = Update only secondary fields, M = If record exists update only secondary fields
 
   // REQUIRED FIELDS
   RecordType: 'CUSTOMER' | 'SUPPLIER' | 'VOUCHER' | 'SUPPLIER_VOUCHER';
@@ -276,6 +272,7 @@ export interface BookFileRQ {
       | 'WORK_IN_PROGRESS'
       | 'CONFIRMED'
       | 'OPTIONED'
+      | 'NULLIFIED'
       | 'CANCELED';
     '@ExpiredDate'?: string;
   };

@@ -174,9 +174,7 @@ export class AvesService {
   async upsertCustomer(
     customer: Customer
   ): Promise<OperationResponse<Customer>> {
-    // Validate customer data
     const validatedCustomer = customerSchema.parse(customer);
-
     const xmlRequest = mapUpsertCustomerToXml(validatedCustomer);
     const xmlResponse = await this.http.postXml<
       WrapRequestDto<ManageMasterRecordRQ>,

@@ -89,7 +89,7 @@ export function mapBookingStatusToXml(
     [BookingStatusType.NULLIFIED]: 'NULLIFIED',
     [BookingStatusType.CANCELED]: 'CANCELED',
   };
-  return mapping[status] || 'QUOTATION';
+  return mapping[status] ?? 'QUOTATION';
 }
 
 export function mapBookingStatusFromXml(
@@ -103,7 +103,7 @@ export function mapBookingStatusFromXml(
     NULLIFIED: BookingStatusType.NULLIFIED,
     CANCELED: BookingStatusType.CANCELED,
   };
-  return mapping[status] || BookingStatusType.QUOTATION;
+  return mapping[status] ?? BookingStatusType.QUOTATION;
 }
 
 // ===== DOCUMENT TYPE MAPPERS =====

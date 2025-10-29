@@ -51,6 +51,8 @@ export function mapCustomerFromXml(xml: MasterRecordDetail): Customer {
           ? GenderType.FEMALE
           : undefined,
       nationality: xml.CitizenshipCode,
+      birthCity: xml.BirthCity,
+      birthCounty: xml.BirthCounty,
     },
     contact: {
       email: xml.Email ? { address: xml.Email } : undefined,
@@ -58,6 +60,8 @@ export function mapCustomerFromXml(xml: MasterRecordDetail): Customer {
         ? { number: xml.FirstPhoneNumber }
         : undefined,
       mobile: xml.MobilePhone ? { number: xml.MobilePhone } : undefined,
+      fax: xml.FaxNumber ? { number: xml.FaxNumber } : undefined,
+      webUrl: xml.WebUrl,
     },
     address: xml.Address
       ? {
@@ -74,12 +78,32 @@ export function mapCustomerFromXml(xml: MasterRecordDetail): Customer {
             companyName: undefined,
             taxId: xml.VatCode || xml.FiscalCode,
             licenseNumber: undefined,
+            vatCode: xml.VatCode,
+            fiscalCode: xml.FiscalCode,
+            priceListCode: xml.PriceListCode,
           }
         : undefined,
     preferences: {
       language: xml.LanguageCode,
       currency: xml.FinancialDetail?.['@CurrencyCode'],
       communicationMethod: undefined,
+    },
+    meta: {
+      createdDate: xml.CreatedDate,
+      modifiedDate: xml.ModifiedDate,
+      loginType: xml.LoginType,
+      thirdPartRecordCode: xml.ThirdPartRecordCode,
+      searchField: xml.SearchField,
+      extraInfo: xml.ExtraInfo,
+    },
+    codes: {
+      zoneCode: xml.ZoneCode,
+      areaCode: xml.AreaCode,
+      branchOfficeCode: xml.BranchOfficeCode,
+      categoryCode: xml.CategoryCode,
+      activityCode: xml.ActivityCode,
+      promoterCode: xml.PromoterCode,
+      networkCode: xml.NetworkCode,
     },
   };
 }
@@ -119,6 +143,15 @@ export function mapBookingFromXml(xml: BookingFile): BookingResponse {
     status: mapBookingStatusFromXml(xml.BookingFileStatus['@Value']),
     createdAt: createDateTimeString(xml.CreationDate),
     updatedAt: createDateTimeString(xml.CreationDate), // Aves doesn't have LastModified in same format
+    description: xml.Description,
+    nation: xml.Nation,
+    destination: xml.Destination,
+    firstConfirmationDate: xml.FirstConfirmationDate
+      ? createDateTimeString(xml.FirstConfirmationDate)
+      : undefined,
+    paxNumber: xml.PaxNumber,
+    reference: xml.Reference,
+    clerkName: xml.ClerkName,
     customer: mapCustomerFromXml({
       '@RecordCode': xml.CustomerRecordCode,
       RecordType: 'CUSTOMER',
@@ -137,6 +170,23 @@ export function mapBookingFromXml(xml: BookingFile): BookingResponse {
         ),
       },
       breakdowns: undefined,
+      totals: xml.TotalAmountDetail
+        ? {
+            beforeDiscount: parseFloat(
+              xml.TotalAmountDetail.TotalAmountBeforeDiscount || '0'
+            ),
+            afterDiscount: parseFloat(
+              xml.TotalAmountDetail.TotalAmountAfterDiscount || '0'
+            ),
+            discount: parseFloat(xml.TotalAmountDetail.TotalDiscount || '0'),
+            withoutVat: parseFloat(
+              xml.TotalAmountDetail.TotalAmountWithoutVat || '0'
+            ),
+            dueAmount: parseFloat(xml.TotalAmountDetail.DueAmount || '0'),
+            paidAmount: parseFloat(xml.TotalAmountDetail.PaiedAmount || '0'),
+            balance: parseFloat(xml.TotalAmountDetail.Balance || '0'),
+          }
+        : undefined,
     },
   };
 }
