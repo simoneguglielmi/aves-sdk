@@ -2,15 +2,16 @@ import type { InferInput, InferOutput } from 'valibot';
 import { RqHeaderSchema, RsStatusSchema } from './schemas/common.js';
 import {
   MasterRecordDetailSchema,
+  MasterRecordDetailResponseSchema,
   FinancialDetailSchema,
 } from './schemas/master-record.js';
 import {
-  SearchMasterRecordRQSchema,
-  SearchMasterRecordRSSchema,
+  SearchMasterRecordSchema,
+  SearchMasterRecordResponseSchema,
 } from './schemas/search.js';
 import {
-  ManageMasterRecordRQSchema,
-  ManageMasterRecordRSSchema,
+  ManageMasterRecordRequestSchema,
+  ManageMasterRecordResponseSchema,
 } from './schemas/upsert.js';
 
 /**
@@ -24,26 +25,24 @@ export type RsStatus = InferOutput<typeof RsStatusSchema>;
  */
 export type FinancialDetail = InferInput<typeof FinancialDetailSchema>;
 export type MasterRecordDetail = InferInput<typeof MasterRecordDetailSchema>;
-export type MasterRecordDetailOutput = InferOutput<
-  typeof MasterRecordDetailSchema
+export type MasterRecordDetailResponse = InferOutput<
+  typeof MasterRecordDetailResponseSchema
 >;
 
 /**
  * Search types
  */
-export type SearchMasterRecordRQ = InferInput<
-  typeof SearchMasterRecordRQSchema
->;
+export type SearchMasterRecord = InferInput<typeof SearchMasterRecordSchema>;
 export type SearchMasterRecordRS = InferOutput<
-  typeof SearchMasterRecordRSSchema
+  typeof SearchMasterRecordResponseSchema
 >;
 
 /**
  * Upsert types
  */
-export type ManageMasterRecordRQ = InferInput<
-  typeof ManageMasterRecordRQSchema
+export type ManageMasterRecordRequest = InferInput<
+  typeof ManageMasterRecordRequestSchema
 >;
 export type ManageMasterRecordRS = InferOutput<
-  typeof ManageMasterRecordRSSchema
+  typeof ManageMasterRecordResponseSchema
 >;

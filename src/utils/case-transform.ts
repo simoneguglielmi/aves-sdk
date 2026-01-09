@@ -40,35 +40,47 @@ export type Pascalize<T> = T extends readonly (infer U)[]
     }
   : T;
 
-/**
- * Converts a camelCase string to PascalCase
- */
 function camelToPascal(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-/**
- * Converts a PascalCase string to camelCase
- */
 function pascalToCamel(str: string): string {
   return str.charAt(0).toLowerCase() + str.slice(1);
 }
 
+const ATTRIBUTE_FIELDS = new Set([
+  'recordCode',
+  'insertCriteria',
+  'currencyCode',
+  'creditLimit',
+  'c_PaymentType',
+  'c_SpecPaymentTypeCode',
+  's_PaymentType',
+  's_SpecPaymentTypeCode',
+  'key',
+  'value',
+  'minDate',
+  'maxDate',
+  'hostID',
+  'xtoken',
+  'interface',
+  'userName',
+  'status',
+]);
+
 /**
- * Recursively transforms object keys from camelCase to PascalCase
+ * Transforms object keys from camelCase to PascalCase
+ * Adds @ prefix to fields in ATTRIBUTE_FIELDS for XML attributes
  */
 export function camelToPascalKeys<T>(obj: T): Pascalize<T> {
-  // Handle primitives and null explicitly
   if (!obj || typeof obj !== 'object') {
     return obj as Pascalize<T>;
   }
 
-  // Handle arrays
   if (Array.isArray(obj)) {
     return obj.map((item) => camelToPascalKeys(item)) as Pascalize<T>;
   }
 
-  // Handle special objects (Date, RegExp, etc.) - return as-is
   if (
     obj instanceof Date ||
     obj instanceof RegExp ||
@@ -79,60 +91,50 @@ export function camelToPascalKeys<T>(obj: T): Pascalize<T> {
     return obj as Pascalize<T>;
   }
 
-  // Handle plain objects
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    if (key.startsWith('@')) {
-      const strippedKey = key.slice(1);
-      const pascalKey = camelToPascal(strippedKey);
-      result[pascalKey] = value;
-    } else {
-      const pascalKey = camelToPascal(key);
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
-        // Check for special objects in nested values
-        if (
-          value instanceof Date ||
-          value instanceof RegExp ||
-          value instanceof Map ||
-          value instanceof Set ||
-          value instanceof Error
-        ) {
-          result[pascalKey] = value;
-        } else {
-          result[pascalKey] = camelToPascalKeys(
-            value as Record<string, unknown>
-          );
-        }
-      } else if (Array.isArray(value)) {
-        result[pascalKey] = value.map((item) =>
-          typeof item === 'object' && item && !Array.isArray(item)
-            ? camelToPascalKeys(item as Record<string, unknown>)
-            : item
-        );
+    const isAttribute = ATTRIBUTE_FIELDS.has(key);
+    const pascalKey = camelToPascal(key);
+    const finalKey = isAttribute ? `@${pascalKey}` : pascalKey;
+
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      if (
+        value instanceof Date ||
+        value instanceof RegExp ||
+        value instanceof Map ||
+        value instanceof Set ||
+        value instanceof Error
+      ) {
+        result[finalKey] = value;
       } else {
-        result[pascalKey] = value;
+        result[finalKey] = camelToPascalKeys(value as Record<string, unknown>);
       }
+    } else if (Array.isArray(value)) {
+      result[finalKey] = value.map((item) =>
+        typeof item === 'object' && item && !Array.isArray(item)
+          ? camelToPascalKeys(item as Record<string, unknown>)
+          : item
+      );
+    } else {
+      result[finalKey] = value;
     }
   }
   return result as Pascalize<T>;
 }
 
 /**
- * Recursively transforms object keys from PascalCase to camelCase
+ * Transforms object keys from PascalCase to camelCase
+ * Strips @ prefix from XML attributes
  */
 export function pascalToCamelKeys<T>(obj: T): Camelize<T> {
-  // Handle primitives and null explicitly
-  // Note: typeof null === 'object' in JavaScript, so we check it first
   if (!obj || typeof obj !== 'object') {
     return obj as Camelize<T>;
   }
 
-  // Handle arrays
   if (Array.isArray(obj)) {
     return obj.map((item) => pascalToCamelKeys(item)) as Camelize<T>;
   }
 
-  // Handle special objects (Date, RegExp, etc.) - return as-is
   if (
     obj instanceof Date ||
     obj instanceof RegExp ||
@@ -143,10 +145,8 @@ export function pascalToCamelKeys<T>(obj: T): Camelize<T> {
     return obj as Camelize<T>;
   }
 
-  // Handle plain objects
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    // Strip @ prefix from keys and camelCase the rest (XML attributes become regular properties)
     if (key.startsWith('@')) {
       const strippedKey = key.slice(1);
       const camelKey = pascalToCamel(strippedKey);
@@ -154,7 +154,6 @@ export function pascalToCamelKeys<T>(obj: T): Camelize<T> {
     } else {
       const camelKey = pascalToCamel(key);
       if (value && typeof value === 'object' && !Array.isArray(value)) {
-        // Check for special objects in nested values
         if (
           value instanceof Date ||
           value instanceof RegExp ||

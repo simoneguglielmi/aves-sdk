@@ -7,10 +7,10 @@ export type {
   RsStatus,
   FinancialDetail,
   MasterRecordDetail,
-  MasterRecordDetailOutput,
-  SearchMasterRecordRQ,
+  MasterRecordDetailResponse,
+  SearchMasterRecord,
   SearchMasterRecordRS,
-  ManageMasterRecordRQ,
+  ManageMasterRecordRequest,
   ManageMasterRecordRS,
 } from './types.js';
 
@@ -19,15 +19,19 @@ export { RqHeaderSchema, RsStatusSchema } from './schemas/common.js';
 
 export {
   MasterRecordDetailSchema,
+  MasterRecordDetailApiSchema,
+  MasterRecordDetailResponseSchema,
   FinancialDetailSchema,
 } from './schemas/master-record.js';
 
 export {
-  SearchMasterRecordRQSchema,
-  SearchMasterRecordRSSchema,
+  SearchMasterRecordSchema,
+  SearchMasterRecordApiSchema,
+  SearchMasterRecordRequestSchema,
+  SearchMasterRecordResponseSchema,
 } from './schemas/search.js';
 
 export {
-  ManageMasterRecordRQSchema,
-  ManageMasterRecordRSSchema,
+  ManageMasterRecordRequestSchema,
+  ManageMasterRecordResponseSchema,
 } from './schemas/upsert.js';

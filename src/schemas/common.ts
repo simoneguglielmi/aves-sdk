@@ -1,16 +1,16 @@
 import * as v from 'valibot';
 
 /**
- * Request header schema with customer credentials
+ * Request header schema with authentication credentials
  */
 export const RqHeaderSchema = v.object({
-  '@HostID': v.pipe(v.string(), v.minLength(6), v.maxLength(6)), // 6 digit identification code
+  '@HostID': v.pipe(v.string(), v.minLength(6), v.maxLength(6)),
   '@Xtoken': v.string(),
   '@Interface': v.literal('WEB'),
   '@UserName': v.literal('WEB'),
   '@LanguageCode': v.optional(
     v.pipe(v.string(), v.minLength(2), v.maxLength(2))
-  ), // 2 digit language code
+  ),
 });
 
 const warningsSchema = v.optional(
@@ -21,7 +21,7 @@ const warningsSchema = v.optional(
 );
 
 /**
- * Response status schema
+ * Response status schema indicating success, error, or warning
  */
 export const RsStatusSchema = v.object({
   '@Status': v.union([

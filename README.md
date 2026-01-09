@@ -1,14 +1,14 @@
 # AVES SDK
 
-A type-safe TypeScript SDK for the AVES XML REST API. Automatically handles XML parsing, validation, and provides full TypeScript support.
+A type-safe TypeScript SDK for the AVES XML REST API. Automatically handles XML parsing, validation, case transformation, and provides full TypeScript support.
 
 ## Features
 
 - **Type-safe** - Full TypeScript support with inferred types
 - **Runtime validation** - Input/output validation using Valibot
 - **XML handling** - Automatic XML ↔ JSON conversion
+- **Case transformation** - Automatic camelCase ↔ PascalCase conversion
 - **Error handling** - Custom error types with detailed error information
-- **Zero dependencies** - Uses native Node.js fetch (undici)
 
 ## Installation
 
@@ -28,29 +28,26 @@ import { AvesClient } from 'aves-sdk';
 const client = new AvesClient(
   'https://api.example.com', // Base URL
   '025706', // 6-digit HostID
-  'TOKEN002756' // Xtoken
+  'TOKEN002756', // Xtoken
+  '02' // Optional: 2-digit language code (01=Italian, 02=English)
 );
 
-// Search for records
+// Search for records (camelCase input)
 const results = await client.search({
-  SearchType: 'CODE',
-  RecordCode: '508558',
-  languageCode: '02', // Optional: 01=Italian, 02=English
+  searchType: 'CODE',
+  recordCode: '508558',
 });
 
-// Insert or update a record
-const response = await client.upsertRecord(
-  {
-    Name: 'John Doe',
-    Email: 'john@example.com',
-    Address: '123 Main St',
-    ZipCode: '12345',
-    CityName: 'New York',
-    StateCode: 'USA',
-    // ... other fields
-  },
-  'S'
-); // Insert criteria: S, N, T, or M
+// Insert or update a record (camelCase input)
+const response = await client.upsertRecord({
+  name: 'John Doe',
+  email: 'john@example.com',
+  address: '123 Main St',
+  zipCode: '12345',
+  cityName: 'New York',
+  stateCode: 'USA',
+  // ... other fields
+});
 ```
 
 ## API Reference
@@ -60,12 +57,13 @@ const response = await client.upsertRecord(
 #### Constructor
 
 ```typescript
-new AvesClient(baseURL: string, hostID: string, xtoken: string)
+new AvesClient(baseURL: string, hostID: string, xtoken: string, languageCode?: string)
 ```
 
 - `baseURL` - Base URL of the AVES API
 - `hostID` - 6-digit identification code
 - `xtoken` - Unique validation string
+- `languageCode` - Optional: 2-digit language code (01=Italian, 02=English, etc.)
 
 #### Methods
 
@@ -75,31 +73,32 @@ Search for master records by various criteria.
 
 ```typescript
 const results = await client.search({
-  SearchType:
-    'CODE' |
-    'NAME' |
-    'VATCODE' |
-    'ZONE' |
-    'CATEGORY' |
-    'EMAIL' |
-    'LASTMODDATE' |
-    'SEARCH FIELD' |
-    'EXTERNAL_REF_CODE',
-  RecordCode: string, // When SearchType='CODE' (6 digits)
-  Name: string, // When SearchType='NAME'
-  VatCode: string, // When SearchType='VATCODE'
-  ZipCode: string, // When SearchType='ZONE'
-  City: string, // When SearchType='ZONE'
-  CountyCode: string, // When SearchType='ZONE'
-  CategoryCode: string, // When SearchType='CATEGORY'
-  Email: string, // When SearchType='EMAIL'
-  LastModificationDate: {
-    // When SearchType='LASTMODDATE'
-    '@MinDate': string,
-    '@MaxDate': string,
+  searchType:
+    | 'CODE'
+    | 'NAME'
+    | 'VATCODE'
+    | 'ZONE'
+    | 'CATEGORY'
+    | 'EMAIL'
+    | 'LASTMODDATE'
+    | 'SEARCH FIELD'
+    | 'EXTERNAL_REF_CODE',
+  recordCode?: string, // When searchType='CODE' (6 digits)
+  name?: string, // When searchType='NAME'
+  vatCode?: string, // When searchType='VATCODE'
+  zipCode?: string, // When searchType='ZONE'
+  city?: string, // When searchType='ZONE'
+  countyCode?: string, // When searchType='ZONE'
+  phoneNumber?: string, // When searchType='VATCODE'
+  categoryCode?: string, // When searchType='CATEGORY'
+  email?: string, // When searchType='EMAIL'
+  lastModificationDate?: {
+    // When searchType='LASTMODDATE'
+    minDate: string,
+    maxDate: string,
   },
-  SearchFieldValue: string, // When SearchType='SEARCH FIELD' or 'EXTERNAL_REF_CODE'
-  languageCode: string, // Optional: 2-digit language code
+  searchFieldValue?: string, // When searchType='SEARCH FIELD' or 'EXTERNAL_REF_CODE'
+  languageCode?: string, // Optional: 2-digit language code
 });
 ```
 
@@ -108,77 +107,81 @@ const results = await client.search({
 ```typescript
 // Search by code
 const byCode = await client.search({
-  SearchType: 'CODE',
-  RecordCode: '508558',
+  searchType: 'CODE',
+  recordCode: '508558',
 });
 
 // Search by email
 const byEmail = await client.search({
-  SearchType: 'EMAIL',
-  Email: 'user@example.com',
+  searchType: 'EMAIL',
+  email: 'user@example.com',
 });
 
 // Search by name
 const byName = await client.search({
-  SearchType: 'NAME',
-  Name: 'John Doe',
-  City: 'New York',
+  searchType: 'NAME',
+  name: 'John Doe',
+  city: 'New York',
 });
 ```
 
-##### `upsertRecord(record, insertCriteria?, languageCode?)`
+##### `upsertRecord(record)`
 
-Insert or update a master record.
+Insert or update a master record. The `insertCriteria` defaults to `'T'` (update all fields if exists) but can be overridden by including it in the record.
 
 ```typescript
-const response = await client.upsertRecord(
-  {
-    Name: string,
-    Email: string,
-    Address: string,
-    ZipCode: string,
-    CityName: string,
-    CountyCode: string,
-    StateCode: string,
-    FirstPhoneNumber: string,
-    MobilePhoneNumber: string,
-    FiscalCode: string,
-    BirthDate: string,
-    Gender: string,
-    LanguageCode: string,
-    CategoryCode: string,
-    // ... see types for full list
-  },
-  'S' | 'N' | 'T' | 'M', // Insert criteria (default: 'S')
-  '02' // Optional: 2-digit language code
-);
+const response = await client.upsertRecord({
+  name: string,
+  email: string,
+  address: string,
+  zipCode: string,
+  cityName: string,
+  countyCode: string,
+  stateCode: string,
+  firstPhoneNumber: string,
+  mobilePhoneNumber: string,
+  fiscalCode: string,
+  birthDate: string,
+  gender: string,
+  languageCode: string,
+  categoryCode: string,
+  recordCode: string, // Optional: 6-digit code
+  insertCriteria: 'S' | 'N' | 'T' | 'M', // Optional: defaults to 'T'
+  // ... see types for full list
+});
 ```
 
 **Insert Criteria:**
 
-- `'S'` - Insert always new record (default)
+- `'S'` - Insert always new record
 - `'N'` - If record exists, do not update
-- `'T'` - If record exists, update all fields
+- `'T'` - If record exists, update all fields (default)
 - `'M'` - If record exists, update only secondary fields
 
 **Example:**
 
 ```typescript
-const response = await client.upsertRecord(
-  {
-    Name: 'Jane Smith',
-    Email: 'jane@example.com',
-    Address: '456 Oak Ave',
-    ZipCode: '67890',
-    CityName: 'Los Angeles',
-    StateCode: 'USA',
-    FirstPhoneNumber: '+1234567890',
-    LanguageCode: '02',
-  },
-  'T'
-); // Update all fields if exists
+// Default behavior (update all fields if exists)
+const response = await client.upsertRecord({
+  name: 'Jane Smith',
+  email: 'jane@example.com',
+  address: '456 Oak Ave',
+  zipCode: '67890',
+  cityName: 'Los Angeles',
+  stateCode: 'USA',
+  firstPhoneNumber: '+1234567890',
+  languageCode: '02',
+});
 
-console.log(response.CustomerRecordRS?.CustomerRecordCode);
+// Override insertCriteria
+const newRecord = await client.upsertRecord({
+  name: 'John Doe',
+  insertCriteria: 'S', // Always insert new
+  email: 'john@example.com',
+  // ... other fields
+});
+
+console.log(response.customerRecordRS?.customerRecordCode);
 ```
 
 ## Error Handling
@@ -189,7 +192,7 @@ The SDK throws `AvesError` for API errors and validation failures:
 import { AvesError } from 'aves-sdk';
 
 try {
-  await client.search({ SearchType: 'CODE', RecordCode: '123' });
+  await client.search({ searchType: 'CODE', recordCode: '123' });
 } catch (error) {
   if (error instanceof AvesError) {
     console.error('Status:', error.status); // 'ERROR' | 'TIMEOUT' | 'WARNING'
@@ -199,22 +202,30 @@ try {
 }
 ```
 
+## Case Transformation
+
+The SDK automatically handles case transformation between your code and the API:
+
+- **Input**: Use camelCase (e.g., `recordCode`, `zipCode`)
+- **API**: Automatically converted to PascalCase with XML attributes (e.g., `@RecordCode`, `ZipCode`)
+- **Output**: Automatically converted back to camelCase
+
+You never need to worry about case conversion or XML attribute prefixes - the SDK handles it all.
+
 ## Type Safety
 
 All types are exported and inferred from the validation schemas:
 
 ```typescript
 import type {
-  SearchMasterRecordRQ,
   SearchMasterRecordRS,
-  ManageMasterRecordRQ,
   ManageMasterRecordRS,
   MasterRecordDetail,
 } from 'aves-sdk';
 
 // Use types for your functions
 function processRecord(record: MasterRecordDetail) {
-  // TypeScript knows all available fields
+  // TypeScript knows all available fields in camelCase
 }
 ```
 
@@ -227,7 +238,7 @@ The SDK validates all inputs and outputs using Valibot schemas:
 - **LanguageCode**: Must be exactly 2 digits (01=Italian, 02=English, etc.)
 - All other fields follow the AVES API specification
 
-Invalid data will throw a validation error before making the API request.
+Invalid data will throw a validation error before making the API request. All validation happens on camelCase input, making it easy to use.
 
 ## License
 

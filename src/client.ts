@@ -2,20 +2,24 @@ import { request as r } from 'undici';
 import { parse, safeParse } from 'valibot';
 import { jsonToXml, xmlToJson } from './xml-client';
 import {
-  SearchMasterRecordRQSchema,
-  SearchMasterRecordRSSchema,
+  SearchMasterRecordSchema,
+  SearchMasterRecordApiSchema,
+  SearchMasterRecordRequestSchema,
+  SearchMasterRecordResponseSchema,
 } from './schemas/search';
 import {
-  ManageMasterRecordRQSchema,
-  ManageMasterRecordRSSchema,
+  ManageMasterRecordRequestSchema,
+  ManageMasterRecordResponseSchema,
 } from './schemas/upsert';
 import type {
-  ManageMasterRecordRQ,
   ManageMasterRecordRS,
   MasterRecordDetail,
   SearchMasterRecordRS,
 } from './types';
-import { MasterRecordDetailInputSchema } from './schemas/master-record';
+import {
+  MasterRecordDetailSchema,
+  MasterRecordDetailApiSchema,
+} from './schemas/master-record';
 
 function createRootElement<T>(name: XMLRootElementValues, object: T) {
   return {
@@ -23,9 +27,6 @@ function createRootElement<T>(name: XMLRootElementValues, object: T) {
   };
 }
 
-/**
- * XML root element names for AVES API requests and responses
- */
 const XML_ROOT_ELEMENTS = {
   SEARCH_REQUEST: 'SearchMasterRecordRQ',
   SEARCH_RESPONSE: 'SearchMasterRecordRS',
@@ -37,7 +38,7 @@ type XMLRootElementValues =
   (typeof XML_ROOT_ELEMENTS)[keyof typeof XML_ROOT_ELEMENTS];
 
 /**
- * Custom error class for AVES API errors
+ * Error thrown by AVES API operations
  */
 export class AvesError extends Error {
   constructor(
@@ -52,14 +53,14 @@ export class AvesError extends Error {
 }
 
 /**
- * AVES XML REST API Client
+ * AVES XML REST API client
  */
 export class AvesClient {
   /**
-   * Creates a new AvesClient instance
-   * @param baseURL - Base URL of the AVES API (e.g., "https://api.example.com")
-   * @param hostID - 6 digit identification code
-   * @param xtoken - Unique validation string
+   * @param baseURL - Base URL of the AVES API
+   * @param hostID - 6-digit identification code
+   * @param xtoken - Authentication token
+   * @param languageCode - Optional 2-digit language code
    */
   constructor(
     private readonly baseURL: string,
@@ -70,9 +71,6 @@ export class AvesClient {
     this.baseURL = baseURL.replace(/\/$/, '');
   }
 
-  /**
-   * Creates a request header with credentials
-   */
   private createRqHeader() {
     return {
       '@HostID': this.hostID,
@@ -83,11 +81,6 @@ export class AvesClient {
     };
   }
 
-  /**
-   * Creates a URL for the AVES API
-   * @param endpoint - Endpoint of the AVES API
-   * @returns URL for the AVES API
-   */
   private createUrl(endpoint: string) {
     return `${this.baseURL}${endpoint}`;
   }
@@ -96,19 +89,16 @@ export class AvesClient {
     return {
       search: '/interop/masterRecords/v2/rest/Search',
       upsert: '/interop/masterRecords/v2/rest/InsertOrUpdate',
-    };
+    } as const;
   }
 
-  /**
-   * Makes an HTTP request to the AVES API
-   */
   private async request<T>(
     endpoint: string,
     requestBody: Record<string, unknown>,
     responseRootKey: string,
     responseSchema:
-      | typeof ManageMasterRecordRSSchema
-      | typeof SearchMasterRecordRSSchema
+      | typeof ManageMasterRecordResponseSchema
+      | typeof SearchMasterRecordResponseSchema
   ): Promise<T> {
     const url = this.createUrl(endpoint);
     const xmlBody = jsonToXml(requestBody);
@@ -151,7 +141,7 @@ export class AvesClient {
     }
 
     const rsStatus = result.output.rsStatus;
-    const status = rsStatus?.['@Status'];
+    const status = rsStatus?.status;
     if (status === 'ERROR' || status === 'TIMEOUT') {
       const errorCode = rsStatus?.errorCode;
       const errorDescription = rsStatus?.errorDescription;
@@ -173,8 +163,7 @@ export class AvesClient {
 
   /**
    * Search for master records
-   * @param params - Search parameters (camelCase)
-   * @returns List of matching master records (camelCase)
+   * @returns List of matching master records in camelCase
    */
   async search(params: {
     searchType:
@@ -197,22 +186,17 @@ export class AvesClient {
     categoryCode?: string;
     email?: string;
     lastModificationDate?: {
-      '@MinDate': string;
-      '@MaxDate': string;
+      minDate: string;
+      maxDate: string;
     };
     searchFieldValue?: string;
     languageCode?: string;
   }): Promise<SearchMasterRecordRS> {
-    // Validate camelCase input and transform to PascalCase
-    const validatedParams = parse(SearchMasterRecordRQSchema, params);
-
-    // Add RqHeader
-    const requestData = {
+    const requestData = parse(SearchMasterRecordRequestSchema, {
       RqHeader: this.createRqHeader(),
-      ...validatedParams,
-    };
+      SearchMasterRecord: params,
+    });
 
-    // Build XML request body
     const requestBody = createRootElement(
       XML_ROOT_ELEMENTS.SEARCH_REQUEST,
       requestData
@@ -222,7 +206,7 @@ export class AvesClient {
       this.endpoints.search,
       requestBody,
       XML_ROOT_ELEMENTS.SEARCH_RESPONSE,
-      SearchMasterRecordRSSchema
+      SearchMasterRecordResponseSchema
     );
 
     return response;
@@ -230,38 +214,34 @@ export class AvesClient {
 
   /**
    * Insert or update a master record
-   * @param record - Master record data (camelCase)
-   * @param insertCriteria - Insert criteria (S, N, T, M). Defaults to 'S' if not provided
-   * @returns Response with customer record code (camelCase)
+   * @param record - Master record data in camelCase
+   * @returns Response with customer record code in camelCase
    */
   async upsertRecord(
-    record: MasterRecordDetail,
-    insertCriteria: 'S' | 'N' | 'T' | 'M' = 'S'
+    record: MasterRecordDetail
   ): Promise<ManageMasterRecordRS> {
-    const validatedRecord = parse(MasterRecordDetailInputSchema, record);
+    const apiRecord = parse(MasterRecordDetailApiSchema, record);
 
     const masterRecordDetail = {
-      '@InsertCriteria': insertCriteria,
-      ...validatedRecord,
+      '@InsertCriteria': 'T' as const,
+      ...apiRecord,
     };
 
-    const requestData: ManageMasterRecordRQ = {
+    const requestData = parse(ManageMasterRecordRequestSchema, {
       RqHeader: this.createRqHeader(),
       MasterRecordDetail: masterRecordDetail,
-    };
-
-    const validatedRequest = parse(ManageMasterRecordRQSchema, requestData);
+    });
 
     const requestBody = createRootElement(
       XML_ROOT_ELEMENTS.UPSERT_REQUEST,
-      validatedRequest
+      requestData
     );
 
     return this.request<ManageMasterRecordRS>(
       this.endpoints.upsert,
       requestBody,
       XML_ROOT_ELEMENTS.UPSERT_RESPONSE,
-      ManageMasterRecordRSSchema
+      ManageMasterRecordResponseSchema
     );
   }
 }
