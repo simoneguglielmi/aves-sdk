@@ -88,11 +88,7 @@ export function camelToPascalKeys<T>(obj: T): Pascalize<T> {
       result[pascalKey] = value;
     } else {
       const pascalKey = camelToPascal(key);
-      if (
-        value !== null &&
-        typeof value === 'object' &&
-        !Array.isArray(value)
-      ) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
         // Check for special objects in nested values
         if (
           value instanceof Date ||
@@ -109,7 +105,7 @@ export function camelToPascalKeys<T>(obj: T): Pascalize<T> {
         }
       } else if (Array.isArray(value)) {
         result[pascalKey] = value.map((item) =>
-          typeof item === 'object' && item !== null && !Array.isArray(item)
+          typeof item === 'object' && item && !Array.isArray(item)
             ? camelToPascalKeys(item as Record<string, unknown>)
             : item
         );
@@ -157,11 +153,7 @@ export function pascalToCamelKeys<T>(obj: T): Camelize<T> {
       result[camelKey] = value;
     } else {
       const camelKey = pascalToCamel(key);
-      if (
-        value !== null &&
-        typeof value === 'object' &&
-        !Array.isArray(value)
-      ) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
         // Check for special objects in nested values
         if (
           value instanceof Date ||
@@ -178,7 +170,7 @@ export function pascalToCamelKeys<T>(obj: T): Camelize<T> {
         }
       } else if (Array.isArray(value)) {
         result[camelKey] = value.map((item) =>
-          typeof item === 'object' && item !== null && !Array.isArray(item)
+          typeof item === 'object' && item && !Array.isArray(item)
             ? pascalToCamelKeys(item as Record<string, unknown>)
             : item
         );
