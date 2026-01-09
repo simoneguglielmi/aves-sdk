@@ -29,6 +29,11 @@ export const FinancialDetailSchema = v.object({
   '@S_SpecPaymentTypeCode': v.optional(v.string()),
 });
 
+export const DynamicFieldsSchema = v.object({
+  '@Key': v.string(),
+  '@Value': v.string(),
+});
+
 /**
  * Master record detail schema (PascalCase output from API)
  * Used for responses
@@ -62,6 +67,7 @@ export const MasterRecordDetailSchema = v.object({
   ),
   RecordStatus: v.optional(v.string()),
   FinancialDetail: v.optional(FinancialDetailSchema),
+  DynamicFields: v.optional(v.array(DynamicFieldsSchema)),
 });
 
 /**
