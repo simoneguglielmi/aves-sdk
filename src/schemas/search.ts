@@ -27,7 +27,7 @@ const SearchTypeSchema = v.union([
 ]);
 
 /**
- * Search master record request schema (camelCase input, transformed to PascalCase)
+ * Search master record request schema
  */
 const SearchMasterRecordSchema = v.object({
   SearchType: SearchTypeSchema,
