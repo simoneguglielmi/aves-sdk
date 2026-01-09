@@ -12,6 +12,7 @@ import {
 import type {
   ManageMasterRecordRQ,
   ManageMasterRecordRS,
+  MasterRecordDetail,
   SearchMasterRecordRS,
 } from './types';
 import { MasterRecordDetailInputSchema } from './schemas/master-record';
@@ -63,7 +64,8 @@ export class AvesClient {
   constructor(
     private readonly baseURL: string,
     private readonly hostID: string,
-    private readonly xtoken: string
+    private readonly xtoken: string,
+    private readonly languageCode?: string
   ) {
     this.baseURL = baseURL.replace(/\/$/, '');
   }
@@ -71,13 +73,13 @@ export class AvesClient {
   /**
    * Creates a request header with credentials
    */
-  private createRqHeader(languageCode?: string) {
+  private createRqHeader() {
     return {
       '@HostID': this.hostID,
       '@Xtoken': this.xtoken,
       '@Interface': 'WEB' as const,
       '@UserName': 'WEB' as const,
-      ...(languageCode && { '@LanguageCode': languageCode }),
+      ...(this.languageCode && { '@LanguageCode': this.languageCode }),
     };
   }
 
@@ -143,7 +145,7 @@ export class AvesClient {
         `Invalid response format: ${result.issues
           .map((i) => i.message)
           .join(', ')}`,
-        undefined,
+        '400',
         'VALIDATION_ERROR'
       );
     }
@@ -162,11 +164,10 @@ export class AvesClient {
     }
 
     if (status === 'WARNING') {
-      const warnings = rsStatus?.warnings;
+      const warnings = rsStatus?.warnings?.join(', ');
       console.warn('AVES API Warning:', warnings);
     }
 
-    // Return the transformed result (already in camelCase from schema)
     return result.output as T;
   }
 
@@ -207,7 +208,7 @@ export class AvesClient {
 
     // Add RqHeader
     const requestData = {
-      RqHeader: this.createRqHeader(validatedParams.LanguageCode),
+      RqHeader: this.createRqHeader(),
       ...validatedParams,
     };
 
@@ -231,18 +232,13 @@ export class AvesClient {
    * Insert or update a master record
    * @param record - Master record data (camelCase)
    * @param insertCriteria - Insert criteria (S, N, T, M). Defaults to 'S' if not provided
-   * @param languageCode - Optional language code
    * @returns Response with customer record code (camelCase)
    */
   async upsertRecord(
-    record: Record<string, unknown>,
-    insertCriteria: 'S' | 'N' | 'T' | 'M' = 'S',
-    languageCode?: string
+    record: MasterRecordDetail,
+    insertCriteria: 'S' | 'N' | 'T' | 'M' = 'S'
   ): Promise<ManageMasterRecordRS> {
-    const validatedRecord = parse(
-      MasterRecordDetailInputSchema,
-      record
-    ) as Record<string, unknown>;
+    const validatedRecord = parse(MasterRecordDetailInputSchema, record);
 
     const masterRecordDetail = {
       '@InsertCriteria': insertCriteria,
@@ -250,8 +246,8 @@ export class AvesClient {
     };
 
     const requestData: ManageMasterRecordRQ = {
-      RqHeader: this.createRqHeader(languageCode),
-      MasterRecordDetail: masterRecordDetail as any,
+      RqHeader: this.createRqHeader(),
+      MasterRecordDetail: masterRecordDetail,
     };
 
     const validatedRequest = parse(ManageMasterRecordRQSchema, requestData);

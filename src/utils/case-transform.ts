@@ -82,7 +82,6 @@ export function camelToPascalKeys<T>(obj: T): Pascalize<T> {
   // Handle plain objects
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    // Strip @ prefix from keys and PascalCase the rest (XML attributes become regular properties)
     if (key.startsWith('@')) {
       const strippedKey = key.slice(1);
       const pascalKey = camelToPascal(strippedKey);

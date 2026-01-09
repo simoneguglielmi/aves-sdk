@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { camelToPascalKeys } from '../utils/case-transform.js';
+import { pascalToCamelKeys } from '../utils/case-transform.js';
 
 /**
  * Financial detail schema
@@ -65,10 +65,9 @@ export const MasterRecordDetailSchema = v.object({
 });
 
 /**
- * Master record detail schema (PascalCase for API)
- * Transforms camelCase input to PascalCase after validation
+ * Master record detail schema (camelCase for API)
  */
 export const MasterRecordDetailInputSchema = v.pipe(
   MasterRecordDetailSchema,
-  v.transform((input) => camelToPascalKeys(input))
+  v.transform((input) => pascalToCamelKeys(input))
 );

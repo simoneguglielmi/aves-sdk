@@ -1,10 +1,7 @@
 import * as v from 'valibot';
 import { RsStatusSchema } from './common.js';
 import { MasterRecordDetailSchema } from './master-record.js';
-import {
-  camelToPascalKeys,
-  pascalToCamelKeys,
-} from '../utils/case-transform.js';
+import { pascalToCamelKeys } from '../utils/case-transform.js';
 
 /**
  * Last modification date schema
@@ -32,33 +29,32 @@ const SearchTypeSchema = v.union([
 /**
  * Search master record request schema (camelCase input, transformed to PascalCase)
  */
-const SearchMasterRecordRQCamelSchema = v.object({
-  searchType: SearchTypeSchema,
-  recordCode: v.optional(v.pipe(v.string(), v.minLength(6), v.maxLength(6))), // Customer Aves code registry (string fix to 6)
-  name: v.optional(v.string()),
-  vatCode: v.optional(v.string()),
-  zipCode: v.optional(v.string()),
-  city: v.optional(v.string()),
-  countyCode: v.optional(v.string()),
-  phoneNumber: v.optional(v.string()),
-  categoryCode: v.optional(v.string()),
-  email: v.optional(v.string()),
-  lastModificationDate: v.optional(LastModificationDateSchema),
-  searchFieldValue: v.optional(v.string()),
-  languageCode: v.optional(v.pipe(v.string(), v.minLength(2), v.maxLength(2))),
+const SearchMasterRecordSchema = v.object({
+  SearchType: SearchTypeSchema,
+  RecordCode: v.optional(v.pipe(v.string(), v.minLength(6), v.maxLength(6))), // Customer Aves code registry (string fix to 6)
+  Name: v.optional(v.string()),
+  VatCode: v.optional(v.string()),
+  ZipCode: v.optional(v.string()),
+  City: v.optional(v.string()),
+  CountyCode: v.optional(v.string()),
+  PhoneNumber: v.optional(v.string()),
+  CategoryCode: v.optional(v.string()),
+  Email: v.optional(v.string()),
+  LastModificationDate: v.optional(LastModificationDateSchema),
+  SearchFieldValue: v.optional(v.string()),
+  LanguageCode: v.optional(v.pipe(v.string(), v.minLength(2), v.maxLength(2))),
 });
 
 /**
- * Search master record request schema (PascalCase for API)
- * Transforms camelCase input to PascalCase after validation
+ * Search master record request schema (camelCase for API)
  */
 export const SearchMasterRecordRQSchema = v.pipe(
-  SearchMasterRecordRQCamelSchema,
-  v.transform((input) => camelToPascalKeys(input))
+  SearchMasterRecordSchema,
+  v.transform((input) => pascalToCamelKeys(input))
 );
 
 /**
- * Master record list schema (PascalCase from API)
+ * Master record list schema (camelCase from API)
  */
 const MasterRecordListSchema = v.object({
   MasterRecordDetail: v.optional(v.array(MasterRecordDetailSchema)),
