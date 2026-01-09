@@ -59,7 +59,7 @@ function pascalToCamel(str: string): string {
  */
 export function camelToPascalKeys<T>(obj: T): Pascalize<T> {
   // Handle primitives and null explicitly
-  if (obj === null || typeof obj !== 'object') {
+  if (!obj || typeof obj !== 'object') {
     return obj as Pascalize<T>;
   }
 
