@@ -2,8 +2,6 @@ import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 
 const parserOptions = {
   ignoreAttributes: false,
-  attributeNamePrefix: '@',
-  textNodeName: '_text',
   parseAttributeValue: true,
   parseTrueNumberOnly: false,
   trimValues: true,
@@ -15,8 +13,6 @@ const parserOptions = {
 const builderOptions = {
   ignoreAttributes: false,
   attributeNamePrefix: '@',
-  textNodeName: '_text',
-  format: true,
   suppressEmptyNode: false,
 };
 
@@ -34,5 +30,5 @@ export function jsonToXml(json: Record<string, unknown>): string {
  * Converts an XML string to JSON object
  */
 export function xmlToJson(xml: string): Record<string, unknown> {
-  return parser.parse(xml) as Record<string, unknown>;
+  return parser.parse(xml);
 }

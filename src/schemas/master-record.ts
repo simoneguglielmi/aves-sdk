@@ -44,9 +44,20 @@ export const MasterRecordDetailSchema = v.object({
     v.union([v.literal('S'), v.literal('N'), v.literal('T'), v.literal('M')])
   ),
   CreatedDate: v.optional(v.string()),
-  ModifiedDate: v.optional(v.string()),
-  RecordType: v.optional(v.string()),
-  LoginType: v.optional(v.string()),
+  RecordType: v.optional(
+    v.union([v.literal('CUSTOMER'), v.literal('SUPPLIER')])
+  ),
+  RecordStatus: v.optional(
+    v.union(
+      [
+        v.literal('ENABLED'),
+        v.literal('DISABLED'),
+        v.literal('WARNING'),
+        v.literal('BLACKLISTED'),
+      ],
+      'ENABLED'
+    )
+  ),
   Moniker: v.optional(v.string()),
   Name: v.optional(v.string()),
   LanguageCode: v.optional(v.pipe(v.string(), v.minLength(2), v.maxLength(2))), // 2 digit language code
@@ -65,7 +76,6 @@ export const MasterRecordDetailSchema = v.object({
   NewsletterDisabled: v.optional(
     v.union([v.literal('true'), v.literal('false'), v.boolean()])
   ),
-  RecordStatus: v.optional(v.string()),
   FinancialDetail: v.optional(FinancialDetailSchema),
   DynamicFields: v.optional(v.array(DynamicFieldsSchema)),
 });
