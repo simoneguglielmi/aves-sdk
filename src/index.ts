@@ -15,11 +15,7 @@ export type {
 } from './types.js';
 
 // Schemas (for advanced usage)
-export {
-  RqHeaderSchema,
-  RsStatusSchema,
-  AvesAutoLoginSchema,
-} from './schemas/common.js';
+export { RqHeaderSchema, RsStatusSchema } from './schemas/common.js';
 
 export {
   MasterRecordDetailSchema,

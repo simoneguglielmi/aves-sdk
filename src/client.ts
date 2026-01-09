@@ -54,20 +54,18 @@ export class AvesError extends Error {
  * AVES XML REST API Client
  */
 export class AvesClient {
-  private readonly baseURL: string;
-  private readonly hostID: string;
-  private readonly xtoken: string;
-
   /**
    * Creates a new AvesClient instance
    * @param baseURL - Base URL of the AVES API (e.g., "https://api.example.com")
    * @param hostID - 6 digit identification code
    * @param xtoken - Unique validation string
    */
-  constructor(baseURL: string, hostID: string, xtoken: string) {
-    this.baseURL = baseURL.replace(/\/$/, ''); // Remove trailing slash
-    this.hostID = hostID;
-    this.xtoken = xtoken;
+  constructor(
+    private readonly baseURL: string,
+    private readonly hostID: string,
+    private readonly xtoken: string
+  ) {
+    this.baseURL = baseURL.replace(/\/$/, '');
   }
 
   /**

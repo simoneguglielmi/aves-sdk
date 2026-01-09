@@ -1,15 +1,6 @@
 import * as v from 'valibot';
 
 /**
- * AvesAutoLogin schema for automatic login
- */
-export const AvesAutoLoginSchema = v.object({
-  '@VatCode': v.string(),
-  '@ZipCode': v.string(),
-  '@HashCode': v.string(),
-});
-
-/**
  * Request header schema with customer credentials
  */
 export const RqHeaderSchema = v.object({
@@ -20,9 +11,14 @@ export const RqHeaderSchema = v.object({
   '@LanguageCode': v.optional(
     v.pipe(v.string(), v.minLength(2), v.maxLength(2))
   ), // 2 digit language code
-  '@SessionId': v.optional(v.string()),
-  AvesAutoLogin: v.optional(AvesAutoLoginSchema),
 });
+
+const warningsSchema = v.optional(
+  v.pipe(
+    v.string(),
+    v.transform((input) => input.split(','))
+  )
+);
 
 /**
  * Response status schema
@@ -36,5 +32,5 @@ export const RsStatusSchema = v.object({
   ]),
   ErrorCode: v.optional(v.string()),
   ErrorDescription: v.optional(v.string()),
-  Warnings: v.optional(v.string()),
+  Warnings: warningsSchema,
 });
