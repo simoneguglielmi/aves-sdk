@@ -17,6 +17,8 @@ npm install aves-sdk
 # or
 yarn add aves-sdk
 # or
+pnpm add aves-sdk
+# or
 bun add aves-sdk
 ```
 
