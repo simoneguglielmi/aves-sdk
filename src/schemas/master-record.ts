@@ -56,7 +56,7 @@ export const MasterRecordDetailSchema = v.object({
   ),
   createdDate: v.optional(v.string()),
   recordType: v.optional(
-    v.union([v.literal('CUSTOMER'), v.literal('SUPPLIER')])
+    v.union([v.literal('CUSTOMER'), v.literal('SUPPLIER')], 'CUSTOMER')
   ),
   recordStatus: v.optional(
     v.union(
