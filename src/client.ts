@@ -1,26 +1,21 @@
 import { request as r } from 'undici';
 import { parse, safeParse } from 'valibot';
-import { jsonToXml, xmlToJson } from './xml-client';
+import { jsonToXml, xmlToJson } from './xml-client.js';
 import {
-  SearchMasterRecordSchema,
-  SearchMasterRecordApiSchema,
   SearchMasterRecordRequestSchema,
   SearchMasterRecordResponseSchema,
-} from './schemas/search';
+} from './schemas/search.js';
 import {
   ManageMasterRecordRequestSchema,
   ManageMasterRecordResponseSchema,
-} from './schemas/upsert';
+} from './schemas/upsert.js';
 import type {
   ManageMasterRecordRS,
   MasterRecordDetail,
   SearchMasterRecord,
   SearchMasterRecordRS,
-} from './types';
-import {
-  MasterRecordDetailSchema,
-  MasterRecordDetailApiSchema,
-} from './schemas/master-record';
+} from './types.js';
+import { MasterRecordDetailApiSchema } from './schemas/master-record.js';
 
 function createRootElement<T>(name: XMLRootElementValues, object: T) {
   return {
