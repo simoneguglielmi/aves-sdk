@@ -1,10 +1,6 @@
 // Main client
 export { AvesClient, AvesError } from './client.js';
 
-// Result type utilities
-export type { Result } from './utils/result.js';
-export { ok, err } from './utils/result.js';
-
 // Types
 export type {
   RqHeader,
