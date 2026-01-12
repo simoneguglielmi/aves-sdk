@@ -60,19 +60,24 @@ describe('AvesClient', () => {
         })
       );
 
-      expect(result).toHaveProperty('rsStatus');
-      expect(result.rsStatus).toHaveProperty('status', 'OK');
-      expect(result).toHaveProperty('masterRecordList');
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveProperty('rsStatus');
+        expect(result.data.rsStatus).toHaveProperty('status', 'OK');
+        expect(result.data).toHaveProperty('masterRecordList');
+      }
     });
 
     it('should validate input parameters', async () => {
-      // Should throw validation error for invalid recordCode length
-      await expect(
-        client.search({
-          searchType: 'CODE',
-          recordCode: '12345', // Too short
-        })
-      ).rejects.toThrow();
+      // Should return error result for invalid recordCode length
+      const result = await client.search({
+        searchType: 'CODE',
+        recordCode: '12345', // Too short
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBeInstanceOf(AvesError);
+      }
     });
 
     it('should handle API errors', async () => {
@@ -91,12 +96,15 @@ describe('AvesClient', () => {
 
       (mockRequest as any).mockResolvedValue(mockResponse);
 
-      await expect(
-        client.search({
-          searchType: 'CODE',
-          recordCode: '508558',
-        })
-      ).rejects.toThrow(AvesError);
+      const result = await client.search({
+        searchType: 'CODE',
+        recordCode: '508558',
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBeInstanceOf(AvesError);
+        expect(result.error.errorCode).toBe('E001');
+      }
     });
 
     it('should handle HTTP errors', async () => {
@@ -109,12 +117,15 @@ describe('AvesClient', () => {
 
       (mockRequest as any).mockResolvedValue(mockResponse);
 
-      await expect(
-        client.search({
-          searchType: 'CODE',
-          recordCode: '508558',
-        })
-      ).rejects.toThrow(AvesError);
+      const result = await client.search({
+        searchType: 'CODE',
+        recordCode: '508558',
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBeInstanceOf(AvesError);
+        expect(result.error.status).toBe('500');
+      }
     });
 
     it('should transform request to PascalCase for API', async () => {
@@ -181,13 +192,16 @@ describe('AvesClient', () => {
         })
       );
 
-      expect(result).toHaveProperty('rsStatus');
-      expect(result.rsStatus).toHaveProperty('status', 'OK');
-      expect(result).toHaveProperty('customerRecordRS');
-      expect(result.customerRecordRS).toHaveProperty(
-        'customerRecordCode',
-        '508558'
-      );
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveProperty('rsStatus');
+        expect(result.data.rsStatus).toHaveProperty('status', 'OK');
+        expect(result.data).toHaveProperty('customerRecordRS');
+        expect(result.data.customerRecordRS).toHaveProperty(
+          'customerRecordCode',
+          '508558'
+        );
+      }
     });
 
     it('should use default insertCriteria', async () => {
@@ -260,12 +274,15 @@ describe('AvesClient', () => {
 
       (mockRequest as any).mockResolvedValue(mockResponse);
 
-      await expect(
-        client.upsertRecord({
-          name: 'John Doe',
-          languageCode: '02',
-        })
-      ).rejects.toThrow(AvesError);
+      const result = await client.upsertRecord({
+        name: 'John Doe',
+        languageCode: '02',
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBeInstanceOf(AvesError);
+        expect(result.error.errorCode).toBe('E002');
+      }
     });
   });
 

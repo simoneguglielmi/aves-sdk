@@ -8,7 +8,7 @@ A type-safe TypeScript SDK for the AVES XML REST API. Automatically handles XML 
 - **Runtime validation** - Input/output validation using Valibot
 - **XML handling** - Automatic XML ↔ JSON conversion
 - **Case transformation** - Automatic camelCase ↔ PascalCase conversion
-- **Error handling** - Custom error types with detailed error information
+- **Functional error handling** - Result pattern for type-safe error handling
 
 ## Installation
 
@@ -35,21 +35,37 @@ const client = new AvesClient(
 );
 
 // Search for records
-const results = await client.search({
+const searchResult = await client.search({
   searchType: 'CODE',
   recordCode: '508558',
 });
 
+if (searchResult.success) {
+  console.log(searchResult.data); // SearchMasterRecordRS
+} else {
+  console.error(searchResult.error); // AvesError
+}
+
 // Insert or update a record
-const response = await client.upsertRecord({
+const upsertResult = await client.upsertRecord({
   name: 'John Doe',
   email: 'john@example.com',
   address: '123 Main St',
   zipCode: '12345',
   cityName: 'New York',
   stateCode: 'USA',
+  languageCode: '02',
   // ... other fields
 });
+
+if (upsertResult.success) {
+  console.log(upsertResult.data.customerRecordRS?.customerRecordCode);
+} else {
+  console.error(
+    upsertResult.error.errorCode,
+    upsertResult.error.errorDescription
+  );
+}
 ```
 
 ## API Reference
@@ -96,11 +112,21 @@ const byCode = await client.search({
   recordCode: '508558',
 });
 
+if (byCode.success) {
+  console.log('Found records:', byCode.data.masterRecordList);
+}
+
 // Search by email
 const byEmail = await client.search({
   searchType: 'EMAIL',
   email: 'user@example.com',
 });
+
+if (byEmail.success) {
+  console.log('Found:', byEmail.data.masterRecordList);
+} else {
+  console.error('Error:', byEmail.error.message);
+}
 
 // Search by name (with optional city)
 const byName = await client.search({
@@ -132,7 +158,7 @@ const byDate = await client.search({
 Insert or update a master record. The `insertCriteria` defaults to `'T'` (update all fields if exists) but can be overridden by including it in the record.
 
 ```typescript
-const response = await client.upsertRecord({
+const result = await client.upsertRecord({
   name: string,
   email: string,
   address: string,
@@ -145,12 +171,19 @@ const response = await client.upsertRecord({
   fiscalCode: string,
   birthDate: string,
   gender: string,
-  languageCode: string,
+  languageCode: string, // Required
   categoryCode: string,
   recordCode: string, // Optional: 6-digit code
   insertCriteria: 'S' | 'N' | 'T' | 'M', // Optional: defaults to 'T'
   // ... see types for full list
 });
+
+// Result is Result<ManageMasterRecordRS, AvesError>
+if (result.success) {
+  // Access result.data
+} else {
+  // Handle result.error
+}
 ```
 
 **Insert Criteria:**
@@ -175,34 +208,60 @@ const response = await client.upsertRecord({
   languageCode: '02',
 });
 
+if (response.success) {
+  console.log(response.data.customerRecordRS?.customerRecordCode);
+} else {
+  console.error('Failed:', response.error.message);
+}
+
 // Override insertCriteria
 const newRecord = await client.upsertRecord({
   name: 'John Doe',
   insertCriteria: 'S', // Always insert new
   email: 'john@example.com',
+  languageCode: '02',
   // ... other fields
 });
 
-console.log(response.customerRecordRS?.customerRecordCode);
+if (newRecord.success) {
+  console.log('Created:', newRecord.data.customerRecordRS?.customerRecordCode);
+}
 ```
 
 ## Error Handling
 
-The SDK throws `AvesError` for API errors and validation failures:
+The SDK uses a functional `Result` pattern for type-safe error handling. All methods return `Result<Success, AvesError>` instead of throwing exceptions:
 
 ```typescript
-import { AvesError } from 'aves-sdk';
+import { AvesClient, AvesError, type Result } from 'aves-sdk';
 
-try {
-  await client.search({ searchType: 'CODE', recordCode: '123' });
-} catch (error) {
-  if (error instanceof AvesError) {
-    console.error('Status:', error.status); // 'ERROR' | 'TIMEOUT' | 'WARNING'
-    console.error('Error Code:', error.errorCode);
-    console.error('Description:', error.errorDescription);
-  }
+const result = await client.search({
+  searchType: 'CODE',
+  recordCode: '508558',
+});
+
+if (result.success) {
+  // TypeScript knows result.data is SearchMasterRecordRS
+  console.log(result.data.masterRecordList);
+} else {
+  // TypeScript knows result.error is AvesError
+  console.error('Status:', result.error.status); // 'ERROR' | 'TIMEOUT' | 'WARNING'
+  console.error('Error Code:', result.error.errorCode);
+  console.error('Description:', result.error.errorDescription);
 }
 ```
+
+**Result Type:**
+
+```typescript
+type Result<T, E> = { success: true; data: T } | { success: false; error: E };
+```
+
+This pattern ensures:
+
+- **Type safety**: TypeScript narrows the type based on `success`
+- **No exceptions**: All errors are explicit in the return type
+- **Functional style**: Easier to compose and chain operations
 
 ## Case Transformation
 
@@ -241,7 +300,7 @@ The SDK validates all inputs and outputs using Valibot schemas:
 - **Search parameters**: Required fields are enforced based on `searchType` using discriminated unions
 - All other fields follow the AVES API specification
 
-Invalid data will throw a validation error before making the API request. All validation happens on camelCase input, making it easy to use. TypeScript will also provide type checking and autocomplete based on the selected `searchType`.
+Invalid data will return an error `Result` before making the API request. All validation happens on camelCase input, making it easy to use. TypeScript will also provide type checking and autocomplete based on the selected `searchType`.
 
 ## License
 

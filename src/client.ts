@@ -16,6 +16,8 @@ import type {
   SearchMasterRecordRS,
 } from './types.js';
 import { MasterRecordDetailApiSchema } from './schemas/master-record.js';
+import type { Result } from './utils/result.js';
+import { err, ok } from './utils/result.js';
 
 function createRootElement<T>(name: XMLRootElementValues, object: T) {
   return {
@@ -88,6 +90,46 @@ export class AvesClient {
     } as const;
   }
 
+  private handleApiStatus<T>(
+    output: T,
+    rsStatus: {
+      status?: string;
+      errorCode?: string;
+      errorDescription?: string;
+      warnings?: string[];
+    }
+  ): Result<T, AvesError> {
+    const status = rsStatus?.status;
+
+    if (status === 'ERROR' || status === 'TIMEOUT') {
+      return err(
+        new AvesError(
+          rsStatus.errorDescription || `API Error: ${status}`,
+          status,
+          rsStatus.errorCode,
+          rsStatus.errorDescription
+        )
+      );
+    }
+
+    if (status === 'WARNING') {
+      const warnings = rsStatus.warnings?.join(', ');
+      console.warn('AVES API Warning:', warnings);
+    }
+
+    return ok(output);
+  }
+
+  private toAvesError(error: unknown, defaultMessage: string): AvesError {
+    if (error instanceof AvesError) {
+      return error;
+    }
+    if (error instanceof Error) {
+      return new AvesError(error.message);
+    }
+    return new AvesError(defaultMessage);
+  }
+
   private async request<T>(
     endpoint: string,
     requestBody: Record<string, unknown>,
@@ -95,123 +137,128 @@ export class AvesClient {
     responseSchema:
       | typeof ManageMasterRecordResponseSchema
       | typeof SearchMasterRecordResponseSchema
-  ): Promise<T> {
-    const url = this.createUrl(endpoint);
-    const xmlBody = jsonToXml(requestBody);
+  ): Promise<Result<T, AvesError>> {
+    try {
+      const url = this.createUrl(endpoint);
+      const xmlBody = jsonToXml(requestBody);
 
-    const response = await r(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/xml',
-      },
-      body: xmlBody,
-    });
+      const response = await r(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/xml',
+        },
+        body: xmlBody,
+      });
 
-    const responseText = await response.body.text();
+      const responseText = await response.body.text();
 
-    if (response.statusCode !== 200) {
-      throw new AvesError(responseText, response.statusCode.toString());
-    }
+      if (response.statusCode !== 200) {
+        return err(new AvesError(responseText, response.statusCode.toString()));
+      }
 
-    const jsonResponse = xmlToJson(responseText);
+      const jsonResponse = xmlToJson(responseText);
+      const rootElement = jsonResponse[responseRootKey];
 
-    const rootElement = jsonResponse[responseRootKey];
-    if (!rootElement) {
-      throw new AvesError(
-        `Invalid response structure: missing root element '${responseRootKey}'`,
-        undefined,
-        'VALIDATION_ERROR'
+      if (!rootElement) {
+        return err(
+          new AvesError(
+            `Invalid response structure: missing root element '${responseRootKey}'`,
+            undefined,
+            'VALIDATION_ERROR'
+          )
+        );
+      }
+
+      const parseResult = safeParse(responseSchema, rootElement);
+
+      if (!parseResult.success) {
+        return err(
+          new AvesError(
+            `Invalid response format: ${parseResult.issues
+              .map((i) => i.message)
+              .join(', ')}`,
+            '400',
+            'VALIDATION_ERROR'
+          )
+        );
+      }
+
+      return this.handleApiStatus(
+        parseResult.output as T,
+        parseResult.output.rsStatus
       );
+    } catch (error) {
+      return err(this.toAvesError(error, 'Unknown error occurred'));
     }
-
-    const result = safeParse(responseSchema, rootElement);
-
-    if (!result.success) {
-      throw new AvesError(
-        `Invalid response format: ${result.issues
-          .map((i) => i.message)
-          .join(', ')}`,
-        '400',
-        'VALIDATION_ERROR'
-      );
-    }
-
-    const rsStatus = result.output.rsStatus;
-    const status = rsStatus?.status;
-    if (status === 'ERROR' || status === 'TIMEOUT') {
-      const errorCode = rsStatus?.errorCode;
-      const errorDescription = rsStatus?.errorDescription;
-      throw new AvesError(
-        errorDescription || `API Error: ${status}`,
-        status,
-        errorCode,
-        errorDescription
-      );
-    }
-
-    if (status === 'WARNING') {
-      const warnings = rsStatus?.warnings?.join(', ');
-      console.warn('AVES API Warning:', warnings);
-    }
-
-    return result.output as T;
   }
 
   /**
    * Search for master records
-   * @returns List of matching master records in camelCase
+   * @returns Result containing list of matching master records in camelCase or error
    */
-  async search(params: SearchMasterRecord): Promise<SearchMasterRecordRS> {
-    const requestData = parse(SearchMasterRecordRequestSchema, {
-      RqHeader: this.createRqHeader(),
-      SearchMasterRecord: params,
-    });
+  async search(
+    params: SearchMasterRecord
+  ): Promise<Result<SearchMasterRecordRS, AvesError>> {
+    try {
+      const requestData = parse(SearchMasterRecordRequestSchema, {
+        RqHeader: this.createRqHeader(),
+        SearchMasterRecord: params,
+      });
 
-    const requestBody = createRootElement(
-      XML_ROOT_ELEMENTS.SEARCH_REQUEST,
-      requestData
-    );
+      const requestBody = createRootElement(
+        XML_ROOT_ELEMENTS.SEARCH_REQUEST,
+        requestData
+      );
 
-    const response = await this.request<SearchMasterRecordRS>(
-      this.endpoints.search,
-      requestBody,
-      XML_ROOT_ELEMENTS.SEARCH_RESPONSE,
-      SearchMasterRecordResponseSchema
-    );
-
-    return response;
+      return await this.request<SearchMasterRecordRS>(
+        this.endpoints.search,
+        requestBody,
+        XML_ROOT_ELEMENTS.SEARCH_RESPONSE,
+        SearchMasterRecordResponseSchema
+      );
+    } catch (error) {
+      return err(
+        this.toAvesError(error, 'Validation error occurred during search')
+      );
+    }
   }
 
   /**
    * Insert or update a master record
    * @param record - Master record data in camelCase
-   * @returns Response with customer record code in camelCase
+   * @returns Result containing response with customer record code in camelCase or error
    */
   async upsertRecord(
     record: MasterRecordDetail
-  ): Promise<ManageMasterRecordRS> {
-    const apiRecord = parse(MasterRecordDetailApiSchema, record);
+  ): Promise<Result<ManageMasterRecordRS, AvesError>> {
+    try {
+      const apiRecord = parse(MasterRecordDetailApiSchema, record);
 
-    const masterRecordDetail = {
-      '@InsertCriteria': 'T' as const,
-      ...apiRecord,
-    };
+      const masterRecordDetail = {
+        '@InsertCriteria': 'T' as const,
+        ...apiRecord,
+      };
 
-    const requestData = parse(ManageMasterRecordRequestSchema, {
-      RqHeader: this.createRqHeader(),
-      MasterRecordDetail: masterRecordDetail,
-    });
+      const requestData = parse(ManageMasterRecordRequestSchema, {
+        RqHeader: this.createRqHeader(),
+        MasterRecordDetail: masterRecordDetail,
+      });
 
-    const requestBody = createRootElement(
-      XML_ROOT_ELEMENTS.UPSERT_REQUEST,
-      requestData
-    );
+      const requestBody = createRootElement(
+        XML_ROOT_ELEMENTS.UPSERT_REQUEST,
+        requestData
+      );
 
-    return this.request<ManageMasterRecordRS>(
-      this.endpoints.upsert,
-      requestBody,
-      XML_ROOT_ELEMENTS.UPSERT_RESPONSE,
-      ManageMasterRecordResponseSchema
-    );
+      return await this.request<ManageMasterRecordRS>(
+        this.endpoints.upsert,
+        requestBody,
+        XML_ROOT_ELEMENTS.UPSERT_RESPONSE,
+        ManageMasterRecordResponseSchema
+      );
+    } catch (error) {
+      return err(
+        this.toAvesError(error, 'Validation error occurred during upsert')
+      );
+    }
   }
 }
