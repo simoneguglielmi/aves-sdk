@@ -69,40 +69,23 @@ new AvesClient(baseURL: string, hostID: string, xtoken: string, languageCode?: s
 
 ##### `search(params)`
 
-Search for master records by various criteria.
+Search for master records by various criteria. The required fields depend on the `searchType` - TypeScript will enforce the correct fields for each search type.
 
-```typescript
-const results = await client.search({
-  searchType:
-    | 'CODE'
-    | 'NAME'
-    | 'VATCODE'
-    | 'ZONE'
-    | 'CATEGORY'
-    | 'EMAIL'
-    | 'LASTMODDATE'
-    | 'SEARCH FIELD'
-    | 'EXTERNAL_REF_CODE',
-  recordCode?: string, // When searchType='CODE' (6 digits)
-  name?: string, // When searchType='NAME'
-  vatCode?: string, // When searchType='VATCODE'
-  zipCode?: string, // When searchType='ZONE'
-  city?: string, // When searchType='ZONE'
-  countyCode?: string, // When searchType='ZONE'
-  phoneNumber?: string, // When searchType='VATCODE'
-  categoryCode?: string, // When searchType='CATEGORY'
-  email?: string, // When searchType='EMAIL'
-  lastModificationDate?: {
-    // When searchType='LASTMODDATE'
-    minDate: string,
-    maxDate: string,
-  },
-  searchFieldValue?: string, // When searchType='SEARCH FIELD' or 'EXTERNAL_REF_CODE'
-  languageCode?: string, // Optional: 2-digit language code
-});
-```
+**Search Types and Required Fields:**
 
-**Example:**
+- **`'CODE'`** - Requires `recordCode` (6 digits)
+- **`'NAME'`** - Requires `name`, optionally `city`
+- **`'VATCODE'`** - Requires `vatCode`, optionally `phoneNumber`
+- **`'ZONE'`** - Requires `zipCode` and `countyCode`, optionally `city`
+- **`'CATEGORY'`** - Requires `categoryCode`
+- **`'EMAIL'`** - Requires `email`
+- **`'LASTMODDATE'`** - Requires `lastModificationDate` with `minDate` and `maxDate`
+- **`'SEARCH_FIELD'`** - Requires `searchFieldValue`
+- **`'EXTERNAL_REF_CODE'`** - Requires `searchFieldValue`
+
+All search types accept an optional `languageCode` (2-digit code).
+
+**Examples:**
 
 ```typescript
 // Search by code
@@ -117,11 +100,28 @@ const byEmail = await client.search({
   email: 'user@example.com',
 });
 
-// Search by name
+// Search by name (with optional city)
 const byName = await client.search({
   searchType: 'NAME',
   name: 'John Doe',
-  city: 'New York',
+  city: 'New York', // Optional
+});
+
+// Search by zone (requires zipCode and countyCode)
+const byZone = await client.search({
+  searchType: 'ZONE',
+  zipCode: '47841',
+  countyCode: 'RN',
+  city: 'Cattolica', // Optional
+});
+
+// Search by last modification date
+const byDate = await client.search({
+  searchType: 'LASTMODDATE',
+  lastModificationDate: {
+    minDate: '2024-01-01',
+    maxDate: '2024-12-31',
+  },
 });
 ```
 
@@ -236,9 +236,10 @@ The SDK validates all inputs and outputs using Valibot schemas:
 - **HostID**: Must be exactly 6 digits
 - **RecordCode**: Must be exactly 6 characters
 - **LanguageCode**: Must be exactly 2 digits (01=Italian, 02=English, etc.)
+- **Search parameters**: Required fields are enforced based on `searchType` using discriminated unions
 - All other fields follow the AVES API specification
 
-Invalid data will throw a validation error before making the API request. All validation happens on camelCase input, making it easy to use.
+Invalid data will throw a validation error before making the API request. All validation happens on camelCase input, making it easy to use. TypeScript will also provide type checking and autocomplete based on the selected `searchType`.
 
 ## License
 
