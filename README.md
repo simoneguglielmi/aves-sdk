@@ -34,13 +34,13 @@ const client = new AvesClient(
   '02' // Optional: 2-digit language code (01=Italian, 02=English)
 );
 
-// Search for records (camelCase input)
+// Search for records
 const results = await client.search({
   searchType: 'CODE',
   recordCode: '508558',
 });
 
-// Insert or update a record (camelCase input)
+// Insert or update a record
 const response = await client.upsertRecord({
   name: 'John Doe',
   email: 'john@example.com',
