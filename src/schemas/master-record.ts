@@ -71,7 +71,8 @@ export const MasterRecordDetailSchema = v.object({
   ),
   moniker: v.optional(v.string()),
   name: v.optional(v.string()),
-  languageCode: v.optional(v.pipe(v.string(), v.minLength(2), v.maxLength(2))),
+  extraInfo: v.optional(v.string()),
+  languageCode: v.pipe(v.string(), v.minLength(2), v.maxLength(2)),
   address: v.optional(v.string()),
   zipCode: v.optional(v.string()),
   cityName: v.optional(v.string()),
@@ -84,9 +85,7 @@ export const MasterRecordDetailSchema = v.object({
   gender: v.optional(v.string()),
   birthDate: v.optional(v.string()),
   fiscalCode: v.optional(v.string()),
-  newsletterDisabled: v.optional(
-    v.union([v.literal('true'), v.literal('false'), v.boolean()])
-  ),
+  vatCode: v.optional(v.string()),
   financialDetail: v.optional(FinancialDetailInputSchema),
   dynamicFields: v.optional(v.array(DynamicFieldsInputSchema)),
 });
