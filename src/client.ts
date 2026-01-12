@@ -14,6 +14,7 @@ import {
 import type {
   ManageMasterRecordRS,
   MasterRecordDetail,
+  SearchMasterRecord,
   SearchMasterRecordRS,
 } from './types';
 import {
@@ -165,33 +166,7 @@ export class AvesClient {
    * Search for master records
    * @returns List of matching master records in camelCase
    */
-  async search(params: {
-    searchType:
-      | 'CODE'
-      | 'NAME'
-      | 'VATCODE'
-      | 'ZONE'
-      | 'CATEGORY'
-      | 'EMAIL'
-      | 'LASTMODDATE'
-      | 'SEARCH FIELD'
-      | 'EXTERNAL_REF_CODE';
-    recordCode?: string;
-    name?: string;
-    vatCode?: string;
-    zipCode?: string;
-    city?: string;
-    countyCode?: string;
-    phoneNumber?: string;
-    categoryCode?: string;
-    email?: string;
-    lastModificationDate?: {
-      minDate: string;
-      maxDate: string;
-    };
-    searchFieldValue?: string;
-    languageCode?: string;
-  }): Promise<SearchMasterRecordRS> {
+  async search(params: SearchMasterRecord): Promise<SearchMasterRecordRS> {
     const requestData = parse(SearchMasterRecordRequestSchema, {
       RqHeader: this.createRqHeader(),
       SearchMasterRecord: params,
