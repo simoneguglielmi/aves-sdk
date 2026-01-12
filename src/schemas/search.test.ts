@@ -17,7 +17,9 @@ describe('SearchMasterRecordSchema', () => {
     const result = parse(SearchMasterRecordSchema, input);
     expect(result).toBeDefined();
     expect(result.searchType).toBe('CODE');
-    expect(result.recordCode).toBe('508558');
+    if (result.searchType === 'CODE') {
+      expect(result.recordCode).toBe('508558');
+    }
   });
 
   it('should validate valid search request with EMAIL type', () => {
@@ -81,6 +83,122 @@ describe('SearchMasterRecordSchema', () => {
     };
 
     expect(() => parse(SearchMasterRecordSchema, input)).toThrow();
+  });
+
+  it('should reject CODE search without required recordCode', () => {
+    const input = {
+      searchType: 'CODE',
+    };
+
+    expect(() => parse(SearchMasterRecordSchema, input)).toThrow();
+  });
+
+  it('should reject NAME search without required name', () => {
+    const input = {
+      searchType: 'NAME',
+    };
+
+    expect(() => parse(SearchMasterRecordSchema, input)).toThrow();
+  });
+
+  it('should reject VATCODE search without required vatCode', () => {
+    const input = {
+      searchType: 'VATCODE',
+    };
+
+    expect(() => parse(SearchMasterRecordSchema, input)).toThrow();
+  });
+
+  it('should reject ZONE search without required zipCode', () => {
+    const input = {
+      searchType: 'ZONE',
+      countyCode: 'RN',
+    };
+
+    expect(() => parse(SearchMasterRecordSchema, input)).toThrow();
+  });
+
+  it('should reject ZONE search without required countyCode', () => {
+    const input = {
+      searchType: 'ZONE',
+      zipCode: '47841',
+    };
+
+    expect(() => parse(SearchMasterRecordSchema, input)).toThrow();
+  });
+
+  it('should reject CATEGORY search without required categoryCode', () => {
+    const input = {
+      searchType: 'CATEGORY',
+    };
+
+    expect(() => parse(SearchMasterRecordSchema, input)).toThrow();
+  });
+
+  it('should reject EMAIL search without required email', () => {
+    const input = {
+      searchType: 'EMAIL',
+    };
+
+    expect(() => parse(SearchMasterRecordSchema, input)).toThrow();
+  });
+
+  it('should reject LASTMODDATE search without required lastModificationDate', () => {
+    const input = {
+      searchType: 'LASTMODDATE',
+    };
+
+    expect(() => parse(SearchMasterRecordSchema, input)).toThrow();
+  });
+
+  it('should reject SEARCH_FIELD search without required searchFieldValue', () => {
+    const input = {
+      searchType: 'SEARCH_FIELD',
+    };
+
+    expect(() => parse(SearchMasterRecordSchema, input)).toThrow();
+  });
+
+  it('should reject EXTERNAL_REF_CODE search without required searchFieldValue', () => {
+    const input = {
+      searchType: 'EXTERNAL_REF_CODE',
+    };
+
+    expect(() => parse(SearchMasterRecordSchema, input)).toThrow();
+  });
+
+  it('should validate ZONE search with all required fields', () => {
+    const input = {
+      searchType: 'ZONE',
+      zipCode: '47841',
+      countyCode: 'RN',
+      city: 'Cattolica',
+    };
+
+    const result = parse(SearchMasterRecordSchema, input);
+    expect(result).toBeDefined();
+    expect(result.searchType).toBe('ZONE');
+    if (result.searchType === 'ZONE') {
+      expect(result.zipCode).toBe('47841');
+      expect(result.countyCode).toBe('RN');
+      expect(result.city).toBe('Cattolica');
+    }
+  });
+
+  it('should validate VATCODE search with optional phoneNumber', () => {
+    const input = {
+      searchType: 'VATCODE',
+      vatCode: 'RSSMRO79P08G479P',
+      phoneNumber: '0541123456',
+    };
+
+    const result = parse(SearchMasterRecordSchema, input);
+    expect(result).toBeDefined();
+    expect(result.searchType).toBe('VATCODE');
+    if (result.searchType === 'VATCODE') {
+      expect(result.vatCode).toBe('RSSMRO79P08G479P');
+      expect(result.phoneNumber).toBe('0541123456');
+    }
   });
 });
 

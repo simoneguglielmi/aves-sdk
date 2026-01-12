@@ -11,36 +11,110 @@ const LastModificationDateInputSchema = v.object({
   maxDate: v.string(),
 });
 
-const SearchTypeSchema = v.union([
-  v.literal('CODE'),
-  v.literal('NAME'),
-  v.literal('VATCODE'),
-  v.literal('ZONE'),
-  v.literal('CATEGORY'),
-  v.literal('EMAIL'),
-  v.literal('LASTMODDATE'),
-  v.literal('SEARCH FIELD'),
-  v.literal('EXTERNAL_REF_CODE'),
-]);
+const languageCodeField = v.optional(
+  v.pipe(v.string(), v.minLength(2), v.maxLength(2))
+);
+
+/**
+ * Search by CODE - requires recordCode
+ */
+const CodeSearchSchema = v.object({
+  searchType: v.literal('CODE'),
+  recordCode: v.pipe(v.string(), v.minLength(6), v.maxLength(6)),
+  languageCode: languageCodeField,
+});
+
+/**
+ * Search by NAME - requires name, optionally city
+ */
+const NameSearchSchema = v.object({
+  searchType: v.literal('NAME'),
+  name: v.string(),
+  city: v.optional(v.string()),
+  languageCode: languageCodeField,
+});
+
+/**
+ * Search by VATCODE - requires vatCode, optionally phoneNumber
+ */
+const VatCodeSearchSchema = v.object({
+  searchType: v.literal('VATCODE'),
+  vatCode: v.string(),
+  phoneNumber: v.optional(v.string()),
+  languageCode: languageCodeField,
+});
+
+/**
+ * Search by ZONE - requires zipCode and countyCode, optionally city
+ */
+const ZoneSearchSchema = v.object({
+  searchType: v.literal('ZONE'),
+  zipCode: v.string(),
+  countyCode: v.string(),
+  city: v.optional(v.string()),
+  languageCode: languageCodeField,
+});
+
+/**
+ * Search by CATEGORY - requires categoryCode
+ */
+const CategorySearchSchema = v.object({
+  searchType: v.literal('CATEGORY'),
+  categoryCode: v.string(),
+  languageCode: languageCodeField,
+});
+
+/**
+ * Search by EMAIL - requires email
+ */
+const EmailSearchSchema = v.object({
+  searchType: v.literal('EMAIL'),
+  email: v.string(),
+  languageCode: languageCodeField,
+});
+
+/**
+ * Search by LASTMODDATE - requires lastModificationDate
+ */
+const LastModDateSearchSchema = v.object({
+  searchType: v.literal('LASTMODDATE'),
+  lastModificationDate: LastModificationDateInputSchema,
+  languageCode: languageCodeField,
+});
+
+/**
+ * Search by SEARCH FIELD - requires searchFieldValue
+ */
+const SearchFieldSearchSchema = v.object({
+  searchType: v.literal('SEARCH_FIELD'),
+  searchFieldValue: v.string(),
+  languageCode: languageCodeField,
+});
+
+/**
+ * Search by EXTERNAL_REF_CODE - requires searchFieldValue
+ */
+const ExternalRefCodeSearchSchema = v.object({
+  searchType: v.literal('EXTERNAL_REF_CODE'),
+  searchFieldValue: v.string(),
+  languageCode: languageCodeField,
+});
 
 /**
  * Search master record input schema (camelCase)
+ * Conditional fields based on searchType
  */
-export const SearchMasterRecordSchema = v.object({
-  searchType: SearchTypeSchema,
-  recordCode: v.optional(v.pipe(v.string(), v.minLength(6), v.maxLength(6))),
-  name: v.optional(v.string()),
-  vatCode: v.optional(v.string()),
-  zipCode: v.optional(v.string()),
-  city: v.optional(v.string()),
-  countyCode: v.optional(v.string()),
-  phoneNumber: v.optional(v.string()),
-  categoryCode: v.optional(v.string()),
-  email: v.optional(v.string()),
-  lastModificationDate: v.optional(LastModificationDateInputSchema),
-  searchFieldValue: v.optional(v.string()),
-  languageCode: v.optional(v.pipe(v.string(), v.minLength(2), v.maxLength(2))),
-});
+export const SearchMasterRecordSchema = v.union([
+  CodeSearchSchema,
+  NameSearchSchema,
+  VatCodeSearchSchema,
+  ZoneSearchSchema,
+  CategorySearchSchema,
+  EmailSearchSchema,
+  LastModDateSearchSchema,
+  SearchFieldSearchSchema,
+  ExternalRefCodeSearchSchema,
+]);
 
 /**
  * Search master record schema for API requests (transforms to PascalCase)
