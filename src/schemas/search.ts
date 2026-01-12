@@ -1,5 +1,6 @@
 import * as v from 'valibot';
 import { RqHeaderSchema, RsStatusSchema } from './common.js';
+import { FinancialDetailSchema, DynamicFieldsSchema } from './master-record.js';
 import {
   createApiSchema,
   createResponseSchema,
@@ -101,8 +102,8 @@ const MasterRecordDetailApiValidationSchema = v.object({
   NewsletterDisabled: v.optional(
     v.union([v.literal('true'), v.literal('false'), v.boolean()])
   ),
-  FinancialDetail: v.optional(v.any()),
-  DynamicFields: v.optional(v.array(v.any())),
+  FinancialDetail: v.optional(FinancialDetailSchema),
+  DynamicFields: v.optional(v.array(DynamicFieldsSchema)),
 });
 
 const MasterRecordListApiSchema = v.object({
