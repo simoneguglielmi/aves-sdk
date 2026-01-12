@@ -1,10 +1,11 @@
 import { defineConfig } from 'tsup';
+import { join } from 'node:path';
 
 export default defineConfig({
   entry: ['src/index.ts'],
   dts: {
     resolve: true,
-    entry: 'tsconfig.build.json',
+    entry: join(__dirname, 'tsconfig.build.json'),
   },
   format: ['cjs', 'esm'],
   sourcemap: true,
