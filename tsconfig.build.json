@@ -11,7 +11,7 @@
     "loadtests"
   ],
   "compilerOptions": {
-    "incremental": false,
+    "incremental": true,
     "declaration": true,
     "emitDeclarationOnly": true
   }
