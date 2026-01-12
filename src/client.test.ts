@@ -168,6 +168,7 @@ describe('AvesClient', () => {
         name: 'John Doe',
         email: 'john@example.com',
         zipCode: '12345',
+        languageCode: '02',
       });
 
       expect(mockRequest).toHaveBeenCalledWith(
@@ -204,6 +205,7 @@ describe('AvesClient', () => {
 
       await client.upsertRecord({
         name: 'John Doe',
+        languageCode: '02',
       });
 
       const callArgs = (mockRequest as any).mock.calls[0];
@@ -230,6 +232,7 @@ describe('AvesClient', () => {
         name: 'John Doe',
         email: 'john@example.com',
         zipCode: '12345',
+        languageCode: '02',
       });
 
       const callArgs = (mockRequest as any).mock.calls[0];
@@ -260,6 +263,7 @@ describe('AvesClient', () => {
       await expect(
         client.upsertRecord({
           name: 'John Doe',
+          languageCode: '02',
         })
       ).rejects.toThrow(AvesError);
     });

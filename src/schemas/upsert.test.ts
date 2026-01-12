@@ -98,6 +98,7 @@ describe('MasterRecordDetailApiSchema', () => {
       name: 'John Doe',
       email: 'john@example.com',
       zipCode: '12345',
+      languageCode: '02',
     };
 
     const validated = parse(MasterRecordDetailSchema, input);
