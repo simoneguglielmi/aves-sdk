@@ -29,8 +29,8 @@ import { AvesClient } from 'aves-sdk';
 
 const client = new AvesClient(
   'https://api.example.com', // Base URL
-  '025706', // 6-digit HostID
-  'TOKEN002756', // Xtoken
+  'hostid', // 6-digit HostID
+  'TOKEN', // Xtoken
   '02' // Optional: 2-digit language code (01=Italian, 02=English)
 );
 
