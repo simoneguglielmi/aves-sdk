@@ -14,7 +14,7 @@ export type {
   ManageMasterRecordRS,
 } from './types.js';
 
-// Schemas (for advanced usage)
+// Schemas 
 export { RqHeaderSchema, RsStatusSchema } from './schemas/common.js';
 
 export {
