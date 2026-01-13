@@ -13,25 +13,3 @@ export type {
   ManageMasterRecordRequest,
   ManageMasterRecordRS,
 } from './types.js';
-
-// Schemas 
-export { RqHeaderSchema, RsStatusSchema } from './schemas/common.js';
-
-export {
-  MasterRecordDetailSchema,
-  MasterRecordDetailApiSchema,
-  MasterRecordDetailResponseSchema,
-  FinancialDetailSchema,
-} from './schemas/master-record.js';
-
-export {
-  SearchMasterRecordSchema,
-  SearchMasterRecordApiSchema,
-  SearchMasterRecordRequestSchema,
-  SearchMasterRecordResponseSchema,
-} from './schemas/search.js';
-
-export {
-  ManageMasterRecordRequestSchema,
-  ManageMasterRecordResponseSchema,
-} from './schemas/upsert.js';
