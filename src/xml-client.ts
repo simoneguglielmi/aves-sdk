@@ -14,7 +14,7 @@ const parserOptions = {
 const builderOptions = {
   ignoreAttributes: false,
   attributeNamePrefix: '@',
-  suppressEmptyNode: false,
+  suppressEmptyNode: true,
 };
 
 const parser = new XMLParser(parserOptions);
