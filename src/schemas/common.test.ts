@@ -89,13 +89,13 @@ describe('RsStatusSchema', () => {
   it('should validate ERROR status with error details', () => {
     const input = {
       '@Status': 'ERROR',
-      ErrorCode: 'E001',
+      ErrorCode: 1001,
       ErrorDescription: 'Invalid request',
     };
 
     const result = parse(RsStatusSchema, input);
     expect(result['@Status']).toBe('ERROR');
-    expect(result.ErrorCode).toBe('E001');
+    expect(result.ErrorCode).toBe(1001);
     expect(result.ErrorDescription).toBe('Invalid request');
   });
 

@@ -43,7 +43,7 @@ export class AvesError extends Error {
   constructor(
     message: string,
     public readonly status?: string,
-    public readonly errorCode?: string,
+    public readonly errorCode?: number,
     public readonly errorDescription?: string
   ) {
     super(message);
@@ -98,8 +98,8 @@ export class AvesClient {
       return err(
         new AvesError(
           rsStatus.errorDescription ?? `API Error: ${status}`,
-          status,
-          rsStatus.errorCode ? rsStatus.errorCode.toString() : undefined,
+          rsStatus.status,
+          rsStatus.errorCode,
           rsStatus.errorDescription
         )
       );
@@ -135,7 +135,6 @@ export class AvesClient {
       const url = this.createUrl(endpoint);
       const xmlBody = jsonToXml(requestBody);
 
-      console.log(xmlBody);
 
       const response = await r(url, {
         method: 'POST',
@@ -148,7 +147,7 @@ export class AvesClient {
       const responseText = await response.body.text();
 
       if (response.statusCode !== 200) {
-        return err(new AvesError(responseText, response.statusCode.toString()));
+        return err(new AvesError(responseText, "ERROR", response.statusCode));
       }
 
       const jsonResponse = xmlToJson(responseText);
@@ -158,7 +157,8 @@ export class AvesClient {
         return err(
           new AvesError(
             `Invalid response structure: missing root element '${responseRootKey}'`,
-            undefined,
+            "ERROR",
+            400,
             'VALIDATION_ERROR'
           )
         );
@@ -172,7 +172,8 @@ export class AvesClient {
             `Invalid response format: ${parseResult.issues
               .map((i) => i.message)
               .join(', ')}`,
-            '400',
+            "ERROR",
+            400,
             'VALIDATION_ERROR'
           )
         );

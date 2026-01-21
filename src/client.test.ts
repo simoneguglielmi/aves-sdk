@@ -87,7 +87,7 @@ describe('AvesClient', () => {
           text: async () =>
             `<SearchMasterRecordRS>
               <RsStatus Status="ERROR">
-                <ErrorCode>E001</ErrorCode>
+                <ErrorCode>1001</ErrorCode>
                 <ErrorDescription>Invalid request</ErrorDescription>
               </RsStatus>
             </SearchMasterRecordRS>`,
@@ -103,7 +103,7 @@ describe('AvesClient', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.errorCode).toBe('E001');
+        expect(result.error.errorCode).toBe(1001);
       }
     });
 
@@ -124,7 +124,8 @@ describe('AvesClient', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.status).toBe('500');
+        expect(result.error.status).toBe('ERROR');
+        expect(result.error.errorCode).toBe(500);
       }
     });
 
@@ -264,7 +265,7 @@ describe('AvesClient', () => {
           text: async () =>
             `<ManageMasterRecordRS>
               <RsStatus Status="ERROR">
-                <ErrorCode>E002</ErrorCode>
+                <ErrorCode>1002</ErrorCode>
                 <ErrorDescription>Invalid record data</ErrorDescription>
               </RsStatus>
             </ManageMasterRecordRS>`,
@@ -280,7 +281,7 @@ describe('AvesClient', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.errorCode).toBe('E002');
+        expect(result.error.errorCode).toBe(1002);
       }
     });
   });
@@ -290,7 +291,7 @@ describe('AvesClient', () => {
       const error = new AvesError(
         'Test error',
         'ERROR',
-        'E001',
+        1001,
         'Error description'
       );
 
@@ -298,7 +299,7 @@ describe('AvesClient', () => {
       expect(error).toBeInstanceOf(AvesError);
       expect(error.message).toBe('Test error');
       expect(error.status).toBe('ERROR');
-      expect(error.errorCode).toBe('E001');
+      expect(error.errorCode).toBe(1001);
       expect(error.errorDescription).toBe('Error description');
     });
   });
