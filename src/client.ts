@@ -135,6 +135,8 @@ export class AvesClient {
       const url = this.createUrl(endpoint);
       const xmlBody = jsonToXml(requestBody);
 
+      console.log(xmlBody);
+
       const response = await r(url, {
         method: 'POST',
         headers: {

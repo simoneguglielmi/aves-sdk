@@ -213,7 +213,7 @@ describe('SearchMasterRecordApiSchema', () => {
     const validated = parse(SearchMasterRecordSchema, input);
     const result = parse(SearchMasterRecordApiSchema, validated);
     expect(result).toHaveProperty('SearchType', 'CODE');
-    expect(result).toHaveProperty('@RecordCode', '508558'); // recordCode is an attribute field
+    expect(result).toHaveProperty('RecordCode', '508558');
     expect(result).toHaveProperty('LanguageCode', '02');
   });
 });

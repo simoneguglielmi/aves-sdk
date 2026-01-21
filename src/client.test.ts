@@ -151,9 +151,8 @@ describe('AvesClient', () => {
       const requestBody = callArgs[1].body;
 
       // Check that XML contains PascalCase (after transformation)
-      // recordCode is an attribute field, so it becomes @RecordCode in XML
       expect(requestBody).toContain('<SearchType>CODE</SearchType>');
-      expect(requestBody).toContain('RecordCode="508558"'); // XML attribute format
+      expect(requestBody).toContain('<RecordCode>508558</RecordCode>');
       expect(requestBody).toContain('<LanguageCode>02</LanguageCode>'); // languageCode is an element, not an attribute
     });
   });

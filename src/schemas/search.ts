@@ -116,20 +116,43 @@ export const SearchMasterRecordSchema = v.union([
   ExternalRefCodeSearchSchema,
 ]);
 
+const transformRecordCode = (input: Record<string, unknown>) => {
+  if(!('@RecordCode' in input)) return input;
+  const recordCode = input['@RecordCode'];
+  if (!recordCode) return input;
+  const { ['@RecordCode']: _discard, ...rest } = input
+  return {
+    ...rest,
+    RecordCode: recordCode,
+  };
+}
+
 /**
  * Search master record schema for API requests (transforms to PascalCase)
  */
-export const SearchMasterRecordApiSchema = createApiSchema(
-  SearchMasterRecordSchema
+export const SearchMasterRecordApiSchema = v.pipe(
+  createApiSchema(SearchMasterRecordSchema),
+  v.transform((input) => transformRecordCode(input))
 );
 
 /**
  * Complete search request schema with header
+ * Flattens SearchMasterRecord fields to root level
  */
-export const SearchMasterRecordRequestSchema = v.object({
-  RqHeader: RqHeaderSchema,
-  SearchMasterRecord: SearchMasterRecordApiSchema,
-});
+export const SearchMasterRecordRequestSchema = v.pipe(
+  v.object({
+    RqHeader: RqHeaderSchema,
+    SearchMasterRecord: SearchMasterRecordApiSchema,
+  }),
+  v.transform((input) => {
+    const { SearchMasterRecord: searchFields, RqHeader, ...rest } = input;
+    return {
+      RqHeader,
+      ...searchFields,
+      ...rest,
+    };
+  })
+);
 
 const MasterRecordDetailApiValidationSchema = v.object({
   '@RecordCode': v.optional(
