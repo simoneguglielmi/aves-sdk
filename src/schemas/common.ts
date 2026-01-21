@@ -30,7 +30,9 @@ export const RsStatusSchema = v.object({
     v.literal('WARNING'),
     v.literal('TIMEOUT'),
   ]),
-  ErrorCode: v.optional(v.string()),
+  ErrorCode: v.optional(
+    v.union([v.string(), v.number()])
+  ),
   ErrorDescription: v.optional(v.string()),
   Warnings: warningsSchema,
 });

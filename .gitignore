@@ -9,3 +9,4 @@ dist
 *.pdf
 .DS_Store
 *.tgz
+src/test/*

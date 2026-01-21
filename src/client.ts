@@ -12,6 +12,7 @@ import {
 import type {
   ManageMasterRecordRS,
   MasterRecordDetail,
+  RsStatus,
   SearchMasterRecord,
   SearchMasterRecordRS,
 } from './types.js';
@@ -90,23 +91,15 @@ export class AvesClient {
     } as const;
   }
 
-  private handleApiStatus<T>(
-    output: T,
-    rsStatus: {
-      status?: string;
-      errorCode?: string;
-      errorDescription?: string;
-      warnings?: string[];
-    }
-  ): Result<T, AvesError> {
+  private handleApiStatus<T>(output: T, rsStatus: RsStatus): Result<T, AvesError> {
     const status = rsStatus?.status;
 
     if (status === 'ERROR' || status === 'TIMEOUT') {
       return err(
         new AvesError(
-          rsStatus.errorDescription || `API Error: ${status}`,
+          rsStatus.errorDescription ?? `API Error: ${status}`,
           status,
-          rsStatus.errorCode,
+          rsStatus.errorCode ? rsStatus.errorCode.toString() : undefined,
           rsStatus.errorDescription
         )
       );
@@ -210,7 +203,7 @@ export class AvesClient {
         requestData
       );
 
-      return await this.request<SearchMasterRecordRS>(
+      return this.request<SearchMasterRecordRS>(
         this.endpoints.search,
         requestBody,
         XML_ROOT_ELEMENTS.SEARCH_RESPONSE,
@@ -249,7 +242,7 @@ export class AvesClient {
         requestData
       );
 
-      return await this.request<ManageMasterRecordRS>(
+      return this.request<ManageMasterRecordRS>(
         this.endpoints.upsert,
         requestBody,
         XML_ROOT_ELEMENTS.UPSERT_RESPONSE,

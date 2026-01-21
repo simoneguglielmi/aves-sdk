@@ -1,5 +1,6 @@
 import type { InferInput, InferOutput } from 'valibot';
 import { RqHeaderSchema, RsStatusSchema } from './schemas/common.js';
+import type { Camelize } from './utils/case-transform.js';
 import {
   MasterRecordDetailSchema,
   MasterRecordDetailResponseSchema,
@@ -18,7 +19,7 @@ import {
  * Common types
  */
 export type RqHeader = InferInput<typeof RqHeaderSchema>;
-export type RsStatus = InferOutput<typeof RsStatusSchema>;
+export type RsStatus = Camelize<InferOutput<typeof RsStatusSchema>>;
 
 /**
  * Master record types
