@@ -1,4 +1,5 @@
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
+import { AvesError } from './error.js';
 
 const parserOptions = {
   ignoreAttributes: false,
@@ -24,7 +25,14 @@ const builder = new XMLBuilder(builderOptions);
  * Converts JSON to XML string
  */
 export function jsonToXml(json: Record<string, unknown>): string {
-  return builder.build(json);
+  try {
+    return builder.build(json);
+  } catch (error) {
+    throw new AvesError(
+      'validation',
+      `Failed to convert JSON to XML: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
+  }
 }
 
 /**
@@ -32,5 +40,12 @@ export function jsonToXml(json: Record<string, unknown>): string {
  * Attributes are parsed with @ prefix
  */
 export function xmlToJson(xml: string): Record<string, unknown> {
-  return parser.parse(xml);
+  try {
+    return parser.parse(xml);
+  } catch (error) {
+    throw new AvesError(
+      'validation',
+      `Failed to convert XML to JSON: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
+  }
 }

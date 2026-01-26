@@ -1,5 +1,5 @@
 import { request as r } from 'undici';
-import { parse, safeParse } from 'valibot';
+import { parse, safeParse, ValiError } from 'valibot';
 import { jsonToXml, xmlToJson } from './xml-client.js';
 import {
   SearchMasterRecordRequestSchema,
@@ -19,6 +19,8 @@ import type {
 import { MasterRecordDetailApiSchema } from './schemas/master-record.js';
 import type { Result } from './utils/result.js';
 import { err, ok } from './utils/result.js';
+import { apiError, AvesError, unknownError, validationError } from './error.js';
+import { parseUrl } from './utils/url.js';
 
 function createRootElement<T>(name: XMLRootElementValues, object: T) {
   return {
@@ -36,19 +38,12 @@ const XML_ROOT_ELEMENTS = {
 type XMLRootElementValues =
   (typeof XML_ROOT_ELEMENTS)[keyof typeof XML_ROOT_ELEMENTS];
 
-/**
- * Error thrown by AVES API operations
- */
-export class AvesError extends Error {
-  constructor(
-    message: string,
-    public readonly status?: string,
-    public readonly errorCode?: number,
-    public readonly errorDescription?: string
-  ) {
-    super(message);
-    this.name = 'AvesError';
-  }
+interface AvesClientOptions {
+  baseURL: string;
+  hostID: string;
+  xtoken: string;
+  languageCode?: string;
+  timeoutMs?: number;
 }
 
 /**
@@ -56,32 +51,29 @@ export class AvesError extends Error {
  */
 export class AvesClient {
   /**
-   * @param baseURL - Base URL of the AVES API
-   * @param hostID - 6-digit identification code
-   * @param xtoken - Authentication token
-   * @param languageCode - Optional 2-digit language code
+   * @param options - Client configuration options
+   * @param options.baseURL - Base URL of the AVES API
+   * @param options.hostID - 6-digit identification code
+   * @param options.xtoken - Authentication token
+   * @param options.languageCode - Optional 2-digit language code
+   * @param options.timeoutMs - Optional request timeout in milliseconds
    */
-  constructor(
-    private readonly baseURL: string,
-    private readonly hostID: string,
-    private readonly xtoken: string,
-    private readonly languageCode?: string
-  ) {
-    this.baseURL = baseURL.replace(/\/$/, '');
-  }
+  constructor(private readonly options: AvesClientOptions) {}
 
   private createRqHeader() {
     return {
-      '@HostID': this.hostID,
-      '@Xtoken': this.xtoken,
+      '@HostID': this.options.hostID,
+      '@Xtoken': this.options.xtoken,
       '@Interface': 'WEB' as const,
       '@UserName': 'WEB' as const,
-      ...(this.languageCode && { '@LanguageCode': this.languageCode }),
+      ...(this.options.languageCode && {
+        '@LanguageCode': this.options.languageCode,
+      }),
     };
   }
 
   private createUrl(endpoint: string) {
-    return `${this.baseURL}${endpoint}`;
+    return parseUrl(this.options.baseURL, endpoint);
   }
 
   private get endpoints() {
@@ -91,23 +83,20 @@ export class AvesClient {
     } as const;
   }
 
-  private handleApiStatus<T>(output: T, rsStatus: RsStatus): Result<T, AvesError> {
+  private handleApiStatus<T>(
+    output: T,
+    rsStatus: RsStatus,
+  ): Result<T, AvesError> {
     const status = rsStatus?.status;
 
-    if (status === 'ERROR' || status === 'TIMEOUT') {
+    if (status !== 'OK') {
       return err(
-        new AvesError(
-          rsStatus.errorDescription ?? `API Error: ${status}`,
-          rsStatus.status,
+        apiError(
+          rsStatus.errorDescription as string,
+          status,
           rsStatus.errorCode,
-          rsStatus.errorDescription
-        )
+        ),
       );
-    }
-
-    if (status === 'WARNING') {
-      const warnings = rsStatus.warnings?.join(', ');
-      console.warn('AVES API Warning:', warnings);
     }
 
     return ok(output);
@@ -117,10 +106,14 @@ export class AvesClient {
     if (error instanceof AvesError) {
       return error;
     }
-    if (error instanceof Error) {
-      return new AvesError(error.message);
+    if (error instanceof ValiError) {
+      const issues = error.issues.map((i) => i.message).join(', ');
+      return validationError(issues);
     }
-    return new AvesError(defaultMessage);
+    if (error instanceof Error) {
+      return unknownError(error.message);
+    }
+    return unknownError(defaultMessage);
   }
 
   private async request<T>(
@@ -129,12 +122,11 @@ export class AvesClient {
     responseRootKey: string,
     responseSchema:
       | typeof ManageMasterRecordResponseSchema
-      | typeof SearchMasterRecordResponseSchema
+      | typeof SearchMasterRecordResponseSchema,
   ): Promise<Result<T, AvesError>> {
     try {
       const url = this.createUrl(endpoint);
       const xmlBody = jsonToXml(requestBody);
-
 
       const response = await r(url, {
         method: 'POST',
@@ -147,7 +139,7 @@ export class AvesClient {
       const responseText = await response.body.text();
 
       if (response.statusCode !== 200) {
-        return err(new AvesError(responseText, "ERROR", response.statusCode));
+        return err(apiError(responseText, 'ERROR', response.statusCode));
       }
 
       const jsonResponse = xmlToJson(responseText);
@@ -155,12 +147,9 @@ export class AvesClient {
 
       if (!rootElement) {
         return err(
-          new AvesError(
+          validationError(
             `Invalid response structure: missing root element '${responseRootKey}'`,
-            "ERROR",
-            400,
-            'VALIDATION_ERROR'
-          )
+          ),
         );
       }
 
@@ -168,20 +157,17 @@ export class AvesClient {
 
       if (!parseResult.success) {
         return err(
-          new AvesError(
+          validationError(
             `Invalid response format: ${parseResult.issues
               .map((i) => i.message)
               .join(', ')}`,
-            "ERROR",
-            400,
-            'VALIDATION_ERROR'
-          )
+          ),
         );
       }
 
       return this.handleApiStatus(
         parseResult.output as T,
-        parseResult.output.rsStatus
+        parseResult.output.rsStatus,
       );
     } catch (error) {
       return err(this.toAvesError(error, 'Unknown error occurred'));
@@ -193,7 +179,7 @@ export class AvesClient {
    * @returns Result containing list of matching master records in camelCase or error
    */
   async search(
-    params: SearchMasterRecord
+    params: SearchMasterRecord,
   ): Promise<Result<SearchMasterRecordRS, AvesError>> {
     try {
       const requestData = parse(SearchMasterRecordRequestSchema, {
@@ -203,18 +189,18 @@ export class AvesClient {
 
       const requestBody = createRootElement(
         XML_ROOT_ELEMENTS.SEARCH_REQUEST,
-        requestData
+        requestData,
       );
 
       return this.request<SearchMasterRecordRS>(
         this.endpoints.search,
         requestBody,
         XML_ROOT_ELEMENTS.SEARCH_RESPONSE,
-        SearchMasterRecordResponseSchema
+        SearchMasterRecordResponseSchema,
       );
     } catch (error) {
       return err(
-        this.toAvesError(error, 'Validation error occurred during search')
+        this.toAvesError(error, 'Validation error occurred during search'),
       );
     }
   }
@@ -225,7 +211,7 @@ export class AvesClient {
    * @returns Result containing response with customer record code in camelCase or error
    */
   async upsertRecord(
-    record: MasterRecordDetail
+    record: MasterRecordDetail,
   ): Promise<Result<ManageMasterRecordRS, AvesError>> {
     try {
       const apiRecord = parse(MasterRecordDetailApiSchema, record);
@@ -242,18 +228,18 @@ export class AvesClient {
 
       const requestBody = createRootElement(
         XML_ROOT_ELEMENTS.UPSERT_REQUEST,
-        requestData
+        requestData,
       );
 
       return this.request<ManageMasterRecordRS>(
         this.endpoints.upsert,
         requestBody,
         XML_ROOT_ELEMENTS.UPSERT_RESPONSE,
-        ManageMasterRecordResponseSchema
+        ManageMasterRecordResponseSchema,
       );
     } catch (error) {
       return err(
-        this.toAvesError(error, 'Validation error occurred during upsert')
+        this.toAvesError(error, 'Validation error occurred during upsert'),
       );
     }
   }

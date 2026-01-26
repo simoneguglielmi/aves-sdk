@@ -1,5 +1,6 @@
 // Main client
-export { AvesClient, AvesError } from './client.js';
+export { AvesClient } from './client.js';
+export { AvesError } from './error.js';
 
 // Types
 export type {

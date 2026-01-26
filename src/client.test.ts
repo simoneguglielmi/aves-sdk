@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AvesClient, AvesError } from './client.js';
+import { AvesClient } from './client.js';
+import { AvesError } from './error.js';
 
 // Mock undici
 vi.mock('undici', () => ({
@@ -15,7 +16,7 @@ describe('AvesClient', () => {
   const xtoken = 'TOKEN000000';
 
   beforeEach(() => {
-    client = new AvesClient(baseURL, hostID, xtoken);
+    client = new AvesClient({ baseURL, hostID, xtoken });
     vi.clearAllMocks();
   });
 
@@ -103,7 +104,9 @@ describe('AvesClient', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.errorCode).toBe(1001);
+        expect(result.error.kind).toBe('api');
+        expect(result.error.code).toBe(1001);
+        expect(result.error.status).toBe('error');
       }
     });
 
@@ -124,8 +127,9 @@ describe('AvesClient', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.status).toBe('ERROR');
-        expect(result.error.errorCode).toBe(500);
+        expect(result.error.kind).toBe('api');
+        expect(result.error.status).toBe('error');
+        expect(result.error.code).toBe(500);
       }
     });
 
@@ -281,26 +285,39 @@ describe('AvesClient', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.errorCode).toBe(1002);
+        expect(result.error.kind).toBe('api');
+        expect(result.error.code).toBe(1002);
+        expect(result.error.status).toBe('error');
       }
     });
   });
 
   describe('AvesError', () => {
     it('should create error with correct properties', () => {
-      const error = new AvesError(
-        'Test error',
-        'ERROR',
-        1001,
-        'Error description',
-      );
+      const error = new AvesError('api', 'Test error message', 'error', 1001);
 
       expect(error).toBeInstanceOf(Error);
       expect(error).toBeInstanceOf(AvesError);
-      expect(error.message).toBe('Test error');
-      expect(error.status).toBe('ERROR');
-      expect(error.errorCode).toBe(1001);
-      expect(error.errorDescription).toBe('Error description');
+      expect(error.kind).toBe('api');
+      expect(error.message).toBe('Test error message');
+      expect(error.status).toBe('error');
+      expect(error.code).toBe(1001);
+    });
+
+    it('should create validation error', () => {
+      const error = new AvesError('validation', 'Validation failed');
+
+      expect(error).toBeInstanceOf(AvesError);
+      expect(error.kind).toBe('validation');
+      expect(error.message).toBe('Validation failed');
+    });
+
+    it('should create unknown error', () => {
+      const error = new AvesError('unknown', 'Unknown error occurred');
+
+      expect(error).toBeInstanceOf(AvesError);
+      expect(error.kind).toBe('unknown');
+      expect(error.message).toBe('Unknown error occurred');
     });
   });
 });
