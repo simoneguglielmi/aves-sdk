@@ -216,14 +216,9 @@ export class AvesClient {
     try {
       const apiRecord = parse(MasterRecordDetailApiSchema, record);
 
-      const masterRecordDetail = {
-        '@InsertCriteria': 'T' as const,
-        ...apiRecord,
-      };
-
       const requestData = parse(ManageMasterRecordRequestSchema, {
         RqHeader: this.createRqHeader(),
-        MasterRecordDetail: masterRecordDetail,
+        MasterRecordDetail: apiRecord,
       });
 
       const requestBody = createRootElement(

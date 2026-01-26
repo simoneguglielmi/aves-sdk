@@ -17,17 +17,7 @@ const CustomerRecordApiSchema = v.object({
  */
 export const ManageMasterRecordRequestSchema = v.object({
   RqHeader: RqHeaderSchema,
-  MasterRecordDetail: v.intersect([
-    MasterRecordDetailApiValidationSchema,
-    v.object({
-      '@InsertCriteria': v.union([
-        v.literal('S'),
-        v.literal('N'),
-        v.literal('T'),
-        v.literal('M'),
-      ]),
-    }),
-  ]),
+  MasterRecordDetail: MasterRecordDetailApiValidationSchema,
 });
 
 /**
