@@ -12,7 +12,7 @@ const LastModificationDateInputSchema = v.object({
 });
 
 const languageCodeField = v.optional(
-  v.pipe(v.string(), v.minLength(2), v.maxLength(2))
+  v.pipe(v.string(), v.minLength(2), v.maxLength(2)),
 );
 
 /**
@@ -117,22 +117,22 @@ export const SearchMasterRecordSchema = v.union([
 ]);
 
 const transformRecordCode = (input: Record<string, unknown>) => {
-  if(!('@RecordCode' in input)) return input;
+  if (!('@RecordCode' in input)) return input;
   const recordCode = input['@RecordCode'];
   if (!recordCode) return input;
-  const { ['@RecordCode']: _discard, ...rest } = input
+  const { ['@RecordCode']: _discard, ...rest } = input;
   return {
     ...rest,
     RecordCode: recordCode,
   };
-}
+};
 
 /**
  * Search master record schema for API requests (transforms to PascalCase)
  */
 export const SearchMasterRecordApiSchema = v.pipe(
   createApiSchema(SearchMasterRecordSchema),
-  v.transform((input) => transformRecordCode(input))
+  v.transform((input) => transformRecordCode(input)),
 );
 
 /**
@@ -151,7 +151,7 @@ export const SearchMasterRecordRequestSchema = v.pipe(
       ...searchFields,
       ...rest,
     };
-  })
+  }),
 );
 
 const MasterRecordDetailApiValidationSchema = v.object({
@@ -160,15 +160,15 @@ const MasterRecordDetailApiValidationSchema = v.object({
       v.union([v.string(), v.number()]),
       v.transform((val) => String(val)),
       v.minLength(6),
-      v.maxLength(6)
-    )
+      v.maxLength(6),
+    ),
   ),
   '@InsertCriteria': v.optional(
-    v.union([v.literal('S'), v.literal('N'), v.literal('T'), v.literal('M')])
+    v.union([v.literal('S'), v.literal('N'), v.literal('T'), v.literal('M')]),
   ),
   CreatedDate: v.optional(v.string()),
   RecordType: v.optional(
-    v.union([v.literal('CUSTOMER'), v.literal('SUPPLIER')])
+    v.union([v.literal('CUSTOMER'), v.literal('SUPPLIER')]),
   ),
   RecordStatus: v.optional(
     v.union(
@@ -178,8 +178,8 @@ const MasterRecordDetailApiValidationSchema = v.object({
         v.literal('WARNING'),
         v.literal('BLACKLISTED'),
       ],
-      'ENABLED'
-    )
+      'ENABLED',
+    ),
   ),
   Moniker: v.optional(v.string()),
   Name: v.optional(v.string()),
@@ -197,7 +197,7 @@ const MasterRecordDetailApiValidationSchema = v.object({
   BirthDate: v.optional(v.string()),
   FiscalCode: v.optional(v.string()),
   NewsletterDisabled: v.optional(
-    v.union([v.literal('true'), v.literal('false'), v.boolean()])
+    v.union([v.literal('true'), v.literal('false'), v.boolean()]),
   ),
   FinancialDetail: v.optional(FinancialDetailSchema),
   DynamicFields: v.optional(v.array(DynamicFieldsSchema)),
@@ -213,8 +213,8 @@ const MasterRecordListApiSchema = v.object({
       v.transform((input) => {
         if (!input) return undefined;
         return Array.isArray(input) ? input : [input];
-      })
-    )
+      }),
+    ),
   ),
 });
 
@@ -225,5 +225,5 @@ export const SearchMasterRecordResponseSchema = createResponseSchema(
   v.object({
     RsStatus: RsStatusSchema,
     MasterRecordList: v.optional(MasterRecordListApiSchema),
-  })
+  }),
 );

@@ -127,7 +127,7 @@ describe('ManageMasterRecordResponseSchema', () => {
     expect(result).toHaveProperty('customerRecordRS');
     expect(result.customerRecordRS).toHaveProperty(
       'customerRecordCode',
-      '508558'
+      '508558',
     );
   });
 });

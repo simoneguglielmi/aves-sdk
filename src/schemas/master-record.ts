@@ -14,7 +14,7 @@ const FinancialDetailInputSchema = v.object({
       v.literal('RID'),
       v.literal('RIBA'),
       v.literal('SPECIFIC_CODE'),
-    ])
+    ]),
   ),
   c_SpecPaymentTypeCode: v.optional(v.string()),
   s_PaymentType: v.optional(
@@ -24,7 +24,7 @@ const FinancialDetailInputSchema = v.object({
       v.literal('RID'),
       v.literal('RIBA'),
       v.literal('SPECIFIC_CODE'),
-    ])
+    ]),
   ),
   s_SpecPaymentTypeCode: v.optional(v.string()),
 });
@@ -33,7 +33,7 @@ const FinancialDetailInputSchema = v.object({
  * Financial detail schema for API requests (transforms to PascalCase)
  */
 export const FinancialDetailSchema = createApiSchema(
-  FinancialDetailInputSchema
+  FinancialDetailInputSchema,
 );
 
 const DynamicFieldsInputSchema = v.object({
@@ -52,11 +52,11 @@ export const DynamicFieldsSchema = createApiSchema(DynamicFieldsInputSchema);
 export const MasterRecordDetailSchema = v.object({
   recordCode: v.optional(v.pipe(v.string(), v.minLength(6), v.maxLength(6))),
   insertCriteria: v.optional(
-    v.union([v.literal('S'), v.literal('N'), v.literal('T'), v.literal('M')])
+    v.union([v.literal('S'), v.literal('N'), v.literal('T'), v.literal('M')]),
   ),
   createdDate: v.optional(v.string()),
   recordType: v.optional(
-    v.union([v.literal('CUSTOMER'), v.literal('SUPPLIER')], 'CUSTOMER')
+    v.union([v.literal('CUSTOMER'), v.literal('SUPPLIER')], 'CUSTOMER'),
   ),
   recordStatus: v.optional(
     v.union(
@@ -66,8 +66,8 @@ export const MasterRecordDetailSchema = v.object({
         v.literal('WARNING'),
         v.literal('BLACKLISTED'),
       ],
-      'ENABLED'
-    )
+      'ENABLED',
+    ),
   ),
   moniker: v.optional(v.string()),
   name: v.optional(v.string()),
@@ -86,20 +86,23 @@ export const MasterRecordDetailSchema = v.object({
   birthDate: v.optional(v.string()),
   fiscalCode: v.optional(v.string()),
   vatCode: v.optional(v.string()),
+  acceptProfilingPolicies: v.optional(v.boolean()),
+  acceptPrivacyPolicies: v.optional(v.boolean()),
+  acceptNewsletterPolicies: v.optional(v.boolean()),
   financialDetail: v.optional(FinancialDetailInputSchema),
-  dynamicFields: v.optional(v.array(DynamicFieldsInputSchema)),
+  dynamicFields: v.optional(DynamicFieldsInputSchema),
 });
 
 /**
  * Master record detail schema for API requests (transforms to PascalCase)
  */
 export const MasterRecordDetailApiSchema = createApiSchema(
-  MasterRecordDetailSchema
+  MasterRecordDetailSchema,
 );
 
 /**
  * Master record detail response schema (transforms to camelCase)
  */
 export const MasterRecordDetailResponseSchema = createResponseSchema(
-  MasterRecordDetailApiSchema
+  MasterRecordDetailApiSchema,
 );

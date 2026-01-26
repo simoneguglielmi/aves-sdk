@@ -8,18 +8,18 @@ const CustomerRecordApiSchema = v.object({
     v.union([v.string(), v.number()]),
     v.transform((val) => String(val)),
     v.minLength(6),
-    v.maxLength(6)
+    v.maxLength(6),
   ),
 });
 
 const MasterRecordDetailApiValidationSchema = v.object({
   '@RecordCode': v.optional(v.pipe(v.string(), v.minLength(6), v.maxLength(6))),
   '@InsertCriteria': v.optional(
-    v.union([v.literal('S'), v.literal('N'), v.literal('T'), v.literal('M')])
+    v.union([v.literal('S'), v.literal('N'), v.literal('T'), v.literal('M')]),
   ),
   CreatedDate: v.optional(v.string()),
   RecordType: v.optional(
-    v.union([v.literal('CUSTOMER'), v.literal('SUPPLIER')])
+    v.union([v.literal('CUSTOMER'), v.literal('SUPPLIER')]),
   ),
   RecordStatus: v.optional(
     v.union(
@@ -29,8 +29,8 @@ const MasterRecordDetailApiValidationSchema = v.object({
         v.literal('WARNING'),
         v.literal('BLACKLISTED'),
       ],
-      'ENABLED'
-    )
+      'ENABLED',
+    ),
   ),
   Moniker: v.optional(v.string()),
   Name: v.optional(v.string()),
@@ -48,8 +48,11 @@ const MasterRecordDetailApiValidationSchema = v.object({
   BirthDate: v.optional(v.string()),
   FiscalCode: v.optional(v.string()),
   NewsletterDisabled: v.optional(
-    v.union([v.literal('true'), v.literal('false'), v.boolean()])
+    v.union([v.literal('true'), v.literal('false'), v.boolean()]),
   ),
+  '@AcceptProfilingPolicies': v.optional(v.boolean()),
+  '@AcceptPrivacyPolicies': v.optional(v.boolean()),
+  '@AcceptNewsletterPolicies': v.optional(v.boolean()),
   FinancialDetail: v.optional(FinancialDetailSchema),
   DynamicFields: v.optional(v.array(DynamicFieldsSchema)),
 });
@@ -79,5 +82,5 @@ export const ManageMasterRecordResponseSchema = createResponseSchema(
   v.object({
     RsStatus: RsStatusSchema,
     CustomerRecordRS: v.optional(CustomerRecordApiSchema),
-  })
+  }),
 );

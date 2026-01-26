@@ -1,8 +1,8 @@
 type CamelFromDelimiter<S extends string> = S extends `${infer H}_${infer T}`
   ? `${H}${Capitalize<CamelFromDelimiter<T>>}`
   : S extends `${infer H}-${infer T}`
-  ? `${H}${Capitalize<CamelFromDelimiter<T>>}`
-  : S;
+    ? `${H}${Capitalize<CamelFromDelimiter<T>>}`
+    : S;
 
 type ToCamelCase<S extends string> =
   CamelFromDelimiter<S> extends `${infer F}${infer R}`
@@ -12,8 +12,8 @@ type ToCamelCase<S extends string> =
 type PascalFromDelimiter<S extends string> = S extends `${infer H}_${infer T}`
   ? `${Capitalize<H>}${Capitalize<PascalFromDelimiter<T>>}`
   : S extends `${infer H}-${infer T}`
-  ? `${Capitalize<H>}${Capitalize<PascalFromDelimiter<T>>}`
-  : S;
+    ? `${Capitalize<H>}${Capitalize<PascalFromDelimiter<T>>}`
+    : S;
 
 type ToPascalCase<S extends string> =
   PascalFromDelimiter<S> extends `${infer F}${infer R}`
@@ -23,22 +23,22 @@ type ToPascalCase<S extends string> =
 export type Camelize<T> = T extends readonly (infer U)[]
   ? Camelize<U>[]
   : T extends object
-  ? {
-      [K in keyof T as K extends `@${infer Rest}`
-        ? ToCamelCase<Rest> // Strip @ prefix and camelCase the rest
-        : ToCamelCase<K & string>]: Camelize<T[K]>;
-    }
-  : T;
+    ? {
+        [K in keyof T as K extends `@${infer Rest}`
+          ? ToCamelCase<Rest> // Strip @ prefix and camelCase the rest
+          : ToCamelCase<K & string>]: Camelize<T[K]>;
+      }
+    : T;
 
 export type Pascalize<T> = T extends readonly (infer U)[]
   ? Pascalize<U>[]
   : T extends object
-  ? {
-      [K in keyof T as K extends `@${infer Rest}`
-        ? ToPascalCase<Rest> // Strip @ prefix and PascalCase the rest
-        : ToPascalCase<K & string>]: Pascalize<T[K]>;
-    }
-  : T;
+    ? {
+        [K in keyof T as K extends `@${infer Rest}`
+          ? ToPascalCase<Rest> // Strip @ prefix and PascalCase the rest
+          : ToPascalCase<K & string>]: Pascalize<T[K]>;
+      }
+    : T;
 
 function camelToPascal(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -66,6 +66,9 @@ const ATTRIBUTE_FIELDS = new Set([
   'interface',
   'userName',
   'status',
+  'acceptProfilingPolicies',
+  'acceptPrivacyPolicies',
+  'acceptNewsletterPolicies',
 ]);
 
 /**
@@ -113,7 +116,7 @@ export function camelToPascalKeys<T>(obj: T): Pascalize<T> {
       result[finalKey] = value.map((item) =>
         typeof item === 'object' && item && !Array.isArray(item)
           ? camelToPascalKeys(item as Record<string, unknown>)
-          : item
+          : item,
       );
     } else {
       result[finalKey] = value;
@@ -164,14 +167,14 @@ export function pascalToCamelKeys<T>(obj: T): Camelize<T> {
           result[camelKey] = value;
         } else {
           result[camelKey] = pascalToCamelKeys(
-            value as Record<string, unknown>
+            value as Record<string, unknown>,
           );
         }
       } else if (Array.isArray(value)) {
         result[camelKey] = value.map((item) =>
           typeof item === 'object' && item && !Array.isArray(item)
             ? pascalToCamelKeys(item as Record<string, unknown>)
-            : item
+            : item,
         );
       } else {
         result[camelKey] = value;
