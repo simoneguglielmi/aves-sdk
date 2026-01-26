@@ -125,7 +125,7 @@ describe('url', () => {
       expect(result).toBe('https://api.example.com/test#section');
     });
     it('should pass with correct baseURL', () => {
-      const url = "REDACTED";
+      const url = 'https://api.example.com';
       const endpoint = `/interop/masterRecords/v2/rest/Search`;
       const result = parseUrl(url, endpoint);
       expect(result).toBe(`${url}${endpoint}`);
