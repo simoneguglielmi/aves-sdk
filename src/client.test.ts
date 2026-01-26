@@ -11,8 +11,8 @@ import { request as mockRequest } from 'undici';
 describe('AvesClient', () => {
   let client: AvesClient;
   const baseURL = 'https://api.example.com';
-  const hostID = '025706';
-  const xtoken = 'TOKEN002756';
+  const hostID = '000000';
+  const xtoken = 'TOKEN000000';
 
   beforeEach(() => {
     client = new AvesClient(baseURL, hostID, xtoken);
@@ -57,7 +57,7 @@ describe('AvesClient', () => {
           headers: expect.objectContaining({
             'Content-Type': 'application/xml',
           }),
-        })
+        }),
       );
 
       expect(result.success).toBe(true);
@@ -189,7 +189,7 @@ describe('AvesClient', () => {
           headers: expect.objectContaining({
             'Content-Type': 'application/xml',
           }),
-        })
+        }),
       );
 
       expect(result.success).toBe(true);
@@ -199,7 +199,7 @@ describe('AvesClient', () => {
         expect(result.data).toHaveProperty('customerRecordRS');
         expect(result.data.customerRecordRS).toHaveProperty(
           'customerRecordCode',
-          '508558'
+          '508558',
         );
       }
     });
@@ -292,7 +292,7 @@ describe('AvesClient', () => {
         'Test error',
         'ERROR',
         1001,
-        'Error description'
+        'Error description',
       );
 
       expect(error).toBeInstanceOf(Error);
