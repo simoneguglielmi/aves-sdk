@@ -38,7 +38,7 @@ const XML_ROOT_ELEMENTS = {
 type XMLRootElementValues =
   (typeof XML_ROOT_ELEMENTS)[keyof typeof XML_ROOT_ELEMENTS];
 
-interface AvesClientOptions {
+export interface AvesClientOptions {
   baseURL: string;
   hostID: string;
   xtoken: string;
