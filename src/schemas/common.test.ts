@@ -83,7 +83,7 @@ describe('RsStatusSchema', () => {
     };
 
     const result = parse(RsStatusSchema, input);
-    expect(result['@Status']).toBe('OK');
+    expect(result.status).toBe('OK');
   });
 
   it('should validate ERROR status with error details', () => {
@@ -94,9 +94,9 @@ describe('RsStatusSchema', () => {
     };
 
     const result = parse(RsStatusSchema, input);
-    expect(result['@Status']).toBe('ERROR');
-    expect(result.ErrorCode).toBe(1001);
-    expect(result.ErrorDescription).toBe('Invalid request');
+    expect(result.status).toBe('ERROR');
+    expect(result.errorCode).toBe(1001);
+    expect(result.errorDescription).toBe('Invalid request');
   });
 
   it('should validate WARNING status with warnings', () => {
@@ -106,8 +106,8 @@ describe('RsStatusSchema', () => {
     };
 
     const result = parse(RsStatusSchema, input);
-    expect(result['@Status']).toBe('WARNING');
-    expect(result.Warnings).toEqual(['Some warning message']);
+    expect(result.status).toBe('WARNING');
+    expect(result.warnings).toEqual(['Some warning message']);
   });
 
   it('should validate TIMEOUT status', () => {
@@ -116,7 +116,7 @@ describe('RsStatusSchema', () => {
     };
 
     const result = parse(RsStatusSchema, input);
-    expect(result['@Status']).toBe('TIMEOUT');
+    expect(result.status).toBe('TIMEOUT');
   });
 
   it('should reject invalid status value', () => {

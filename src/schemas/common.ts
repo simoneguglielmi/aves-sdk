@@ -9,28 +9,38 @@ export const RqHeaderSchema = v.object({
   '@Interface': v.literal('WEB'),
   '@UserName': v.literal('WEB'),
   '@LanguageCode': v.optional(
-    v.pipe(v.string(), v.minLength(2), v.maxLength(2))
+    v.pipe(v.string(), v.minLength(2), v.maxLength(2)),
   ),
 });
 
 const warningsSchema = v.optional(
   v.pipe(
     v.string(),
-    v.transform((input) => input.split(','))
-  )
+    v.transform((input) => input.split(',')),
+  ),
 );
 
 /**
  * Response status schema indicating success, error, or warning
  */
-export const RsStatusSchema = v.object({
-  '@Status': v.union([
-    v.literal('OK'),
-    v.literal('ERROR'),
-    v.literal('WARNING'),
-    v.literal('TIMEOUT'),
-  ]),
-  ErrorCode: v.optional(v.number()),
-  ErrorDescription: v.optional(v.string()),
-  Warnings: warningsSchema,
-});
+export const RsStatusSchema = v.pipe(
+  v.object({
+    '@Status': v.union([
+      v.literal('OK'),
+      v.literal('ERROR'),
+      v.literal('WARNING'),
+      v.literal('TIMEOUT'),
+    ]),
+    ErrorCode: v.optional(v.number()),
+    ErrorDescription: v.optional(v.string()),
+    Warnings: warningsSchema,
+  }),
+  v.transform((input) => {
+    return {
+      status: input['@Status'],
+      errorCode: input.ErrorCode,
+      errorDescription: input.ErrorDescription,
+      warnings: input.Warnings,
+    };
+  }),
+);

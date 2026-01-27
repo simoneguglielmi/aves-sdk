@@ -5,7 +5,7 @@ import {
 } from '../utils/schema-transform.js';
 
 const FinancialDetailInputSchema = v.object({
-  currencyCode: v.string(),
+  currencyCode: v.optional(v.string()),
   creditLimit: v.optional(v.string()),
   c_PaymentType: v.optional(
     v.union([
@@ -123,7 +123,7 @@ export const MasterRecordDetailApiValidationSchema = v.object({
     v.pipe(
       v.union([v.string(), v.number()]),
       v.transform((val) => String(val)),
-      v.minLength(6),
+      v.minLength(5),
       v.maxLength(6),
     ),
   ),
@@ -132,7 +132,11 @@ export const MasterRecordDetailApiValidationSchema = v.object({
   ),
   CreatedDate: v.optional(v.string()),
   RecordType: v.optional(
-    v.union([v.literal('CUSTOMER'), v.literal('SUPPLIER')]),
+    v.union([
+      v.literal('CUSTOMER'),
+      v.literal('SUPPLIER'),
+      v.literal('GENERAL'),
+    ]),
   ),
   RecordStatus: v.optional(
     v.union(
@@ -147,9 +151,21 @@ export const MasterRecordDetailApiValidationSchema = v.object({
   ),
   Moniker: v.optional(v.string()),
   Name: v.optional(v.string()),
-  LanguageCode: v.optional(v.pipe(v.string(), v.minLength(2), v.maxLength(2))),
+  LanguageCode: v.optional(
+    v.pipe(
+      v.union([v.string(), v.number()]),
+      v.transform((val) => String(val)),
+      v.minLength(1),
+      v.maxLength(2),
+    ),
+  ),
   Address: v.optional(v.string()),
-  ZipCode: v.optional(v.string()),
+  ZipCode: v.optional(
+    v.pipe(
+      v.union([v.string(), v.number()]),
+      v.transform((val) => String(val)),
+    ),
+  ),
   CityName: v.optional(v.string()),
   CountyCode: v.optional(v.string()),
   StateCode: v.optional(v.string()),
@@ -160,6 +176,7 @@ export const MasterRecordDetailApiValidationSchema = v.object({
   Gender: v.optional(v.string()),
   BirthDate: v.optional(v.string()),
   FiscalCode: v.optional(v.string()),
+  VatCode: v.optional(v.string()),
   NewsletterDisabled: v.optional(
     v.union([v.literal('true'), v.literal('false'), v.boolean()]),
   ),

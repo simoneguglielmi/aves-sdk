@@ -116,18 +116,18 @@ describe('ManageMasterRecordResponseSchema', () => {
       RsStatus: {
         '@Status': 'OK',
       },
-      CustomerRecordRS: {
-        CustomerRecordCode: '508558',
+      MasterRecordDetail: {
+        '@RecordCode': '508558',
+        Name: 'John Doe',
+        Email: 'john@example.com',
+        ZipCode: '12345',
       },
     };
 
     const result = parse(ManageMasterRecordResponseSchema, apiResponse);
     expect(result).toHaveProperty('rsStatus');
     expect(result.rsStatus).toHaveProperty('status', 'OK');
-    expect(result).toHaveProperty('customerRecordRS');
-    expect(result.customerRecordRS).toHaveProperty(
-      'customerRecordCode',
-      '508558',
-    );
+    expect(result).toHaveProperty('masterRecordDetail');
+    expect(result.masterRecordDetail).toHaveProperty('recordCode', '508558');
   });
 });

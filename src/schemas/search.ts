@@ -20,7 +20,7 @@ const languageCodeField = v.optional(
  */
 const CodeSearchSchema = v.object({
   searchType: v.literal('CODE'),
-  recordCode: v.pipe(v.string(), v.minLength(6), v.maxLength(6)),
+  recordCode: v.pipe(v.string(), v.minLength(5), v.maxLength(6)),
   languageCode: languageCodeField,
 });
 

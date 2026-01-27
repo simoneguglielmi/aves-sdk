@@ -1,3 +1,5 @@
+import { BaseIssue } from 'valibot';
+
 export const ERROR_KINDS = {
   VALIDATION: 'validation',
   API: 'api',
@@ -44,4 +46,27 @@ export function apiError(
 
 export function unknownError(message: string): AvesError {
   return new AvesError(ERROR_KINDS.UNKNOWN, message);
+}
+
+export function buildDetails(issues: readonly BaseIssue<unknown>[]): string {
+  return issues
+    .map((issue) => {
+      const path =
+        issue.path && issue.path.length > 0
+          ? issue.path
+              .map((segment) =>
+                typeof segment === 'string' || typeof segment === 'number'
+                  ? String(segment)
+                  : 'key' in segment
+                    ? String((segment as any).key)
+                    : '',
+              )
+              .filter(Boolean)
+              .join('.')
+          : undefined;
+
+      const text = issue.message ?? 'Invalid value';
+      return path ? `${path}: ${text}` : text;
+    })
+    .join('; ');
 }

@@ -19,7 +19,13 @@ import type {
 import { MasterRecordDetailApiSchema } from './schemas/master-record.js';
 import type { Result } from './utils/result.js';
 import { err, ok } from './utils/result.js';
-import { apiError, AvesError, unknownError, validationError } from './error.js';
+import {
+  apiError,
+  AvesError,
+  buildDetails,
+  unknownError,
+  validationError,
+} from './error.js';
 import { parseUrl } from './utils/url.js';
 
 function createRootElement<T>(name: XMLRootElementValues, object: T) {
@@ -83,10 +89,10 @@ export class AvesClient {
     } as const;
   }
 
-  private handleApiStatus<T>(
+  private handleApiStatus<T extends { rsStatus: RsStatus }>(
     output: T,
-    rsStatus: RsStatus,
   ): Result<T, AvesError> {
+    const rsStatus = output.rsStatus;
     const status = rsStatus?.status;
 
     if (status !== 'OK') {
@@ -107,8 +113,8 @@ export class AvesClient {
       return error;
     }
     if (error instanceof ValiError) {
-      const issues = error.issues.map((i) => i.message).join(', ');
-      return validationError(issues);
+      const details = buildDetails(error.issues);
+      return validationError(`Validation error: ${details}`);
     }
     if (error instanceof Error) {
       return unknownError(error.message);
@@ -154,21 +160,13 @@ export class AvesClient {
       }
 
       const parseResult = safeParse(responseSchema, rootElement);
-
       if (!parseResult.success) {
-        return err(
-          validationError(
-            `Invalid response format: ${parseResult.issues
-              .map((i) => i.message)
-              .join(', ')}`,
-          ),
-        );
+        const details = buildDetails(parseResult.issues);
+        return err(validationError(`Invalid response format: ${details}`));
       }
 
-      return this.handleApiStatus(
-        parseResult.output as T,
-        parseResult.output.rsStatus,
-      );
+      const output = parseResult.output as T & { rsStatus: RsStatus };
+      return this.handleApiStatus(output);
     } catch (error) {
       return err(this.toAvesError(error, 'Unknown error occurred'));
     }

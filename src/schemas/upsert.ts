@@ -26,6 +26,6 @@ export const ManageMasterRecordRequestSchema = v.object({
 export const ManageMasterRecordResponseSchema = createResponseSchema(
   v.object({
     RsStatus: RsStatusSchema,
-    CustomerRecordRS: v.optional(CustomerRecordApiSchema),
+    MasterRecordDetail: v.optional(MasterRecordDetailApiValidationSchema),
   }),
 );

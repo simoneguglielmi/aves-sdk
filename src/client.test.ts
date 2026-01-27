@@ -170,9 +170,11 @@ describe('AvesClient', () => {
           text: async () =>
             `<ManageMasterRecordRS>
               <RsStatus Status="OK"/>
-              <CustomerRecordRS>
-                <CustomerRecordCode>508558</CustomerRecordCode>
-              </CustomerRecordRS>
+              <MasterRecordDetail RecordCode="508558">
+                <Name>John Doe</Name>
+                <Email>john@example.com</Email>
+                <ZipCode>12345</ZipCode>
+              </MasterRecordDetail>
             </ManageMasterRecordRS>`,
         },
       };
@@ -200,9 +202,9 @@ describe('AvesClient', () => {
       if (result.success) {
         expect(result.data).toHaveProperty('rsStatus');
         expect(result.data.rsStatus).toHaveProperty('status', 'OK');
-        expect(result.data).toHaveProperty('customerRecordRS');
-        expect(result.data.customerRecordRS).toHaveProperty(
-          'customerRecordCode',
+        expect(result.data).toHaveProperty('masterRecordDetail');
+        expect(result.data.masterRecordDetail).toHaveProperty(
+          'recordCode',
           '508558',
         );
       }
