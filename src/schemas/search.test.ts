@@ -69,7 +69,7 @@ describe('SearchMasterRecordSchema', () => {
   it('should reject RecordCode with invalid length', () => {
     const input = {
       searchType: 'CODE',
-      recordCode: '12345', // Too short (must be 6)
+      recordCode: '1234', // Too short (must be 5-6)
     };
 
     expect(() => parse(SearchMasterRecordSchema, input)).toThrow();

@@ -70,10 +70,10 @@ describe('AvesClient', () => {
     });
 
     it('should validate input parameters', async () => {
-      // Should return error result for invalid recordCode length
+      // Should return error result for invalid recordCode length (< 5 chars)
       const result = await client.search({
         searchType: 'CODE',
-        recordCode: '12345', // Too short
+        recordCode: '1234', // Too short
       });
       expect(result.success).toBe(false);
       if (!result.success) {
