@@ -58,7 +58,7 @@ export function buildDetails(issues: readonly BaseIssue<unknown>[]): string {
                 typeof segment === 'string' || typeof segment === 'number'
                   ? String(segment)
                   : 'key' in segment
-                    ? String((segment as any).key)
+                    ? String(segment.key)
                     : '',
               )
               .filter(Boolean)
