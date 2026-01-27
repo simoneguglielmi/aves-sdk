@@ -1,5 +1,5 @@
 import { request as r } from 'undici';
-import { parse, safeParse, ValiError } from 'valibot';
+import { BaseIssue, BaseSchema, parse, safeParse, ValiError } from 'valibot';
 import { jsonToXml, xmlToJson } from './xml-client.js';
 import {
   SearchMasterRecordRequestSchema,
@@ -117,13 +117,11 @@ export class AvesClient {
     return unknownError(defaultMessage);
   }
 
-  private async request<T>(
+  private async request<T extends { rsStatus: RsStatus }>(
     endpoint: string,
     requestBody: Record<string, unknown>,
     responseRootKey: string,
-    responseSchema:
-      | typeof ManageMasterRecordResponseSchema
-      | typeof SearchMasterRecordResponseSchema,
+    responseSchema: BaseSchema<unknown, T, BaseIssue<unknown>>,
   ): Promise<Result<T, AvesError>> {
     const { signal, clear } = createTimeoutSignal(
       this.options.timeoutMs ?? 30_000,
@@ -164,9 +162,7 @@ export class AvesClient {
         const details = buildDetails(parseResult.issues);
         return err(validationError(`Invalid response format: ${details}`));
       }
-
-      const output = parseResult.output as T & { rsStatus: RsStatus };
-      return this.handleApiStatus(output);
+      return this.handleApiStatus(parseResult.output);
     } catch (error) {
       if (isAbortError(error)) {
         return err(apiError('Request timed out', 'TIMEOUT'));
