@@ -130,7 +130,7 @@ describe('xml-client', () => {
       expect(json.SearchMasterRecordRS).toHaveProperty('RsStatus');
       expect(json.SearchMasterRecordRS.RsStatus).toHaveProperty(
         '@Status',
-        'OK'
+        'OK',
       );
       expect(json.SearchMasterRecordRS).toHaveProperty('MasterRecordList');
     });
