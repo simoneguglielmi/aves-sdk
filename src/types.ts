@@ -47,3 +47,11 @@ export type ManageMasterRecordRequest = InferInput<
 export type ManageMasterRecordRS = InferOutput<
   typeof ManageMasterRecordResponseSchema
 >;
+
+export interface AvesClientOptions {
+  baseURL: string;
+  hostID: string;
+  xtoken: string;
+  languageCode?: string;
+  timeoutMs?: number;
+}

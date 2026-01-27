@@ -10,6 +10,7 @@ import {
   ManageMasterRecordResponseSchema,
 } from './schemas/upsert.js';
 import type {
+  AvesClientOptions,
   ManageMasterRecordRS,
   MasterRecordDetail,
   RsStatus,
@@ -44,14 +45,6 @@ const XML_ROOT_ELEMENTS = {
 
 type XMLRootElementValues =
   (typeof XML_ROOT_ELEMENTS)[keyof typeof XML_ROOT_ELEMENTS];
-
-export interface AvesClientOptions {
-  baseURL: string;
-  hostID: string;
-  xtoken: string;
-  languageCode?: string;
-  timeoutMs?: number;
-}
 
 /**
  * AVES XML REST API client
@@ -174,7 +167,6 @@ export class AvesClient {
       const output = parseResult.output as T & { rsStatus: RsStatus };
       return this.handleApiStatus(output);
     } catch (error) {
-      // Distinguish request timeout from other errors
       if (error instanceof Error && error.name === 'AbortError') {
         return err(apiError('Request timed out', 'TIMEOUT'));
       }
