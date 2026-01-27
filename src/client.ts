@@ -27,6 +27,7 @@ import {
   validationError,
 } from './error.js';
 import { parseUrl } from './utils/url.js';
+import { createTimeoutSignal } from './utils/timeout.js';
 
 function createRootElement<T>(name: XMLRootElementValues, object: T) {
   return {
@@ -130,6 +131,10 @@ export class AvesClient {
       | typeof ManageMasterRecordResponseSchema
       | typeof SearchMasterRecordResponseSchema,
   ): Promise<Result<T, AvesError>> {
+    const { signal, clear } = createTimeoutSignal(
+      this.options.timeoutMs ?? 30_000,
+    );
+
     try {
       const url = this.createUrl(endpoint);
       const xmlBody = jsonToXml(requestBody);
@@ -140,6 +145,7 @@ export class AvesClient {
           'Content-Type': 'application/xml',
         },
         body: xmlBody,
+        signal,
       });
 
       const responseText = await response.body.text();
@@ -168,7 +174,13 @@ export class AvesClient {
       const output = parseResult.output as T & { rsStatus: RsStatus };
       return this.handleApiStatus(output);
     } catch (error) {
+      // Distinguish request timeout from other errors
+      if (error instanceof Error && error.name === 'AbortError') {
+        return err(apiError('Request timed out', 'TIMEOUT'));
+      }
       return err(this.toAvesError(error, 'Unknown error occurred'));
+    } finally {
+      clear?.();
     }
   }
 
