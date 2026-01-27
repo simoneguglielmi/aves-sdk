@@ -1,9 +1,10 @@
 // Main client
-export { AvesClient, type AvesClientOptions } from './client.js';
+export { AvesClient } from './client.js';
 export { AvesError } from './error.js';
 
 // Types
 export type {
+  AvesClientOptions,
   RqHeader,
   RsStatus,
   FinancialDetail,
