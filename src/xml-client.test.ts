@@ -64,11 +64,11 @@ describe('xml-client', () => {
   describe('xmlToJson', () => {
     it('should convert simple XML to JSON', () => {
       const xml = '<root><name>John</name><age>30</age></root>';
-      const json = xmlToJson(xml) as { root: { name: string; age: number } };
+      const json = xmlToJson(xml) as { root: { name: string; age: string } };
 
       expect(json).toHaveProperty('root');
       expect(json.root).toHaveProperty('name', 'John');
-      expect(json.root).toHaveProperty('age', 30);
+      expect(json.root).toHaveProperty('age', '30');
     });
 
     it('should handle attributes', () => {
@@ -133,6 +133,24 @@ describe('xml-client', () => {
         'OK'
       );
       expect(json.SearchMasterRecordRS).toHaveProperty('MasterRecordList');
+    });
+
+    it('should preserve leading zeros in record codes', () => {
+      const xml = `
+        <MasterRecordDetail RecordCode="017627">
+          <Name>Test User</Name>
+        </MasterRecordDetail>
+      `;
+
+      const json = xmlToJson(xml) as {
+        MasterRecordDetail: {
+          '@RecordCode': string;
+          Name: string;
+        };
+      };
+
+      expect(json.MasterRecordDetail['@RecordCode']).toBe('017627');
+      expect(json.MasterRecordDetail.Name).toBe('Test User');
     });
   });
 

@@ -48,7 +48,20 @@ function pascalToCamel(str: string): string {
   return str.charAt(0).toLowerCase() + str.slice(1);
 }
 
-const ATTRIBUTE_FIELDS = new Set([
+/**
+ * Checks if an object is a special built-in type that should not be transformed
+ */
+function isSpecialObject(obj: unknown): boolean {
+  return (
+    obj instanceof Date ||
+    obj instanceof RegExp ||
+    obj instanceof Map ||
+    obj instanceof Set ||
+    obj instanceof Error
+  );
+}
+
+export const ATTRIBUTE_FIELDS = new Set([
   'recordCode',
   'insertCriteria',
   'currencyCode',
@@ -57,6 +70,8 @@ const ATTRIBUTE_FIELDS = new Set([
   'c_SpecPaymentTypeCode',
   's_PaymentType',
   's_SpecPaymentTypeCode',
+  'enableElectronicInvoicing',
+  'electronicInvoicingType',
   'key',
   'value',
   'minDate',
@@ -84,13 +99,7 @@ export function camelToPascalKeys<T>(obj: T): Pascalize<T> {
     return obj.map((item) => camelToPascalKeys(item)) as Pascalize<T>;
   }
 
-  if (
-    obj instanceof Date ||
-    obj instanceof RegExp ||
-    obj instanceof Map ||
-    obj instanceof Set ||
-    obj instanceof Error
-  ) {
+  if (isSpecialObject(obj)) {
     return obj as Pascalize<T>;
   }
 
@@ -101,13 +110,7 @@ export function camelToPascalKeys<T>(obj: T): Pascalize<T> {
     const finalKey = isAttribute ? `@${pascalKey}` : pascalKey;
 
     if (value && typeof value === 'object' && !Array.isArray(value)) {
-      if (
-        value instanceof Date ||
-        value instanceof RegExp ||
-        value instanceof Map ||
-        value instanceof Set ||
-        value instanceof Error
-      ) {
+      if (isSpecialObject(value)) {
         result[finalKey] = value;
       } else {
         result[finalKey] = camelToPascalKeys(value as Record<string, unknown>);
@@ -138,13 +141,7 @@ export function pascalToCamelKeys<T>(obj: T): Camelize<T> {
     return obj.map((item) => pascalToCamelKeys(item)) as Camelize<T>;
   }
 
-  if (
-    obj instanceof Date ||
-    obj instanceof RegExp ||
-    obj instanceof Map ||
-    obj instanceof Set ||
-    obj instanceof Error
-  ) {
+  if (isSpecialObject(obj)) {
     return obj as Camelize<T>;
   }
 
@@ -157,13 +154,7 @@ export function pascalToCamelKeys<T>(obj: T): Camelize<T> {
     } else {
       const camelKey = pascalToCamel(key);
       if (value && typeof value === 'object' && !Array.isArray(value)) {
-        if (
-          value instanceof Date ||
-          value instanceof RegExp ||
-          value instanceof Map ||
-          value instanceof Set ||
-          value instanceof Error
-        ) {
+        if (isSpecialObject(value)) {
           result[camelKey] = value;
         } else {
           result[camelKey] = pascalToCamelKeys(

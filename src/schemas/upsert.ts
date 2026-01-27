@@ -3,15 +3,6 @@ import { RqHeaderSchema, RsStatusSchema } from './common.js';
 import { MasterRecordDetailApiValidationSchema } from './master-record.js';
 import { createResponseSchema } from '../utils/schema-transform.js';
 
-const CustomerRecordApiSchema = v.object({
-  CustomerRecordCode: v.pipe(
-    v.union([v.string(), v.number()]),
-    v.transform((val) => String(val)),
-    v.minLength(6),
-    v.maxLength(6),
-  ),
-});
-
 /**
  * Complete upsert request schema with header and required InsertCriteria
  */

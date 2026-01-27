@@ -1,16 +1,20 @@
 import * as v from 'valibot';
-import type { BaseSchema } from 'valibot';
-import { camelToPascalKeys, pascalToCamelKeys } from './case-transform.js';
+import type { BaseSchema, ObjectEntries } from 'valibot';
+import {
+  camelToPascalKeys,
+  pascalToCamelKeys,
+  ATTRIBUTE_FIELDS,
+} from './case-transform.js';
 
 /**
  * Creates a schema that transforms camelCase input to PascalCase for API requests
  */
 export function createApiSchema<TInput extends BaseSchema<any, any, any>>(
-  inputSchema: TInput
+  inputSchema: TInput,
 ) {
   return v.pipe(
     inputSchema,
-    v.transform((input) => camelToPascalKeys(input))
+    v.transform((input) => camelToPascalKeys(input)),
   );
 }
 
@@ -18,10 +22,33 @@ export function createApiSchema<TInput extends BaseSchema<any, any, any>>(
  * Creates a schema that transforms PascalCase API responses to camelCase
  */
 export function createResponseSchema<TApi extends BaseSchema<any, any, any>>(
-  apiSchema: TApi
+  apiSchema: TApi,
 ) {
   return v.pipe(
     apiSchema,
-    v.transform((input) => pascalToCamelKeys(input))
+    v.transform((input) => pascalToCamelKeys(input)),
   );
+}
+
+/**
+ * Creates a validation schema for already-transformed PascalCase data with @ attributes
+ * Used for nested objects like AccountPolicies, FinancialDetail, DynamicFields
+ * Takes the same input schema used in createApiSchema and generates the validation schema
+ * by directly using the ATTRIBUTE_FIELDS logic to determine which fields become attributes
+ */
+export function createApiValidationSchema<TEntries extends ObjectEntries>(
+  inputSchema: v.ObjectSchema<TEntries, any>,
+) {
+  const validationEntries: Record<string, any> = {};
+
+  // Build validation schema based on ATTRIBUTE_FIELDS
+  for (const key in inputSchema.entries) {
+    const isAttribute = ATTRIBUTE_FIELDS.has(key);
+    const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
+    const finalKey = isAttribute ? `@${pascalKey}` : pascalKey;
+
+    validationEntries[finalKey] = inputSchema.entries[key];
+  }
+
+  return v.object(validationEntries as TEntries);
 }

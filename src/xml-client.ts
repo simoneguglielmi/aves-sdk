@@ -4,12 +4,11 @@ import { AvesError } from './error.js';
 const parserOptions = {
   ignoreAttributes: false,
   attributeNamePrefix: '@',
-  parseAttributeValue: true,
-  parseTrueNumberOnly: false,
+  parseAttributeValue: false,
   trimValues: true,
   ignoreNameSpace: true,
   removeNSPrefix: true,
-  parseTagValue: true,
+  parseTagValue: false,
 };
 
 const builderOptions = {
