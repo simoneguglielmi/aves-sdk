@@ -24,6 +24,7 @@ import {
   apiError,
   AvesError,
   buildDetails,
+  isAbortError,
   unknownError,
   validationError,
 } from './error.js';
@@ -167,7 +168,7 @@ export class AvesClient {
       const output = parseResult.output as T & { rsStatus: RsStatus };
       return this.handleApiStatus(output);
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (isAbortError(error)) {
         return err(apiError('Request timed out', 'TIMEOUT'));
       }
       return err(this.toAvesError(error, 'Unknown error occurred'));
