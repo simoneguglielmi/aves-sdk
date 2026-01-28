@@ -30,22 +30,7 @@ import {
 } from './error.js';
 import { parseUrl } from './utils/url.js';
 import { createTimeoutSignal } from './utils/timeout.js';
-
-function createRootElement<T>(name: XMLRootElementValues, object: T) {
-  return {
-    [name]: object,
-  };
-}
-
-const XML_ROOT_ELEMENTS = {
-  SEARCH_REQUEST: 'SearchMasterRecordRQ',
-  SEARCH_RESPONSE: 'SearchMasterRecordRS',
-  UPSERT_REQUEST: 'ManageMasterRecordRQ',
-  UPSERT_RESPONSE: 'ManageMasterRecordRS',
-} as const;
-
-type XMLRootElementValues =
-  (typeof XML_ROOT_ELEMENTS)[keyof typeof XML_ROOT_ELEMENTS];
+import { XML_ROOT_ELEMENTS, createRootElement } from './xml-root.js';
 
 /**
  * AVES XML REST API client
