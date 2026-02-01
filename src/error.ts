@@ -60,9 +60,7 @@ function formatIssue(issue: BaseIssue<unknown>): string {
 }
 
 function formatPath(path?: readonly unknown[]): string | undefined {
-  if (!path || path.length === 0) {
-    return undefined;
-  }
+  if (!path || path.length === 0) return;
 
   const segments = path
     .map(extractSegment)
