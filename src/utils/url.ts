@@ -1,20 +1,20 @@
-import { AvesError } from '../error.js';
+import { AvesError } from "../error.js";
 
 function buildUrl(baseURL: string, endpoint: string): URL {
-  try {
-    const base = new URL(baseURL);
-    const basePath = base.pathname.endsWith('/')
-      ? base.pathname.slice(0, -1)
-      : base.pathname;
-    const combinedPath = basePath + endpoint;
+	try {
+		const base = new URL(baseURL);
+		const basePath = base.pathname.endsWith("/")
+			? base.pathname.slice(0, -1)
+			: base.pathname;
+		const combinedPath = basePath + endpoint;
 
-    return new URL(combinedPath, base);
-  } catch (error) {
-    throw new AvesError(
-      'validation',
-      `Invalid baseURL: ${error instanceof Error ? error.message : 'Invalid URL format'}`,
-    );
-  }
+		return new URL(combinedPath, base);
+	} catch (error) {
+		throw new AvesError(
+			"validation",
+			`Invalid baseURL: ${error instanceof Error ? error.message : "Invalid URL format"}`,
+		);
+	}
 }
 
 /**
@@ -25,23 +25,23 @@ function buildUrl(baseURL: string, endpoint: string): URL {
  * @throws AvesError if URL is invalid or protocol is not http/https
  */
 export function parseUrl(baseURL: string, endpoint: string): string {
-  if (!endpoint.startsWith('/')) {
-    throw new AvesError(
-      'validation',
-      `Invalid endpoint: endpoint must start with '/' but got '${endpoint}'`,
-    );
-  }
+	if (!endpoint.startsWith("/")) {
+		throw new AvesError(
+			"validation",
+			`Invalid endpoint: endpoint must start with '/' but got '${endpoint}'`,
+		);
+	}
 
-  const normalizedBaseURL = baseURL.replace(/\/$/, '');
+	const normalizedBaseURL = baseURL.replace(/\/$/, "");
 
-  const url = buildUrl(normalizedBaseURL, endpoint);
+	const url = buildUrl(normalizedBaseURL, endpoint);
 
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new AvesError(
-      'validation',
-      `Invalid protocol: baseURL must use http:// or https:// but got '${url.protocol}'`,
-    );
-  }
+	if (url.protocol !== "http:" && url.protocol !== "https:") {
+		throw new AvesError(
+			"validation",
+			`Invalid protocol: baseURL must use http:// or https:// but got '${url.protocol}'`,
+		);
+	}
 
-  return url.toString();
+	return url.toString();
 }

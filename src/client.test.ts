@@ -1,326 +1,324 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AvesClient } from './client.js';
-import { AvesError } from './error.js';
+import {
+	type Dispatcher,
+	getGlobalDispatcher,
+	MockAgent,
+	setGlobalDispatcher,
+} from "undici";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { AvesClient } from "./client.js";
+import { AvesError } from "./error.js";
 
-// Mock undici
-vi.mock('undici', () => ({
-  request: vi.fn(),
-}));
+describe("AvesClient", () => {
+	let client: AvesClient;
+	let mockAgent: MockAgent;
+	let originalDispatcher: Dispatcher;
 
-import { request as mockRequest } from 'undici';
+	const baseURL = "https://api.example.com";
+	const hostID = "000000";
+	const xtoken = "TOKEN000000";
 
-describe('AvesClient', () => {
-  let client: AvesClient;
-  const baseURL = 'https://api.example.com';
-  const hostID = '000000';
-  const xtoken = 'TOKEN000000';
+	beforeEach(() => {
+		originalDispatcher = getGlobalDispatcher();
+		mockAgent = new MockAgent();
+		mockAgent.disableNetConnect();
+		setGlobalDispatcher(mockAgent);
 
-  beforeEach(() => {
-    client = new AvesClient({ baseURL, hostID, xtoken });
-    vi.clearAllMocks();
-  });
+		client = new AvesClient({ baseURL, hostID, xtoken });
+	});
 
-  describe('constructor', () => {
-    it('should create client with correct configuration', () => {
-      expect(client).toBeInstanceOf(AvesClient);
-    });
-  });
+	afterEach(async () => {
+		await mockAgent.close();
+		setGlobalDispatcher(originalDispatcher);
+	});
 
-  describe('search', () => {
-    it('should make search request and return camelCase response', async () => {
-      const mockResponse = {
-        statusCode: 200,
-        body: {
-          text: async () =>
-            `<SearchMasterRecordRS>
-              <RsStatus Status="OK"/>
-              <MasterRecordList>
-                <MasterRecordDetail RecordCode="508558">
-                  <Name>ROSSI MARIO</Name>
-                  <Email>mario.rossi@example.com</Email>
-                </MasterRecordDetail>
-              </MasterRecordList>
-            </SearchMasterRecordRS>`,
-        },
-      };
+	describe("constructor", () => {
+		it("should create client with correct configuration", () => {
+			expect(client).toBeInstanceOf(AvesClient);
+		});
+	});
 
-      (mockRequest as any).mockResolvedValue(mockResponse);
+	describe("search", () => {
+		it("should make search request and return camelCase response", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      const result = await client.search({
-        searchType: 'CODE',
-        recordCode: '508558',
-      });
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/Search",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<SearchMasterRecordRS>
+          <RsStatus Status="OK"/>
+          <MasterRecordList>
+            <MasterRecordDetail RecordCode="508558">
+              <Name>ROSSI MARIO</Name>
+              <Email>mario.rossi@example.com</Email>
+            </MasterRecordDetail>
+          </MasterRecordList>
+        </SearchMasterRecordRS>`,
+				);
 
-      expect(mockRequest).toHaveBeenCalledWith(
-        `${baseURL}/interop/masterRecords/v2/rest/Search`,
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'application/xml',
-          }),
-        }),
-      );
+			const result = await client.search({
+				searchType: "CODE",
+				recordCode: "508558",
+			});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toHaveProperty('rsStatus');
-        expect(result.data.rsStatus).toHaveProperty('status', 'OK');
-        expect(result.data).toHaveProperty('masterRecordList');
-      }
-    });
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data).toHaveProperty("rsStatus");
+				expect(result.data.rsStatus).toHaveProperty("status", "OK");
+				expect(result.data).toHaveProperty("masterRecordList");
+			}
+		});
 
-    it('should validate input parameters', async () => {
-      // Should return error result for invalid recordCode length (< 5 chars)
-      const result = await client.search({
-        searchType: 'CODE',
-        recordCode: '1234', // Too short
-      });
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(AvesError);
-      }
-    });
+		it("should validate input parameters", async () => {
+			const result = await client.search({
+				searchType: "CODE",
+				recordCode: "1234", // Too short
+			});
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+			}
+		});
 
-    it('should handle API errors', async () => {
-      const mockResponse = {
-        statusCode: 200,
-        body: {
-          text: async () =>
-            `<SearchMasterRecordRS>
-              <RsStatus Status="ERROR">
-                <ErrorCode>1001</ErrorCode>
-                <ErrorDescription>Invalid request</ErrorDescription>
-              </RsStatus>
-            </SearchMasterRecordRS>`,
-        },
-      };
+		it("should handle API errors", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      (mockRequest as any).mockResolvedValue(mockResponse);
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/Search",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<SearchMasterRecordRS>
+          <RsStatus Status="ERROR">
+            <ErrorCode>1001</ErrorCode>
+            <ErrorDescription>Invalid request</ErrorDescription>
+          </RsStatus>
+        </SearchMasterRecordRS>`,
+				);
 
-      const result = await client.search({
-        searchType: 'CODE',
-        recordCode: '508558',
-      });
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.kind).toBe('api');
-        expect(result.error.code).toBe(1001);
-        expect(result.error.status).toBe('error');
-      }
-    });
+			const result = await client.search({
+				searchType: "CODE",
+				recordCode: "508558",
+			});
 
-    it('should handle HTTP errors', async () => {
-      const mockResponse = {
-        statusCode: 500,
-        body: {
-          text: async () => 'Internal Server Error',
-        },
-      };
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+				expect(result.error.kind).toBe("api");
+				expect(result.error.code).toBe(1001);
+				expect(result.error.status).toBe("error");
+			}
+		});
 
-      (mockRequest as any).mockResolvedValue(mockResponse);
+		it("should handle HTTP errors", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      const result = await client.search({
-        searchType: 'CODE',
-        recordCode: '508558',
-      });
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.kind).toBe('api');
-        expect(result.error.status).toBe('error');
-        expect(result.error.code).toBe(500);
-      }
-    });
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/Search",
+					method: "POST",
+				})
+				.reply(500, "Internal Server Error");
 
-    it('should transform request to PascalCase for API', async () => {
-      const mockResponse = {
-        statusCode: 200,
-        body: {
-          text: async () =>
-            `<SearchMasterRecordRS>
-              <RsStatus Status="OK"/>
-            </SearchMasterRecordRS>`,
-        },
-      };
+			const result = await client.search({
+				searchType: "CODE",
+				recordCode: "508558",
+			});
 
-      (mockRequest as any).mockResolvedValue(mockResponse);
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+				expect(result.error.kind).toBe("api");
+				expect(result.error.status).toBe("error");
+				expect(result.error.code).toBe(500);
+			}
+		});
 
-      await client.search({
-        searchType: 'CODE',
-        recordCode: '508558',
-        languageCode: '02',
-      });
+		it("should transform request to PascalCase for API", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
 
-      const callArgs = (mockRequest as any).mock.calls[0];
-      const requestBody = callArgs[1].body;
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/Search",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<SearchMasterRecordRS>
+            <RsStatus Status="OK"/>
+          </SearchMasterRecordRS>`;
+				});
 
-      // Check that XML contains PascalCase (after transformation)
-      expect(requestBody).toContain('<SearchType>CODE</SearchType>');
-      expect(requestBody).toContain('<RecordCode>508558</RecordCode>');
-      expect(requestBody).toContain('<LanguageCode>02</LanguageCode>'); // languageCode is an element, not an attribute
-    });
-  });
+			await client.search({
+				searchType: "CODE",
+				recordCode: "508558",
+				languageCode: "02",
+			});
 
-  describe('upsertRecord', () => {
-    it('should make upsert request and return camelCase response', async () => {
-      const mockResponse = {
-        statusCode: 200,
-        body: {
-          text: async () =>
-            `<ManageMasterRecordRS>
-              <RsStatus Status="OK"/>
-              <MasterRecordDetail RecordCode="508558">
-                <Name>John Doe</Name>
-                <Email>john@example.com</Email>
-                <ZipCode>12345</ZipCode>
-              </MasterRecordDetail>
-            </ManageMasterRecordRS>`,
-        },
-      };
+			expect(capturedBody).toContain("<SearchType>CODE</SearchType>");
+			expect(capturedBody).toContain("<RecordCode>508558</RecordCode>");
+			expect(capturedBody).toContain("<LanguageCode>02</LanguageCode>");
+		});
+	});
 
-      (mockRequest as any).mockResolvedValue(mockResponse);
+	describe("upsertRecord", () => {
+		it("should make upsert request and return camelCase response", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      const result = await client.upsertRecord({
-        name: 'John Doe',
-        email: 'john@example.com',
-        zipCode: '12345',
-        languageCode: '02',
-      });
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<ManageMasterRecordRS>
+          <RsStatus Status="OK"/>
+          <MasterRecordDetail RecordCode="508558">
+            <Name>John Doe</Name>
+            <Email>john@example.com</Email>
+            <ZipCode>12345</ZipCode>
+          </MasterRecordDetail>
+        </ManageMasterRecordRS>`,
+				);
 
-      expect(mockRequest).toHaveBeenCalledWith(
-        `${baseURL}/interop/masterRecords/v2/rest/InsertOrUpdate`,
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'application/xml',
-          }),
-        }),
-      );
+			const result = await client.upsertRecord({
+				name: "John Doe",
+				email: "john@example.com",
+				zipCode: "12345",
+				languageCode: "02",
+			});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toHaveProperty('rsStatus');
-        expect(result.data.rsStatus).toHaveProperty('status', 'OK');
-        expect(result.data).toHaveProperty('masterRecordDetail');
-        expect(result.data.masterRecordDetail).toHaveProperty(
-          'recordCode',
-          '508558',
-        );
-      }
-    });
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data).toHaveProperty("rsStatus");
+				expect(result.data.rsStatus).toHaveProperty("status", "OK");
+				expect(result.data).toHaveProperty("masterRecordDetail");
+				expect(result.data.masterRecordDetail).toHaveProperty(
+					"recordCode",
+					"508558",
+				);
+			}
+		});
 
-    it('should allow optional insertCriteria', async () => {
-      const mockResponse = {
-        statusCode: 200,
-        body: {
-          text: async () =>
-            `<ManageMasterRecordRS>
-              <RsStatus Status="OK"/>
-            </ManageMasterRecordRS>`,
-        },
-      };
+		it("should allow optional insertCriteria", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
 
-      (mockRequest as any).mockResolvedValue(mockResponse);
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<ManageMasterRecordRS>
+            <RsStatus Status="OK"/>
+          </ManageMasterRecordRS>`;
+				});
 
-      await client.upsertRecord({
-        name: 'John Doe',
-        languageCode: '02',
-      });
+			await client.upsertRecord({
+				name: "John Doe",
+				languageCode: "02",
+			});
 
-      const callArgs = (mockRequest as any).mock.calls[0];
-      const requestBody = callArgs[1].body;
+			expect(capturedBody).toBeDefined();
+			expect(capturedBody).toContain("<Name>John Doe</Name>");
+		});
 
-      // InsertCriteria is optional, so it may or may not be present
-      expect(requestBody).toBeDefined();
-      expect(requestBody).toContain('<Name>John Doe</Name>');
-    });
+		it("should transform request to PascalCase for API", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
 
-    it('should transform request to PascalCase for API', async () => {
-      const mockResponse = {
-        statusCode: 200,
-        body: {
-          text: async () =>
-            `<ManageMasterRecordRS>
-              <RsStatus Status="OK"/>
-            </ManageMasterRecordRS>`,
-        },
-      };
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<ManageMasterRecordRS>
+            <RsStatus Status="OK"/>
+          </ManageMasterRecordRS>`;
+				});
 
-      (mockRequest as any).mockResolvedValue(mockResponse);
+			await client.upsertRecord({
+				name: "John Doe",
+				email: "john@example.com",
+				zipCode: "12345",
+				languageCode: "02",
+			});
 
-      await client.upsertRecord({
-        name: 'John Doe',
-        email: 'john@example.com',
-        zipCode: '12345',
-        languageCode: '02',
-      });
+			expect(capturedBody).toContain("<Name>John Doe</Name>");
+			expect(capturedBody).toContain("<Email>john@example.com</Email>");
+			expect(capturedBody).toContain("<ZipCode>12345</ZipCode>");
+		});
 
-      const callArgs = (mockRequest as any).mock.calls[0];
-      const requestBody = callArgs[1].body;
+		it("should handle API errors", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      // Check that XML contains PascalCase
-      expect(requestBody).toContain('<Name>John Doe</Name>');
-      expect(requestBody).toContain('<Email>john@example.com</Email>');
-      expect(requestBody).toContain('<ZipCode>12345</ZipCode>');
-    });
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<ManageMasterRecordRS>
+          <RsStatus Status="ERROR">
+            <ErrorCode>1002</ErrorCode>
+            <ErrorDescription>Invalid record data</ErrorDescription>
+          </RsStatus>
+        </ManageMasterRecordRS>`,
+				);
 
-    it('should handle API errors', async () => {
-      const mockResponse = {
-        statusCode: 200,
-        body: {
-          text: async () =>
-            `<ManageMasterRecordRS>
-              <RsStatus Status="ERROR">
-                <ErrorCode>1002</ErrorCode>
-                <ErrorDescription>Invalid record data</ErrorDescription>
-              </RsStatus>
-            </ManageMasterRecordRS>`,
-        },
-      };
+			const result = await client.upsertRecord({
+				name: "John Doe",
+				languageCode: "02",
+			});
 
-      (mockRequest as any).mockResolvedValue(mockResponse);
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+				expect(result.error.kind).toBe("api");
+				expect(result.error.code).toBe(1002);
+				expect(result.error.status).toBe("error");
+			}
+		});
+	});
 
-      const result = await client.upsertRecord({
-        name: 'John Doe',
-        languageCode: '02',
-      });
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.kind).toBe('api');
-        expect(result.error.code).toBe(1002);
-        expect(result.error.status).toBe('error');
-      }
-    });
-  });
+	describe("AvesError", () => {
+		it("should create error with correct properties", () => {
+			const error = new AvesError("api", "Test error message", "error", 1001);
 
-  describe('AvesError', () => {
-    it('should create error with correct properties', () => {
-      const error = new AvesError('api', 'Test error message', 'error', 1001);
+			expect(error).toBeInstanceOf(Error);
+			expect(error).toBeInstanceOf(AvesError);
+			expect(error.kind).toBe("api");
+			expect(error.message).toBe("Test error message");
+			expect(error.status).toBe("error");
+			expect(error.code).toBe(1001);
+		});
 
-      expect(error).toBeInstanceOf(Error);
-      expect(error).toBeInstanceOf(AvesError);
-      expect(error.kind).toBe('api');
-      expect(error.message).toBe('Test error message');
-      expect(error.status).toBe('error');
-      expect(error.code).toBe(1001);
-    });
+		it("should create validation error", () => {
+			const error = new AvesError("validation", "Validation failed");
 
-    it('should create validation error', () => {
-      const error = new AvesError('validation', 'Validation failed');
+			expect(error).toBeInstanceOf(AvesError);
+			expect(error.kind).toBe("validation");
+			expect(error.message).toBe("Validation failed");
+		});
 
-      expect(error).toBeInstanceOf(AvesError);
-      expect(error.kind).toBe('validation');
-      expect(error.message).toBe('Validation failed');
-    });
+		it("should create unknown error", () => {
+			const error = new AvesError("unknown", "Unknown error occurred");
 
-    it('should create unknown error', () => {
-      const error = new AvesError('unknown', 'Unknown error occurred');
-
-      expect(error).toBeInstanceOf(AvesError);
-      expect(error.kind).toBe('unknown');
-      expect(error.message).toBe('Unknown error occurred');
-    });
-  });
+			expect(error).toBeInstanceOf(AvesError);
+			expect(error.kind).toBe("unknown");
+			expect(error.message).toBe("Unknown error occurred");
+		});
+	});
 });

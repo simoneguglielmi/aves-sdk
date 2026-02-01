@@ -45,25 +45,23 @@
   },
   "scripts": {
     "clean": "rimraf dist",
-    "build": "yarn clean && yarn tsup",
-    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "build": "yarn clean && yarn check && yarn tsup",
     "prepare": "yarn build",
     "test": "vitest run",
-    "publish": "npm publish"
+    "publish": "npm publish",
+    "check": "biome check --write src"
   },
   "packageManager": "yarn@1.22.22",
   "dependencies": {
-    "fast-xml-parser": "^5.3.3",
-    "undici": "^7.19.1",
+    "fast-xml-parser": "^5.3.4",
+    "undici": "^7.19.2",
     "valibot": "^1.2.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.13",
     "@tsconfig/node22": "^22.0.5",
     "@types/node": "^24.6.2",
-    "@typescript-eslint/eslint-plugin": "^8.53.1",
-    "@typescript-eslint/parser": "^8.53.1",
     "dotenv": "^17.2.3",
-    "eslint": "^9.39.2",
     "rimraf": "^6.1.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
