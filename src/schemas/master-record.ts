@@ -20,7 +20,9 @@ const FinancialDetailInputSchema = v.object({
   c_SpecPaymentTypeCode: v.optional(v.string()),
   s_PaymentType: v.optional(paymentTypeSchema),
   s_SpecPaymentTypeCode: v.optional(v.string()),
-  enableElectronicInvoicing: v.optional(v.union([v.literal('true'), v.literal('false'), v.boolean()])),
+  enableElectronicInvoicing: v.optional(
+    v.union([v.literal('true'), v.literal('false'), v.boolean()])
+  ),
   electronicInvoicingType: v.optional(v.string()),
 });
 
@@ -28,14 +30,37 @@ const FinancialDetailInputSchema = v.object({
  * Financial detail schema for API requests (transforms to PascalCase)
  */
 export const FinancialDetailSchema = createApiSchema(
-  FinancialDetailInputSchema,
+  FinancialDetailInputSchema
 );
 
 /**
  * Financial detail validation schema (already transformed PascalCase with @ attributes)
  */
 export const FinancialDetailApiValidationSchema = createApiValidationSchema(
-  FinancialDetailInputSchema,
+  FinancialDetailInputSchema
+);
+
+const IdDocumentDetailInputSchema = v.object({
+  idType: v.optional(v.string()),
+  idCode: v.optional(v.string()),
+  idIssueLocation: v.optional(v.string()),
+  idIssueCounty: v.optional(v.string()),
+  idIssueDate: v.optional(v.string()),
+  idExpireDate: v.optional(v.string()),
+});
+
+/**
+ * ID document detail schema for API requests (transforms to PascalCase)
+ */
+export const IdDocumentDetailSchema = createApiSchema(
+  IdDocumentDetailInputSchema
+);
+
+/**
+ * ID document detail validation schema (already transformed PascalCase with @ attributes)
+ */
+export const IdDocumentDetailApiValidationSchema = createApiValidationSchema(
+  IdDocumentDetailInputSchema
 );
 
 const DynamicFieldsInputSchema = v.object({
@@ -52,7 +77,7 @@ export const DynamicFieldsSchema = createApiSchema(DynamicFieldsInputSchema);
  * Dynamic fields validation schema (already transformed PascalCase with @ attributes)
  */
 export const DynamicFieldsApiValidationSchema = createApiValidationSchema(
-  DynamicFieldsInputSchema,
+  DynamicFieldsInputSchema
 );
 
 const flagSchema = v.union([v.literal(0), v.literal(1)]);
@@ -87,14 +112,14 @@ const AccountPoliciesInputSchema = v.object({
  * Account policies schema for API requests (transforms to PascalCase with @ attributes)
  */
 export const AccountPoliciesSchema = createApiSchema(
-  AccountPoliciesInputSchema,
+  AccountPoliciesInputSchema
 );
 
 /**
  * Account policies validation schema (already transformed PascalCase with @ attributes)
  */
 export const AccountPoliciesApiValidationSchema = createApiValidationSchema(
-  AccountPoliciesInputSchema,
+  AccountPoliciesInputSchema
 );
 
 /**
@@ -125,6 +150,8 @@ export const MasterRecordDetailSchema = v.object({
   birthCounty: v.optional(v.string()),
   fiscalCode: v.optional(v.string()),
   vatCode: v.optional(v.string()),
+  thirdPartRecordCode: v.optional(v.string()),
+  idDocumentDetail: v.optional(IdDocumentDetailInputSchema),
   accountPolicies: v.optional(AccountPoliciesInputSchema),
   financialDetail: v.optional(FinancialDetailInputSchema),
   dynamicFields: v.optional(DynamicFieldsInputSchema),
@@ -134,14 +161,14 @@ export const MasterRecordDetailSchema = v.object({
  * Master record detail schema for API requests (transforms to PascalCase)
  */
 export const MasterRecordDetailApiSchema = createApiSchema(
-  MasterRecordDetailSchema,
+  MasterRecordDetailSchema
 );
 
 /**
  * Master record detail response schema (transforms to camelCase)
  */
 export const MasterRecordDetailResponseSchema = createResponseSchema(
-  MasterRecordDetailApiSchema,
+  MasterRecordDetailApiSchema
 );
 
 /**
@@ -150,7 +177,7 @@ export const MasterRecordDetailResponseSchema = createResponseSchema(
  * All fields are optional as responses may not contain all fields
  */
 export const MasterRecordDetailApiValidationSchema = v.object({
-  '@RecordCode': v.optional(v.pipe(v.string(), v.minLength(5), v.maxLength(6))),
+  '@RecordCode': v.optional(v.pipe(v.string(), v.minLength(6), v.maxLength(6))),
   '@InsertCriteria': v.optional(insertCriteriaSchema),
   CreatedDate: v.optional(v.string()),
   ModifiedDate: v.optional(v.string()),
@@ -159,7 +186,7 @@ export const MasterRecordDetailApiValidationSchema = v.object({
       v.literal('CUSTOMER'),
       v.literal('SUPPLIER'),
       v.literal('GENERAL'),
-    ]),
+    ])
   ),
   LoginType: v.optional(v.string()),
   RecordStatus: v.optional(recordStatusSchema),
@@ -181,12 +208,18 @@ export const MasterRecordDetailApiValidationSchema = v.object({
   BirthDate: v.optional(v.string()),
   BirthCity: v.optional(v.string()),
   BirthCounty: v.optional(v.string()),
-  EncryptedPassword: v.optional(v.union([v.literal('true'), v.literal('false'), v.boolean()])),
+  EncryptedPassword: v.optional(
+    v.union([v.literal('true'), v.literal('false'), v.boolean()])
+  ),
   FiscalCode: v.optional(v.string()),
   VatCode: v.optional(v.string()),
-  NewsletterDisabled: v.optional(v.union([v.literal('true'), v.literal('false'), v.boolean()])),
+  ThirdPartRecordCode: v.optional(v.string()),
+  IdDocumentDetail: v.optional(IdDocumentDetailApiValidationSchema),
+  NewsletterDisabled: v.optional(
+    v.union([v.literal('true'), v.literal('false'), v.boolean()])
+  ),
   SupplierRefMasterRecords: v.optional(v.any()),
   AccountPolicies: v.optional(AccountPoliciesApiValidationSchema),
   FinancialDetail: v.optional(FinancialDetailApiValidationSchema),
-  DynamicFields: v.optional(v.array(DynamicFieldsApiValidationSchema)),
+  DynamicFields: v.optional(DynamicFieldsApiValidationSchema),
 });

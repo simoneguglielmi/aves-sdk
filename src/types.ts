@@ -5,6 +5,9 @@ import {
   MasterRecordDetailSchema,
   MasterRecordDetailResponseSchema,
   FinancialDetailSchema,
+  IdDocumentDetailSchema,
+  AccountPoliciesSchema,
+  DynamicFieldsSchema,
 } from './schemas/master-record.js';
 import {
   SearchMasterRecordSchema,
@@ -15,43 +18,305 @@ import {
   ManageMasterRecordResponseSchema,
 } from './schemas/upsert.js';
 
-/**
- * Common types
- */
-export type RqHeader = InferInput<typeof RqHeaderSchema>;
-export type RsStatus = Camelize<InferOutput<typeof RsStatusSchema>>;
+// ============================================================================
+// Common Types
+// ============================================================================
 
 /**
- * Master record types
+ * Request header containing authentication credentials for AVES API calls.
+ *
+ * @property hostID - 6-digit identification code assigned to your organization
+ * @property xtoken - Authentication token for API access
+ * @property interface - Interface type, always 'WEB'
+ * @property userName - Username for the request, always 'WEB'
+ * @property languageCode - Optional 2-character ISO language code (e.g., '02' for Italian)
+ */
+export type RqHeader = InferInput<typeof RqHeaderSchema>;
+
+/**
+ * Response status returned by all AVES API operations.
+ *
+ * @property status - Result status: 'OK' (success), 'ERROR' (failure), 'WARNING' (partial success), 'TIMEOUT'
+ * @property errorCode - Numeric error code when status is 'ERROR' (e.g., 1001, 1002)
+ * @property errorDescription - Human-readable error message
+ * @property warnings - Array of warning messages when status is 'WARNING'
+ *
+ * @example
+ * ```typescript
+ * if (response.rsStatus.status === 'OK') {
+ *   // Process successful response
+ * } else {
+ *   console.error(response.rsStatus.errorDescription);
+ * }
+ * ```
+ */
+export type RsStatus = Camelize<InferOutput<typeof RsStatusSchema>>;
+
+// ============================================================================
+// Master Record Types
+// ============================================================================
+
+/**
+ * Financial and payment details for a master record.
+ *
+ * @property currencyCode - ISO currency code (e.g., 'EUR', 'USD')
+ * @property creditLimit - Maximum credit amount as a string
+ * @property c_PaymentType - Customer payment type: 'CASH' | 'BANK' | 'RID' | 'RIBA' | 'SPECIFIC_CODE'
+ * @property c_SpecPaymentTypeCode - Specific payment code when c_PaymentType is 'SPECIFIC_CODE'
+ * @property s_PaymentType - Supplier payment type: 'CASH' | 'BANK' | 'RID' | 'RIBA' | 'SPECIFIC_CODE'
+ * @property s_SpecPaymentTypeCode - Specific payment code when s_PaymentType is 'SPECIFIC_CODE'
+ * @property enableElectronicInvoicing - Enable electronic invoicing (accepts boolean or 'true'/'false' string)
+ * @property electronicInvoicingType - Type of electronic invoicing when enabled
  */
 export type FinancialDetail = InferInput<typeof FinancialDetailSchema>;
+
+/**
+ * Identity document details for a master record.
+ *
+ * @property idType - Document type code (e.g., 'PASSPORT', 'ID_CARD')
+ * @property idCode - Document number/identifier
+ * @property idIssueLocation - Location where the document was issued
+ * @property idIssueCounty - County/region code where issued
+ * @property idIssueDate - Issue date in ISO format (YYYY-MM-DD)
+ * @property idExpireDate - Expiration date in ISO format (YYYY-MM-DD)
+ */
+export type IdDocumentDetail = InferInput<typeof IdDocumentDetailSchema>;
+
+/**
+ * Privacy and marketing policy acceptance flags.
+ *
+ * @property acceptProfilingPolicies - User consent for profiling (0 = not accepted, 1 = accepted)
+ * @property acceptPrivacyPolicies - User consent for privacy policy (0 = not accepted, 1 = accepted)
+ * @property acceptNewsletterPolicies - User consent for newsletter (0 = not accepted, 1 = accepted)
+ */
+export type AccountPolicies = InferInput<typeof AccountPoliciesSchema>;
+
+/**
+ * Custom key-value field for extending master record data.
+ *
+ * @property key - Unique identifier for the dynamic field
+ * @property value - Value associated with the key
+ *
+ * @example
+ * ```typescript
+ * const dynamicField: DynamicFields = {
+ *   key: 'loyalty_tier',
+ *   value: 'gold'
+ * };
+ * ```
+ */
+export type DynamicFields = InferInput<typeof DynamicFieldsSchema>;
+
+/**
+ * Master record detail for creating or updating customer, supplier, or general records.
+ *
+ * This is the primary input type for the `upsertRecord` method.
+ *
+ * @property recordCode - 6-character unique identifier (auto-generated if not provided)
+ * @property insertCriteria - Duplicate handling strategy:
+ *   - 'S' (Skip): Skip if duplicate exists
+ *   - 'N' (New): Always create new record
+ *   - 'T' (Throw): Error if duplicate exists
+ *   - 'M' (Merge): Merge with existing record
+ * @property createdDate - Record creation date in ISO format
+ * @property recordType - Classification: 'CUSTOMER' | 'SUPPLIER' | 'GENERAL' (defaults to 'CUSTOMER')
+ * @property recordStatus - Status: 'ENABLED' | 'DISABLED' | 'WARNING' | 'BLACKLISTED' (defaults to 'ENABLED')
+ * @property moniker - Short display name or alias
+ * @property name - Full name (person or company)
+ * @property extraInfo - Additional information field
+ * @property languageCode - Required 2-character ISO language code (e.g., '02' for Italian, '01' for English)
+ * @property address - Street address
+ * @property zipCode - Postal/ZIP code
+ * @property cityName - City name
+ * @property countyCode - County/province code
+ * @property stateCode - Country/state code
+ * @property categoryCode - Category classification code
+ * @property firstPhoneNumber - Primary phone number
+ * @property mobilePhoneNumber - Mobile phone number
+ * @property email - Email address
+ * @property gender - Gender: 'M' (male) | 'F' (female)
+ * @property birthDate - Date of birth in ISO format (YYYY-MM-DD)
+ * @property birthCity - City of birth
+ * @property birthCounty - County of birth
+ * @property fiscalCode - Tax/fiscal identification code
+ * @property vatCode - VAT number
+ * @property thirdPartRecordCode - External system reference code
+ * @property idDocumentDetail - Identity document information
+ * @property accountPolicies - Privacy and marketing consent flags
+ * @property financialDetail - Financial and payment details
+ * @property dynamicFields - Custom key-value fields
+ *
+ * @example
+ * ```typescript
+ * const record: MasterRecordDetail = {
+ *   languageCode: '02',
+ *   name: 'Mario Rossi',
+ *   email: 'mario.rossi@example.com',
+ *   recordType: 'CUSTOMER',
+ *   insertCriteria: 'M',
+ *   accountPolicies: {
+ *     acceptPrivacyPolicies: 1,
+ *     acceptNewsletterPolicies: 0,
+ *   },
+ * };
+ * ```
+ */
 export type MasterRecordDetail = InferInput<typeof MasterRecordDetailSchema>;
+
+/**
+ * Master record detail as returned by the API (camelCase transformed).
+ *
+ * Contains all fields from {@link MasterRecordDetail} plus additional read-only fields
+ * populated by the server (e.g., `modifiedDate`, `loginType`).
+ */
 export type MasterRecordDetailResponse = InferOutput<
   typeof MasterRecordDetailResponseSchema
 >;
 
+// ============================================================================
+// Search Types
+// ============================================================================
+
 /**
- * Search types
+ * Search parameters for finding master records.
+ *
+ * This is a discriminated union based on `searchType`. Each search type requires
+ * different parameters:
+ *
+ * | searchType | Required Fields | Optional Fields |
+ * |------------|-----------------|-----------------|
+ * | 'CODE' | recordCode | languageCode |
+ * | 'NAME' | name | city, languageCode |
+ * | 'VATCODE' | vatCode | phoneNumber, languageCode |
+ * | 'ZONE' | zipCode, countyCode | city, languageCode |
+ * | 'CATEGORY' | categoryCode | languageCode |
+ * | 'EMAIL' | email | languageCode |
+ * | 'LASTMODDATE' | lastModificationDate | languageCode |
+ * | 'SEARCH_FIELD' | searchFieldValue | languageCode |
+ * | 'EXTERNAL_REF_CODE' | searchFieldValue | languageCode |
+ *
+ * @example
+ * ```typescript
+ * // Search by customer code
+ * const byCode: SearchMasterRecord = {
+ *   searchType: 'CODE',
+ *   recordCode: '508558',
+ * };
+ *
+ * // Search by name and city
+ * const byName: SearchMasterRecord = {
+ *   searchType: 'NAME',
+ *   name: 'Rossi',
+ *   city: 'Milano',
+ * };
+ *
+ * // Search by last modification date range
+ * const byDate: SearchMasterRecord = {
+ *   searchType: 'LASTMODDATE',
+ *   lastModificationDate: {
+ *     minDate: '2024-01-01',
+ *     maxDate: '2024-12-31',
+ *   },
+ * };
+ * ```
  */
 export type SearchMasterRecord = InferInput<typeof SearchMasterRecordSchema>;
+
+/**
+ * Response from a master record search operation.
+ *
+ * @property rsStatus - Operation status (check for 'OK' before accessing results)
+ * @property masterRecordList - Object containing array of matching records
+ * @property masterRecordList.masterRecordDetail - Array of {@link MasterRecordDetailResponse} objects
+ *
+ * @example
+ * ```typescript
+ * const result = await client.search({ searchType: 'CODE', recordCode: '508558' });
+ * if (result.success && result.data.rsStatus.status === 'OK') {
+ *   const records = result.data.masterRecordList?.masterRecordDetail ?? [];
+ *   records.forEach(record => console.log(record.name));
+ * }
+ * ```
+ */
 export type SearchMasterRecordRS = InferOutput<
   typeof SearchMasterRecordResponseSchema
 >;
 
+// ============================================================================
+// Upsert Types
+// ============================================================================
+
 /**
- * Upsert types
+ * Complete request structure for insert/update operations (internal use).
+ *
+ * @property RqHeader - Authentication header
+ * @property MasterRecordDetail - Record data to insert or update
+ *
+ * @internal This type is primarily for internal SDK use. Use {@link MasterRecordDetail}
+ * as the input type for `client.upsertRecord()`.
  */
 export type ManageMasterRecordRequest = InferInput<
   typeof ManageMasterRecordRequestSchema
 >;
+
+/**
+ * Response from an insert/update operation.
+ *
+ * @property rsStatus - Operation status (check for 'OK' to confirm success)
+ * @property masterRecordDetail - The created/updated record with server-assigned values
+ *   (e.g., `recordCode` for new records)
+ *
+ * @example
+ * ```typescript
+ * const result = await client.upsertRecord({
+ *   languageCode: '02',
+ *   name: 'New Customer',
+ *   insertCriteria: 'N',
+ * });
+ *
+ * if (result.success) {
+ *   const newCode = result.data.masterRecordDetail?.recordCode;
+ *   console.log(`Created record with code: ${newCode}`);
+ * }
+ * ```
+ */
 export type ManageMasterRecordRS = InferOutput<
   typeof ManageMasterRecordResponseSchema
 >;
 
+// ============================================================================
+// Client Configuration
+// ============================================================================
+
+/**
+ * Configuration options for the AVES API client.
+ *
+ * @property baseURL - Base URL of the AVES API (e.g., 'https://api.aves.example.com')
+ * @property hostID - 6-digit identification code assigned to your organization
+ * @property xtoken - Authentication token for API access
+ * @property languageCode - Optional default 2-character language code for all requests
+ * @property timeoutMs - Optional request timeout in milliseconds (default: 30000)
+ *
+ * @example
+ * ```typescript
+ * const client = new AvesClient({
+ *   baseURL: 'https://api.aves.example.com',
+ *   hostID: '025706',
+ *   xtoken: 'TOKEN025706',
+ *   languageCode: '02',
+ *   timeoutMs: 10000,
+ * });
+ * ```
+ */
 export interface AvesClientOptions {
+  /** Base URL of the AVES API (e.g., 'https://api.aves.example.com') */
   baseURL: string;
+  /** 6-digit identification code assigned to your organization */
   hostID: string;
+  /** Authentication token for API access */
   xtoken: string;
+  /** Optional default 2-character language code for all requests */
   languageCode?: string;
+  /** Optional request timeout in milliseconds (default: 30000) */
   timeoutMs?: number;
 }

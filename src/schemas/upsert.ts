@@ -10,7 +10,6 @@ export const ManageMasterRecordRequestSchema = v.object({
   RqHeader: RqHeaderSchema,
   MasterRecordDetail: MasterRecordDetailApiValidationSchema,
 });
-
 /**
  * Upsert master record response schema (transforms to camelCase)
  */
@@ -18,5 +17,5 @@ export const ManageMasterRecordResponseSchema = createResponseSchema(
   v.object({
     RsStatus: RsStatusSchema,
     MasterRecordDetail: v.optional(MasterRecordDetailApiValidationSchema),
-  }),
+  })
 );

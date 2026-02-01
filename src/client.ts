@@ -70,7 +70,7 @@ export class AvesClient {
   }
 
   private handleApiStatus<T extends { rsStatus: RsStatus }>(
-    output: T,
+    output: T
   ): Result<T, AvesError> {
     const rsStatus = output.rsStatus;
     const status = rsStatus?.status;
@@ -80,8 +80,8 @@ export class AvesClient {
         apiError(
           rsStatus.errorDescription as string,
           status,
-          rsStatus.errorCode,
-        ),
+          rsStatus.errorCode
+        )
       );
     }
 
@@ -106,10 +106,10 @@ export class AvesClient {
     endpoint: string,
     requestBody: Record<string, unknown>,
     responseRootKey: string,
-    responseSchema: BaseSchema<unknown, T, BaseIssue<unknown>>,
+    responseSchema: BaseSchema<unknown, T, BaseIssue<unknown>>
   ): Promise<Result<T, AvesError>> {
     const { signal, clear } = createTimeoutSignal(
-      this.options.timeoutMs ?? 30_000,
+      this.options.timeoutMs ?? 30_000
     );
 
     try {
@@ -137,8 +137,8 @@ export class AvesClient {
       if (!rootElement) {
         return err(
           validationError(
-            `Invalid response structure: missing root element '${responseRootKey}'`,
-          ),
+            `Invalid response structure: missing root element '${responseRootKey}'`
+          )
         );
       }
 
@@ -163,7 +163,7 @@ export class AvesClient {
    * @returns Result containing list of matching master records in camelCase or error
    */
   async search(
-    params: SearchMasterRecord,
+    params: SearchMasterRecord
   ): Promise<Result<SearchMasterRecordRS, AvesError>> {
     try {
       const requestData = parse(SearchMasterRecordRequestSchema, {
@@ -173,18 +173,18 @@ export class AvesClient {
 
       const requestBody = createRootElement(
         XML_ROOT_ELEMENTS.SEARCH_REQUEST,
-        requestData,
+        requestData
       );
 
       return this.request<SearchMasterRecordRS>(
         this.endpoints.search,
         requestBody,
         XML_ROOT_ELEMENTS.SEARCH_RESPONSE,
-        SearchMasterRecordResponseSchema,
+        SearchMasterRecordResponseSchema
       );
     } catch (error) {
       return err(
-        this.toAvesError(error, 'Validation error occurred during search'),
+        this.toAvesError(error, 'Validation error occurred during search')
       );
     }
   }
@@ -195,7 +195,7 @@ export class AvesClient {
    * @returns Result containing response with customer record code in camelCase or error
    */
   async upsertRecord(
-    record: MasterRecordDetail,
+    record: MasterRecordDetail
   ): Promise<Result<ManageMasterRecordRS, AvesError>> {
     try {
       const apiRecord = parse(MasterRecordDetailApiSchema, record);
@@ -207,18 +207,18 @@ export class AvesClient {
 
       const requestBody = createRootElement(
         XML_ROOT_ELEMENTS.UPSERT_REQUEST,
-        requestData,
+        requestData
       );
 
       return this.request<ManageMasterRecordRS>(
         this.endpoints.upsert,
         requestBody,
         XML_ROOT_ELEMENTS.UPSERT_RESPONSE,
-        ManageMasterRecordResponseSchema,
+        ManageMasterRecordResponseSchema
       );
     } catch (error) {
       return err(
-        this.toAvesError(error, 'Validation error occurred during upsert'),
+        this.toAvesError(error, 'Validation error occurred during upsert')
       );
     }
   }
