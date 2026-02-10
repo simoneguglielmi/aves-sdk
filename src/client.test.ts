@@ -293,6 +293,135 @@ describe("AvesClient", () => {
 		});
 	});
 
+	describe("createBooking", () => {
+		const minimalBookingParams = {
+			customerDetail: { recordCode: "138311" },
+			bookingFileStatus: { value: "QUOTATION" as const },
+			startDate: "2014-12-27T00:00:00",
+			endDate: "2015-01-03T00:00:00",
+			selectedServiceList: {
+				selectedServiceDetail: {
+					sCode: "S1",
+					avesServiceType: "TOP_SS" as const,
+					toServiceType: "TRANSPORT" as const,
+				},
+			},
+			passengerList: {
+				passengerDetail: {
+					rph: "001",
+					roomRph: "001",
+					name: "Adult 1",
+					categoryCode: "AD" as const,
+				},
+			},
+		};
+
+		it("should make createBooking request and return camelCase response", async () => {
+			const mockClient = mockAgent.get(baseURL);
+
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/CreateBookingFile",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<BookingFileRS>
+          <RsStatus Status="OK"/>
+          <BookingFileDetail BookingFileCode="14/036657">
+            <CustomerRecordCode>138311</CustomerRecordCode>
+            <BookingFileStatus Value="QUOTATION"/>
+            <StartDate>2014-12-27T00:00:00</StartDate>
+            <EndDate>2015-01-03T00:00:00</EndDate>
+          </BookingFileDetail>
+        </BookingFileRS>`,
+				);
+
+			const result = await client.createBooking(minimalBookingParams);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data).toHaveProperty("rsStatus");
+				expect(result.data.rsStatus).toHaveProperty("status", "OK");
+				expect(result.data).toHaveProperty("bookingFileDetail");
+				expect(result.data.bookingFileDetail).toHaveProperty(
+					"bookingFileCode",
+					"14/036657",
+				);
+			}
+		});
+
+		it("should validate input parameters", async () => {
+			const result = await client.createBooking({
+				...minimalBookingParams,
+				bookingFileStatus: {
+					value: "INVALID_STATUS" as "QUOTATION",
+				},
+			});
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+			}
+		});
+
+		it("should handle API errors", async () => {
+			const mockClient = mockAgent.get(baseURL);
+
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/CreateBookingFile",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<BookingFileRS>
+          <RsStatus Status="ERROR">
+            <ErrorCode>2001</ErrorCode>
+            <ErrorDescription>Booking creation failed</ErrorDescription>
+          </RsStatus>
+        </BookingFileRS>`,
+				);
+
+			const result = await client.createBooking(minimalBookingParams);
+
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+				expect(result.error.kind).toBe("api");
+				expect(result.error.code).toBe(2001);
+				expect(result.error.status).toBe("error");
+			}
+		});
+
+		it("should transform request to PascalCase with BookFileRQ root", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
+
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/CreateBookingFile",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<BookingFileRS>
+            <RsStatus Status="OK"/>
+          </BookingFileRS>`;
+				});
+
+			await client.createBooking(minimalBookingParams);
+
+			expect(capturedBody).toContain("<BookFileRQ>");
+			expect(capturedBody).toContain("<CustomerDetail");
+			expect(capturedBody).toContain('RecordCode="138311"');
+			expect(capturedBody).toContain("<BookingFileStatus");
+			expect(capturedBody).toContain(
+				"<StartDate>2014-12-27T00:00:00</StartDate>",
+			);
+			expect(capturedBody).toContain("<PassengerList>");
+		});
+	});
+
 	describe("AvesError", () => {
 		it("should create error with correct properties", () => {
 			const error = new AvesError("api", "Test error message", "error", 1001);

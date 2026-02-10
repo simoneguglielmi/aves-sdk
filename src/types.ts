@@ -1,22 +1,26 @@
-import type { InferInput, InferOutput } from "valibot";
-import type { RqHeaderSchema, RsStatusSchema } from "./schemas/common.js";
+import type { InferInput, InferOutput } from 'valibot';
 import type {
-	AccountPoliciesSchema,
-	DynamicFieldsSchema,
-	FinancialDetailSchema,
-	IdDocumentDetailSchema,
-	MasterRecordDetailResponseSchema,
-	MasterRecordDetailSchema,
-} from "./schemas/master-record.js";
+  BookingFileResponseSchema,
+  BookingFileSchema,
+} from './schemas/booking-file.js';
+import type { RqHeaderSchema, RsStatusSchema } from './schemas/common.js';
 import type {
-	SearchMasterRecordResponseSchema,
-	SearchMasterRecordSchema,
-} from "./schemas/search.js";
+  AccountPoliciesSchema,
+  DynamicFieldsSchema,
+  FinancialDetailSchema,
+  IdDocumentDetailSchema,
+  MasterRecordDetailResponseSchema,
+  MasterRecordDetailSchema,
+} from './schemas/master-record.js';
 import type {
-	ManageMasterRecordRequestSchema,
-	ManageMasterRecordResponseSchema,
-} from "./schemas/upsert.js";
-import type { Camelize } from "./utils/case-transform.js";
+  SearchMasterRecordResponseSchema,
+  SearchMasterRecordSchema,
+} from './schemas/search.js';
+import type {
+  ManageMasterRecordRequestSchema,
+  ManageMasterRecordResponseSchema,
+} from './schemas/upsert.js';
+import type { Camelize } from './utils/case-transform.js';
 
 // ============================================================================
 // Common Types
@@ -170,7 +174,7 @@ export type MasterRecordDetail = InferInput<typeof MasterRecordDetailSchema>;
  * populated by the server (e.g., `modifiedDate`, `loginType`).
  */
 export type MasterRecordDetailResponse = InferOutput<
-	typeof MasterRecordDetailResponseSchema
+  typeof MasterRecordDetailResponseSchema
 >;
 
 // ============================================================================
@@ -239,7 +243,7 @@ export type SearchMasterRecord = InferInput<typeof SearchMasterRecordSchema>;
  * ```
  */
 export type SearchMasterRecordRS = InferOutput<
-	typeof SearchMasterRecordResponseSchema
+  typeof SearchMasterRecordResponseSchema
 >;
 
 // ============================================================================
@@ -256,7 +260,7 @@ export type SearchMasterRecordRS = InferOutput<
  * as the input type for `client.upsertRecord()`.
  */
 export type ManageMasterRecordRequest = InferInput<
-	typeof ManageMasterRecordRequestSchema
+  typeof ManageMasterRecordRequestSchema
 >;
 
 /**
@@ -281,8 +285,63 @@ export type ManageMasterRecordRequest = InferInput<
  * ```
  */
 export type ManageMasterRecordRS = InferOutput<
-	typeof ManageMasterRecordResponseSchema
+  typeof ManageMasterRecordResponseSchema
 >;
+
+// ============================================================================
+// Booking File Types (CreateBookingFile)
+// ============================================================================
+
+/**
+ * Request body for CreateBookingFile (BookFileRQ).
+ * Maps to AVES XML 1.8.0 "BookingFileRQ" / BookFileRQ structure.
+ *
+ * @property createDate - Creation date of booking file (optional; Aves uses system date if omitted)
+ * @property bookingFileRefCode - Reference code of an external booking system
+ * @property travelAgentCode - Travel agent code
+ * @property clerkName - Clerk name
+ * @property customerDetail - Customer: record code if in Aves DB, or full data to insert (see Common Structures)
+ * @property currencyCode - Currency code
+ * @property markupCode - Markup code applied
+ * @property bookingFileStatus - Status (QUOTATION | WORK_IN_PROGRESS | CONFIRM | CONFIRMED | OPTION | OPTIONED | REQUEST | CANCELED); ExpiredDate only for OPTIONED
+ * @property statisticCodes - Statistic codes (sCode1..sCode6, string up to 4)
+ * @property destination - Destination (code, iataCode, nationCode)
+ * @property bookingFileDescription - Booking file description
+ * @property startDate - Start date of booking file (required)
+ * @property endDate - End date of booking file (required)
+ * @property earlyBookingDate - Early booking date for discount
+ * @property cupCode - CupCode
+ * @property cigCode - CigCode
+ * @property customerPromoterCode - Customer promoter code
+ * @property billingReferenceCode - Aves code for billing
+ * @property paymentReferenceCode - Aves code for payment
+ * @property bookingFileDocument - Print/send document options and infoDocumentsToPrint
+ * @property financialDeadlineList - List of financial deadlines
+ * @property deadlineList - List of deadlines
+ * @property paymentList - List of payments
+ * @property selectedPackageList - List of selected packages (pCode, startDate, endDate, getServicesFromPackage)
+ * @property selectedServiceList - List of selected services (required)
+ * @property extraQuotaRefCode - Code of program with extra services (e.g. insurance)
+ * @property extraQuoteServiceList - List of extra services
+ * @property getExtraQuoteFromSystem - Force Aves to get extra quotes from DB
+ * @property passengerList - List of passengers (required)
+ * @property noteList - Notes
+ * @property bookingFinancialInfo - Payment type (Customer_PaymentType, Customer_SpecPaymentTypeCode)
+ * @property bookingFileCode - Booking file code
+ * @property groupingPaxPolicy - GROUPED_PAX | NOT_GROUPED_PAX | ONE_PAX_ONLY
+ * @property groupBookingFile - true/false for group booking
+ * @property typeDownloadFile - AVES2AVES | AVES2AVESVIA | AVES2AVESITA
+ * @property setBookingFileCodeFromStartDate - Set booking code from departure date
+ */
+export type BookingFileRQ = InferInput<typeof BookingFileSchema>;
+
+/**
+ * Response from CreateBookingFile (BookingFileRS).
+ *
+ * @property rsStatus - Operation status (check for 'OK' before using result)
+ * @property bookingFileDetail - Created booking file detail (camelCase); see Common Structures "BOOKEDFILE"
+ */
+export type BookingFileRS = InferOutput<typeof BookingFileResponseSchema>;
 
 // ============================================================================
 // Client Configuration
@@ -309,14 +368,14 @@ export type ManageMasterRecordRS = InferOutput<
  * ```
  */
 export interface AvesClientOptions {
-	/** Base URL of the AVES API (e.g., 'https://api.aves.example.com') */
-	baseURL: string;
-	/** 6-digit identification code assigned to your organization */
-	hostID: string;
-	/** Authentication token for API access */
-	xtoken: string;
-	/** Optional default 2-character language code for all requests */
-	languageCode?: string;
-	/** Optional request timeout in milliseconds (default: 30000) */
-	timeoutMs?: number;
+  /** Base URL of the AVES API (e.g., 'https://api.aves.example.com') */
+  baseURL: string;
+  /** 6-digit identification code assigned to your organization */
+  hostID: string;
+  /** Authentication token for API access */
+  xtoken: string;
+  /** Optional default 2-character language code for all requests */
+  languageCode?: string;
+  /** Optional request timeout in milliseconds (default: 30000) */
+  timeoutMs?: number;
 }

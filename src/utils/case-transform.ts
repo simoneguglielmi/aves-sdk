@@ -20,25 +20,52 @@ type ToPascalCase<S extends string> =
 		? `${Capitalize<F>}${R}`
 		: Capitalize<PascalFromDelimiter<S>>;
 
-export type Camelize<T> = T extends readonly (infer U)[]
-	? Camelize<U>[]
-	: T extends object
-		? {
-				[K in keyof T as K extends `@${infer Rest}`
-					? ToCamelCase<Rest> // Strip @ prefix and camelCase the rest
-					: ToCamelCase<K & string>]: Camelize<T[K]>;
-			}
-		: T;
+/** Keys that are preserved as-is (no recursive transform) at runtime */
+type Primitive = string | number | boolean | symbol | bigint | null | undefined;
+type SpecialObject =
+	| Date
+	| RegExp
+	| Map<unknown, unknown>
+	| Set<unknown>
+	| Error;
 
-export type Pascalize<T> = T extends readonly (infer U)[]
-	? Pascalize<U>[]
-	: T extends object
-		? {
-				[K in keyof T as K extends `@${infer Rest}`
-					? ToPascalCase<Rest> // Strip @ prefix and PascalCase the rest
-					: ToPascalCase<K & string>]: Pascalize<T[K]>;
-			}
-		: T;
+/** Maps key K: strips leading @ and converts to camelCase for mapped output key */
+type CamelizeKey<K extends string> = K extends `@${infer Rest}`
+	? ToCamelCase<Rest>
+	: ToCamelCase<K>;
+
+/** Maps key K: strips leading @ and converts to PascalCase for mapped output key */
+type PascalizeKey<K extends string> = K extends `@${infer Rest}`
+	? ToPascalCase<Rest>
+	: ToPascalCase<K>;
+
+/**
+ * Recursively maps PascalCase/@-prefixed object keys to camelCase.
+ * Reflects pascalToCamelKeys runtime: primitives and special objects preserved; arrays and plain objects recursively transformed.
+ */
+export type Camelize<T> = T extends Primitive
+	? T
+	: T extends SpecialObject
+		? T
+		: T extends readonly (infer U)[]
+			? Camelize<U>[]
+			: T extends object
+				? { [K in keyof T as CamelizeKey<K & string>]: Camelize<T[K]> }
+				: T;
+
+/**
+ * Recursively maps camelCase keys to PascalCase (with @ for attributes at runtime).
+ * Reflects camelToPascalKeys output shape for type-level use.
+ */
+export type Pascalize<T> = T extends Primitive
+	? T
+	: T extends SpecialObject
+		? T
+		: T extends readonly (infer U)[]
+			? Pascalize<U>[]
+			: T extends object
+				? { [K in keyof T as PascalizeKey<K & string>]: Pascalize<T[K]> }
+				: T;
 
 function camelToPascal(str: string): string {
 	return str.charAt(0).toUpperCase() + str.slice(1);
@@ -106,6 +133,51 @@ const attributeRegistry: Record<string, readonly string[]> = {
 
 	// Search parameters
 	search: ["minDate", "maxDate"],
+
+	// Booking file (CreateBookingFile / BookFileRQ)
+	bookingFileStatus: ["value", "expiredDate"],
+	statisticCodes: ["sCode1", "sCode2", "sCode3", "sCode4", "sCode5", "sCode6"],
+	destination: ["code", "iataCode", "nationCode"],
+	customerDetail: ["recordCode"],
+	bookingFileDocument: ["printDoc", "sendDocViaEmail"],
+	financialDeadlineDetail: ["reschedulingCode", "expireDate", "totalAmount"],
+	deadlineDetail: ["deadlineCode", "description", "expireDate"],
+	paymentDetail: [
+		"paymentDate",
+		"paumentNote",
+		"amount",
+		"paymentUser",
+		"paymentType",
+	],
+	selectedPackageDetail: [
+		"pCode",
+		"startDate",
+		"endDate",
+		"getServicesFromPackage",
+	],
+	selectedServiceDetail: [
+		"sCode",
+		"ssCode",
+		"supplierMasterCode",
+		"supplierName",
+		"supplierMasterSearchField",
+		"supplierFiscalCode",
+	],
+	extraQuoteServiceDetail: [
+		"sCode",
+		"ssCode",
+		"supplierMasterCode",
+		"supplierName",
+		"supplierMasterSearchField",
+		"supplierFiscalCode",
+	],
+	noteDetail: ["nType", "title"],
+	passengerDetail: ["rph", "roomRph", "billingHolder"],
+	bookingFinancialInfo: [
+		"customer_PaymentType",
+		"customer_SpecPaymentTypeCode",
+	],
+	reservationFormCustomizablePrintParameters: ["makeDocumentTo"],
 };
 
 /**
@@ -132,11 +204,20 @@ export function registerAttributeFields(
 	});
 }
 
+export type CamelToPascalOptions = {
+	/** At root level only: do not add @ prefix for these keys (used when same key is element at root but attribute in nested objects) */
+	excludeFromAttributePrefix?: string[];
+};
+
 /**
  * Transforms object keys from camelCase to PascalCase
  * Adds @ prefix to fields in ATTRIBUTE_FIELDS for XML attributes
+ * @param options.excludeFromAttributePrefix - keys that must not get @ at this level (not passed to recursion)
  */
-export function camelToPascalKeys<T>(input: T): Pascalize<T> {
+export function camelToPascalKeys<T>(
+	input: T,
+	options?: CamelToPascalOptions,
+): Pascalize<T> {
 	if (input === null || typeof input !== "object") {
 		return input as Pascalize<T>;
 	}
@@ -149,13 +230,17 @@ export function camelToPascalKeys<T>(input: T): Pascalize<T> {
 		return input.map((item) => camelToPascalKeys(item)) as Pascalize<T>;
 	}
 
+	const exclude = options?.excludeFromAttributePrefix;
 	const result: Record<string, unknown> = {};
 
 	for (const [key, value] of Object.entries(input)) {
 		const pascalKey = camelToPascal(key);
-		const finalKey = ATTRIBUTE_FIELDS.has(key) ? `@${pascalKey}` : pascalKey;
+		const treatAsAttr = ATTRIBUTE_FIELDS.has(key) && !exclude?.includes(key);
+		const finalKey = treatAsAttr ? `@${pascalKey}` : pascalKey;
 
-		result[finalKey] = transformValue(value, camelToPascalKeys);
+		result[finalKey] = transformValue(value, (val) =>
+			camelToPascalKeys(val, undefined),
+		);
 	}
 
 	return result as Pascalize<T>;

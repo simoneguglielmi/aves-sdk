@@ -6,6 +6,9 @@ export { AvesError } from "./error.js";
 export type {
 	AccountPolicies,
 	AvesClientOptions,
+	// Booking file (CreateBookingFile)
+	BookingFileRQ,
+	BookingFileRS,
 	DynamicFields,
 	// Master record types
 	FinancialDetail,

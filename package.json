@@ -25,14 +25,14 @@
   ],
   "license": "MIT",
   "type": "module",
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "default": "./dist/index.js"
     }
   },
   "sideEffects": false,
@@ -45,7 +45,7 @@
   },
   "scripts": {
     "clean": "rimraf dist",
-    "build": "yarn clean && yarn check && yarn tsup",
+    "build": "yarn clean && yarn check && yarn tsdown",
     "prepare": "yarn build",
     "test": "vitest run",
     "publish": "npm publish",
@@ -63,7 +63,7 @@
     "@types/node": "^24.6.2",
     "dotenv": "^17.2.3",
     "rimraf": "^6.1.2",
-    "tsup": "^8.5.1",
+    "tsdown": "^0.20.3",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }

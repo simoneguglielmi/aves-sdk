@@ -3,6 +3,8 @@ export const XML_ROOT_ELEMENTS = {
 	SEARCH_RESPONSE: "SearchMasterRecordRS",
 	UPSERT_REQUEST: "ManageMasterRecordRQ",
 	UPSERT_RESPONSE: "ManageMasterRecordRS",
+	BOOKING_REQUEST: "BookFileRQ",
+	BOOKING_RESPONSE: "BookingFileRS",
 } as const;
 
 export type XMLRootElementValues =
