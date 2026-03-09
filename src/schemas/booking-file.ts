@@ -234,7 +234,10 @@ const SelectedPackageListInputSchema = v.object({
 
 const SelectedServiceListInputSchema = v.object({
 	selectedServiceDetail: v.pipe(
-		v.union([v.array(SelectedServiceDetailInputSchema), SelectedServiceDetailInputSchema]),
+		v.union([
+			v.array(SelectedServiceDetailInputSchema),
+			SelectedServiceDetailInputSchema,
+		]),
 		v.transform((input) => (Array.isArray(input) ? input : [input])),
 	),
 });
