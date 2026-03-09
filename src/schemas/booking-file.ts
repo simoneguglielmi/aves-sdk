@@ -154,6 +154,18 @@ const PaymentDetailInputSchema = v.object({
 	paymentType: v.optional(paymentTypeDetailSchema),
 });
 
+const FinancialDeadlineListInputSchema = v.object({
+	deadlineDetail: v.optional(v.array(FinancialDeadlineDetailInputSchema)),
+});
+
+const DeadlineListInputSchema = v.object({
+	deadlineDetail: v.optional(v.array(DeadlineDetailInputSchema)),
+});
+
+const PaymentListInputSchema = v.object({
+	paymentDetail: v.optional(v.array(PaymentDetailInputSchema)),
+});
+
 // ---------------------------------------------------------------------------
 // SelectedPackageList / SelectedServiceList / ExtraQuoteServiceList
 // ---------------------------------------------------------------------------
@@ -216,6 +228,23 @@ const SelectedServiceDetailInputSchema = v.object({
 	supplierFiscalCode: v.optional(v.string()),
 });
 
+const SelectedPackageListInputSchema = v.object({
+	selectedPackageDetail: v.optional(v.array(SelectedPackageDetailInputSchema)),
+});
+
+const SelectedServiceListInputSchema = v.object({
+	selectedServiceDetail: v.pipe(
+		v.union([v.array(SelectedServiceDetailInputSchema), SelectedServiceDetailInputSchema]),
+		v.transform((input) => (Array.isArray(input) ? input : [input])),
+	),
+});
+
+const ExtraQuoteServiceListInputSchema = v.object({
+	extraQuoteServiceDetail: v.optional(
+		v.array(SelectedServiceDetailInputSchema),
+	),
+});
+
 // ---------------------------------------------------------------------------
 // NoteList
 // ---------------------------------------------------------------------------
@@ -224,6 +253,10 @@ const NoteDetailInputSchema = v.object({
 	nType: v.optional(v.string()),
 	title: v.optional(v.string()),
 	text: v.optional(v.string()),
+});
+
+const NoteListInputSchema = v.object({
+	noteDetail: v.optional(v.array(NoteDetailInputSchema)),
 });
 
 // ---------------------------------------------------------------------------
@@ -266,6 +299,13 @@ const PassengerDetailInputSchema = v.object({
 			idIssueDate: v.optional(v.string()),
 			idExpireDate: v.optional(v.string()),
 		}),
+	),
+});
+
+const PassengerListInputSchema = v.object({
+	passengerDetail: v.pipe(
+		v.union([v.array(PassengerDetailInputSchema), PassengerDetailInputSchema]),
+		v.transform((input) => (Array.isArray(input) ? input : [input])),
 	),
 });
 
@@ -332,62 +372,18 @@ export const BookingFileSchema = v.object({
 	billingReferenceCode: v.optional(v.string()),
 	paymentReferenceCode: v.optional(v.string()),
 	bookingFileDocument: v.optional(BookingFileDocumentInputSchema),
-	financialDeadlineList: v.optional(
-		v.object({
-			deadlineDetail: v.optional(v.array(FinancialDeadlineDetailInputSchema)),
-		}),
-	),
-	deadlineList: v.optional(
-		v.object({
-			deadlineDetail: v.optional(v.array(DeadlineDetailInputSchema)),
-		}),
-	),
-	paymentList: v.optional(
-		v.object({
-			paymentDetail: v.optional(v.array(PaymentDetailInputSchema)),
-		}),
-	),
-	selectedPackageList: v.optional(
-		v.object({
-			selectedPackageDetail: v.optional(
-				v.array(SelectedPackageDetailInputSchema),
-			),
-		}),
-	),
-	selectedServiceList: v.object({
-		selectedServiceDetail: v.pipe(
-			v.union([
-				v.array(SelectedServiceDetailInputSchema),
-				SelectedServiceDetailInputSchema,
-			]),
-			v.transform((input) => (Array.isArray(input) ? input : [input])),
-		),
-	}),
+	financialDeadlineList: v.optional(FinancialDeadlineListInputSchema),
+	deadlineList: v.optional(DeadlineListInputSchema),
+	paymentList: v.optional(PaymentListInputSchema),
+	selectedPackageList: v.optional(SelectedPackageListInputSchema),
+	selectedServiceList: SelectedServiceListInputSchema,
 	extraQuotaRefCode: v.optional(v.string()),
-	extraQuoteServiceList: v.optional(
-		v.object({
-			extraQuoteServiceDetail: v.optional(
-				v.array(SelectedServiceDetailInputSchema),
-			),
-		}),
-	),
+	extraQuoteServiceList: v.optional(ExtraQuoteServiceListInputSchema),
 	getExtraQuoteFromSystem: v.optional(
 		v.union([v.literal("true"), v.literal("false"), v.boolean()]),
 	),
-	passengerList: v.object({
-		passengerDetail: v.pipe(
-			v.union([
-				v.array(PassengerDetailInputSchema),
-				PassengerDetailInputSchema,
-			]),
-			v.transform((input) => (Array.isArray(input) ? input : [input])),
-		),
-	}),
-	noteList: v.optional(
-		v.object({
-			noteDetail: v.optional(v.array(NoteDetailInputSchema)),
-		}),
-	),
+	passengerList: PassengerListInputSchema,
+	noteList: v.optional(NoteListInputSchema),
 	bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
 	bookingFileCode: v.optional(v.string()),
 	groupingPaxPolicy: v.optional(groupingPaxPolicySchema),
