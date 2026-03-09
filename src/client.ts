@@ -37,7 +37,7 @@ import type {
   SearchMasterRecord,
   SearchMasterRecordRS,
 } from './types.js';
-import type { Result } from './utils/result.js';
+import { isOk, type Result } from './utils/result.js';
 import { err, ok } from './utils/result.js';
 import { createTimeoutSignal } from './utils/timeout.js';
 import { parseUrl } from './utils/url.js';
@@ -140,7 +140,7 @@ export class AvesClient {
 
       const responseText = await response.body.text();
 
-      if (response.statusCode !== 200) {
+      if (!isOk(response.statusCode)) {
         return err(apiError(responseText, 'ERROR', response.statusCode));
       }
 
