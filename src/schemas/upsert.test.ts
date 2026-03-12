@@ -7,6 +7,7 @@ import {
 	IdDocumentDetailSchema,
 	MasterRecordDetailApiSchema,
 	MasterRecordDetailSchema,
+	SupplierRefMasterRecordsSchema,
 } from "./master-record.js";
 import {
 	ManageMasterRecordRequestSchema,
@@ -321,34 +322,77 @@ describe("AccountPoliciesSchema", () => {
 	});
 });
 
-describe("DynamicFieldsSchema", () => {
-	it("should validate valid dynamic field", () => {
+describe("SupplierRefMasterRecordsSchema", () => {
+	it("should validate valid supplier reference master records with all fields", () => {
 		const input = {
-			key: "loyalty_tier",
-			value: "gold",
+			supplierRefCode: "SUP123",
+			companyMainBusinessType: "HOTEL",
+			carrierType: "FLIGHT",
 		};
 
-		const result = parse(DynamicFieldsSchema, input);
+		const result = parse(SupplierRefMasterRecordsSchema, input);
 		expect(result).toBeDefined();
 	});
 
-	it("should require both key and value", () => {
-		expect(() => parse(DynamicFieldsSchema, { key: "test" })).toThrow();
-		expect(() => parse(DynamicFieldsSchema, { value: "test" })).toThrow();
-		expect(() => parse(DynamicFieldsSchema, {})).toThrow();
+	it("should require supplierRefCode and allow optional fields", () => {
+		const input = {
+			supplierRefCode: "SUP123",
+		};
+
+		const result = parse(SupplierRefMasterRecordsSchema, input);
+		expect(result).toBeDefined();
 	});
 
 	it("should transform to PascalCase with @ prefix for attributes", () => {
 		const input = {
-			key: "custom_field",
-			value: "custom_value",
+			supplierRefCode: "SUP456",
+			companyMainBusinessType: "TOUR_OPERATOR",
+			carrierType: "OTHER",
 		};
+
+		const result = parse(SupplierRefMasterRecordsSchema, input);
+
+		// All supplier reference master records fields are attributes
+		expect(result).toHaveProperty("@SupplierRefCode", "SUP456");
+		expect(result).toHaveProperty("@CompanyMainBusinessType", "TOUR_OPERATOR");
+		expect(result).toHaveProperty("@CarrierType", "OTHER");
+	});
+});
+
+describe("DynamicFieldsSchema", () => {
+	it("should validate valid dynamic field", () => {
+		const input = [
+			{
+				key: "loyalty_tier",
+				value: "gold",
+			},
+		];
+
+		const result = parse(DynamicFieldsSchema, input);
+		expect(result).toBeDefined();
+		expect(result).toHaveLength(1);
+	});
+
+	it("should require both key and value", () => {
+		expect(() => parse(DynamicFieldsSchema, [{ key: "test" }])).toThrow();
+		expect(() => parse(DynamicFieldsSchema, [{ value: "test" }])).toThrow();
+		expect(() => parse(DynamicFieldsSchema, [{}])).toThrow();
+	});
+
+	it("should transform to PascalCase with @ prefix for attributes", () => {
+		const input = [
+			{
+				key: "custom_field",
+				value: "custom_value",
+			},
+		];
 
 		const result = parse(DynamicFieldsSchema, input);
 
+		expect(result).toHaveLength(1);
 		// key and value are attribute fields
-		expect(result).toHaveProperty("@Key", "custom_field");
-		expect(result).toHaveProperty("@Value", "custom_value");
+		expect(result[0]).toHaveProperty("@Key", "custom_field");
+		expect(result[0]).toHaveProperty("@Value", "custom_value");
 	});
 });
 
@@ -514,6 +558,35 @@ describe("MasterRecordDetailApiSchema with nested objects", () => {
 		expect(result.IdDocumentDetail).toHaveProperty("@IdCode", "AB1234567");
 	});
 
+	it("should transform nested supplierRefMasterRecords to PascalCase with @ attributes", () => {
+		const input = {
+			languageCode: "02",
+			name: "John Doe",
+			supplierRefMasterRecords: {
+				supplierRefCode: "SUP123",
+				companyMainBusinessType: "TRAVEL",
+				carrierType: "FLIGHT",
+			},
+		};
+
+		const validated = parse(MasterRecordDetailSchema, input);
+		const result = parse(MasterRecordDetailApiSchema, validated);
+
+		expect(result).toHaveProperty("SupplierRefMasterRecords");
+		expect(result.SupplierRefMasterRecords).toHaveProperty(
+			"@SupplierRefCode",
+			"SUP123",
+		);
+		expect(result.SupplierRefMasterRecords).toHaveProperty(
+			"@CompanyMainBusinessType",
+			"TRAVEL",
+		);
+		expect(result.SupplierRefMasterRecords).toHaveProperty(
+			"@CarrierType",
+			"FLIGHT",
+		);
+	});
+
 	it("should transform nested dynamicFields to PascalCase with @ attributes", () => {
 		const input = {
 			languageCode: "02",
@@ -607,6 +680,35 @@ describe("ManageMasterRecordResponseSchema with nested objects", () => {
 		expect(result.masterRecordDetail?.idDocumentDetail?.idCode).toBe(
 			"AB1234567",
 		);
+	});
+
+	it("should transform API response with supplierRefMasterRecords to camelCase", () => {
+		const apiResponse = {
+			RsStatus: { "@Status": "OK" },
+			MasterRecordDetail: {
+				"@RecordCode": "508558",
+				Name: "John Doe",
+				SupplierRefMasterRecords: {
+					"@SupplierRefCode": "SUP123",
+					"@CompanyMainBusinessType": "HOTEL",
+					"@CarrierType": "FLIGHT",
+				},
+			},
+		};
+
+		const result = parse(ManageMasterRecordResponseSchema, apiResponse);
+
+		expect(result.masterRecordDetail?.supplierRefMasterRecords).toBeDefined();
+		expect(
+			result.masterRecordDetail?.supplierRefMasterRecords?.supplierRefCode,
+		).toBe("SUP123");
+		expect(
+			result.masterRecordDetail?.supplierRefMasterRecords
+				?.companyMainBusinessType,
+		).toBe("HOTEL");
+		expect(
+			result.masterRecordDetail?.supplierRefMasterRecords?.carrierType,
+		).toBe("FLIGHT");
 	});
 
 	it("should transform API response with all nested objects (excluding dynamicFields array)", () => {

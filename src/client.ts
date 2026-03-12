@@ -1,270 +1,269 @@
-import { request as r } from 'undici';
+import { request as r } from "undici";
 import {
-  type BaseIssue,
-  type BaseSchema,
-  parse,
-  safeParse,
-  ValiError,
-} from 'valibot';
+	type BaseIssue,
+	type BaseSchema,
+	parse,
+	safeParse,
+	ValiError,
+} from "valibot";
 import {
-  AvesError,
-  apiError,
-  buildDetails,
-  isAbortError,
-  unknownError,
-  validationError,
-} from './error.js';
+	AvesError,
+	apiError,
+	buildDetails,
+	isAbortError,
+	unknownError,
+	validationError,
+} from "./error.js";
 import {
-  BookingFileApiSchema,
-  BookingFileResponseSchema,
-} from './schemas/booking-file.js';
-import { MasterRecordDetailApiSchema } from './schemas/master-record.js';
+	BookingFileApiSchema,
+	BookingFileResponseSchema,
+} from "./schemas/booking-file.js";
+import { MasterRecordDetailApiSchema } from "./schemas/master-record.js";
 import {
-  SearchMasterRecordRequestSchema,
-  SearchMasterRecordResponseSchema,
-} from './schemas/search.js';
+	SearchMasterRecordRequestSchema,
+	SearchMasterRecordResponseSchema,
+} from "./schemas/search.js";
 import {
-  ManageMasterRecordRequestSchema,
-  ManageMasterRecordResponseSchema,
-} from './schemas/upsert.js';
+	ManageMasterRecordRequestSchema,
+	ManageMasterRecordResponseSchema,
+} from "./schemas/upsert.js";
 import type {
-  AvesClientOptions,
-  BookingFileRQ,
-  BookingFileRS,
-  ManageMasterRecordRS,
-  MasterRecordDetail,
-  RsStatus,
-  SearchMasterRecord,
-  SearchMasterRecordRS,
-} from './types.js';
-import { err, isOk, ok, type Result } from './utils/result.js';
-import { createTimeoutSignal } from './utils/timeout.js';
-import { parseUrl } from './utils/url.js';
-import { jsonToXml, xmlToJson } from './xml-client.js';
-import { createRootElement, XML_ROOT_ELEMENTS } from './xml-root.js';
+	AvesClientOptions,
+	BookingFileRQ,
+	BookingFileRS,
+	ManageMasterRecordRS,
+	MasterRecordDetail,
+	RsStatus,
+	SearchMasterRecord,
+	SearchMasterRecordRS,
+} from "./types.js";
+import { err, isOk, ok, type Result } from "./utils/result.js";
+import { createTimeoutSignal } from "./utils/timeout.js";
+import { parseUrl } from "./utils/url.js";
+import { jsonToXml, xmlToJson } from "./xml-client.js";
+import { createRootElement, XML_ROOT_ELEMENTS } from "./xml-root.js";
 
 /**
  * AVES XML REST API client
  */
 export class AvesClient {
-  /**
-   * @param options - Client configuration options
-   * @param options.baseURL - Base URL of the AVES API
-   * @param options.hostID - 6-digit identification code
-   * @param options.xtoken - Authentication token
-   * @param options.languageCode - Optional 2-digit language code
-   * @param options.timeoutMs - Optional request timeout in milliseconds
-   */
-  constructor(private readonly options: AvesClientOptions) {}
+	/**
+	 * @param options - Client configuration options
+	 * @param options.baseURL - Base URL of the AVES API
+	 * @param options.hostID - 6-digit identification code
+	 * @param options.xtoken - Authentication token
+	 * @param options.languageCode - Optional 2-digit language code
+	 * @param options.timeoutMs - Optional request timeout in milliseconds
+	 */
+	constructor(private readonly options: AvesClientOptions) {}
 
-  private createRqHeader() {
-    return {
-      '@HostID': this.options.hostID,
-      '@Xtoken': this.options.xtoken,
-      '@Interface': 'WEB' as const,
-      '@UserName': 'WEB' as const,
-      ...(this.options.languageCode && {
-        '@LanguageCode': this.options.languageCode,
-      }),
-    };
-  }
+	private createRqHeader() {
+		return {
+			"@HostID": this.options.hostID,
+			"@Xtoken": this.options.xtoken,
+			"@Interface": "WEB" as const,
+			"@UserName": "WEB" as const,
+			...(this.options.languageCode && {
+				"@LanguageCode": this.options.languageCode,
+			}),
+		};
+	}
 
-  private createUrl(endpoint: string) {
-    return parseUrl(this.options.baseURL, endpoint);
-  }
+	private createUrl(endpoint: string) {
+		return parseUrl(this.options.baseURL, endpoint);
+	}
 
-  private get endpoints() {
-    return {
-      search: '/interop/masterRecords/v2/rest/Search',
-      upsert: '/interop/masterRecords/v2/rest/InsertOrUpdate',
-      createBooking: '/interop/booking/v2/rest/CreateBookingFile',
-    } as const;
-  }
+	private get endpoints() {
+		return {
+			search: "/interop/masterRecords/v2/rest/Search",
+			upsert: "/interop/masterRecords/v2/rest/InsertOrUpdate",
+			createBooking: "/interop/booking/v2/rest/CreateBookingFile",
+		} as const;
+	}
 
-  private handleApiStatus<T extends { rsStatus: RsStatus }>(
-    output: T,
-  ): Result<T, AvesError> {
-    const rsStatus = output.rsStatus;
-    const status = rsStatus?.status;
+	private handleApiStatus<T extends { rsStatus: RsStatus }>(
+		output: T,
+	): Result<T, AvesError> {
+		const rsStatus = output.rsStatus;
+		const status = rsStatus?.status;
 
-    if (status !== 'OK') {
-      return err(
-        apiError(
-          rsStatus.errorDescription as string,
-          status,
-          rsStatus.errorCode,
-        ),
-      );
-    }
+		if (status !== "OK") {
+			return err(
+				apiError(
+					rsStatus.errorDescription as string,
+					status,
+					rsStatus.errorCode,
+				),
+			);
+		}
 
-    return ok(output);
-  }
+		return ok(output);
+	}
 
-  private toAvesError(error: unknown, defaultMessage: string): AvesError {
-    if (error instanceof AvesError) {
-      return error;
-    }
-    if (error instanceof ValiError) {
-      const details = buildDetails(error.issues);
-      return validationError(`Validation error: ${details}`);
-    }
-    if (error instanceof Error) {
-      return unknownError(error.message);
-    }
-    return unknownError(defaultMessage);
-  }
+	private toAvesError(error: unknown, defaultMessage: string): AvesError {
+		if (error instanceof AvesError) {
+			return error;
+		}
+		if (error instanceof ValiError) {
+			const details = buildDetails(error.issues);
+			return validationError(`Validation error: ${details}`);
+		}
+		if (error instanceof Error) {
+			return unknownError(error.message);
+		}
+		return unknownError(defaultMessage);
+	}
 
-  private async request<T extends { rsStatus: RsStatus }>(
-    endpoint: string,
-    requestBody: Record<string, unknown>,
-    responseRootKey: string,
-    responseSchema: BaseSchema<unknown, T, BaseIssue<unknown>>,
-  ): Promise<Result<T, AvesError>> {
-    const { signal, clear } = createTimeoutSignal(
-      this.options.timeoutMs ?? 30_000,
-    );
+	private async request<T extends { rsStatus: RsStatus }>(
+		endpoint: string,
+		requestBody: Record<string, unknown>,
+		responseRootKey: string,
+		responseSchema: BaseSchema<unknown, T, BaseIssue<unknown>>,
+	): Promise<Result<T, AvesError>> {
+		const { signal, clear } = createTimeoutSignal(
+			this.options.timeoutMs ?? 30_000,
+		);
 
-    try {
-      const url = this.createUrl(endpoint);
-      const xmlBody = jsonToXml(requestBody);
-      console.log('xmlBody', xmlBody);
+		try {
+			const url = this.createUrl(endpoint);
+			const xmlBody = jsonToXml(requestBody);
 
-      const response = await r(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/xml',
-        },
-        body: xmlBody,
-        signal,
-      });
+			const response = await r(url, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/xml",
+				},
+				body: xmlBody,
+				signal,
+			});
 
-      const responseText = await response.body.text();
+			const responseText = await response.body.text();
 
-      if (!isOk(response.statusCode)) {
-        return err(apiError(responseText, 'ERROR', response.statusCode));
-      }
+			if (!isOk(response.statusCode)) {
+				return err(apiError(responseText, "ERROR", response.statusCode));
+			}
 
-      const jsonResponse = xmlToJson(responseText);
-      const rootElement = jsonResponse[responseRootKey];
+			const jsonResponse = xmlToJson(responseText);
+			const rootElement = jsonResponse[responseRootKey];
 
-      if (!rootElement) {
-        return err(
-          validationError(
-            `Invalid response structure: missing root element '${responseRootKey}'`,
-          ),
-        );
-      }
+			if (!rootElement) {
+				return err(
+					validationError(
+						`Invalid response structure: missing root element '${responseRootKey}'`,
+					),
+				);
+			}
 
-      const parseResult = safeParse(responseSchema, rootElement);
-      if (!parseResult.success) {
-        const details = buildDetails(parseResult.issues);
-        return err(validationError(`Invalid response format: ${details}`));
-      }
-      return this.handleApiStatus(parseResult.output);
-    } catch (error) {
-      if (isAbortError(error)) {
-        return err(apiError('Request timed out', 'TIMEOUT'));
-      }
-      return err(this.toAvesError(error, 'Unknown error occurred'));
-    } finally {
-      clear?.();
-    }
-  }
+			const parseResult = safeParse(responseSchema, rootElement);
+			if (!parseResult.success) {
+				const details = buildDetails(parseResult.issues);
+				return err(validationError(`Invalid response format: ${details}`));
+			}
+			return this.handleApiStatus(parseResult.output);
+		} catch (error) {
+			if (isAbortError(error)) {
+				return err(apiError("Request timed out", "TIMEOUT"));
+			}
+			return err(this.toAvesError(error, "Unknown error occurred"));
+		} finally {
+			clear?.();
+		}
+	}
 
-  /**
-   * Search for master records
-   * @param params - Search master record request body in camelCase ({@link SearchMasterRecord})
-   * @returns Result containing list of matching master records in camelCase or error
-   */
-  async search(
-    params: SearchMasterRecord,
-  ): Promise<Result<SearchMasterRecordRS, AvesError>> {
-    try {
-      const requestData = parse(SearchMasterRecordRequestSchema, {
-        RqHeader: this.createRqHeader(),
-        SearchMasterRecord: params,
-      });
+	/**
+	 * Search for master records
+	 * @param params - Search master record request body in camelCase ({@link SearchMasterRecord})
+	 * @returns Result containing list of matching master records in camelCase or error
+	 */
+	async search(
+		params: SearchMasterRecord,
+	): Promise<Result<SearchMasterRecordRS, AvesError>> {
+		try {
+			const requestData = parse(SearchMasterRecordRequestSchema, {
+				RqHeader: this.createRqHeader(),
+				SearchMasterRecord: params,
+			});
 
-      const requestBody = createRootElement(
-        XML_ROOT_ELEMENTS.SEARCH_REQUEST,
-        requestData,
-      );
+			const requestBody = createRootElement(
+				XML_ROOT_ELEMENTS.SEARCH_REQUEST,
+				requestData,
+			);
 
-      return this.request<SearchMasterRecordRS>(
-        this.endpoints.search,
-        requestBody,
-        XML_ROOT_ELEMENTS.SEARCH_RESPONSE,
-        SearchMasterRecordResponseSchema,
-      );
-    } catch (error) {
-      return err(
-        this.toAvesError(error, 'Validation error occurred during search'),
-      );
-    }
-  }
+			return this.request<SearchMasterRecordRS>(
+				this.endpoints.search,
+				requestBody,
+				XML_ROOT_ELEMENTS.SEARCH_RESPONSE,
+				SearchMasterRecordResponseSchema,
+			);
+		} catch (error) {
+			return err(
+				this.toAvesError(error, "Validation error occurred during search"),
+			);
+		}
+	}
 
-  /**
-   * Insert or update a master record
-   * @param record - Master record data in camelCase ({@link MasterRecordDetail})
-   * @returns Result containing response with customer record code in camelCase or error
-   */
-  async upsertRecord(
-    record: MasterRecordDetail,
-  ): Promise<Result<ManageMasterRecordRS, AvesError>> {
-    try {
-      const apiRecord = parse(MasterRecordDetailApiSchema, record);
+	/**
+	 * Insert or update a master record
+	 * @param record - Master record data in camelCase ({@link MasterRecordDetail})
+	 * @returns Result containing response with customer record code in camelCase or error
+	 */
+	async upsertRecord(
+		record: MasterRecordDetail,
+	): Promise<Result<ManageMasterRecordRS, AvesError>> {
+		try {
+			const apiRecord = parse(MasterRecordDetailApiSchema, record);
 
-      const requestData = parse(ManageMasterRecordRequestSchema, {
-        RqHeader: this.createRqHeader(),
-        MasterRecordDetail: apiRecord,
-      });
+			const requestData = parse(ManageMasterRecordRequestSchema, {
+				RqHeader: this.createRqHeader(),
+				MasterRecordDetail: apiRecord,
+			});
 
-      const requestBody = createRootElement(
-        XML_ROOT_ELEMENTS.UPSERT_REQUEST,
-        requestData,
-      );
+			const requestBody = createRootElement(
+				XML_ROOT_ELEMENTS.UPSERT_REQUEST,
+				requestData,
+			);
 
-      return this.request<ManageMasterRecordRS>(
-        this.endpoints.upsert,
-        requestBody,
-        XML_ROOT_ELEMENTS.UPSERT_RESPONSE,
-        ManageMasterRecordResponseSchema,
-      );
-    } catch (error) {
-      return err(
-        this.toAvesError(error, 'Validation error occurred during upsert'),
-      );
-    }
-  }
+			return this.request<ManageMasterRecordRS>(
+				this.endpoints.upsert,
+				requestBody,
+				XML_ROOT_ELEMENTS.UPSERT_RESPONSE,
+				ManageMasterRecordResponseSchema,
+			);
+		} catch (error) {
+			return err(
+				this.toAvesError(error, "Validation error occurred during upsert"),
+			);
+		}
+	}
 
-  /**
-   * Create a booking file (CreateBookingFile).
-   * @param params - Booking file request body in camelCase ({@link BookingFileRQ})
-   * @returns Result containing booking file detail in camelCase or error
-   */
-  async createBooking(
-    params: BookingFileRQ,
-  ): Promise<Result<BookingFileRS, AvesError>> {
-    try {
-      const apiBody = parse(BookingFileApiSchema, params);
-      const requestBody = createRootElement(XML_ROOT_ELEMENTS.BOOKING_REQUEST, {
-        RqHeader: this.createRqHeader(),
-        ...apiBody,
-      });
+	/**
+	 * Create a booking file (CreateBookingFile).
+	 * @param params - Booking file request body in camelCase ({@link BookingFileRQ})
+	 * @returns Result containing booking file detail in camelCase or error
+	 */
+	async createBooking(
+		params: BookingFileRQ,
+	): Promise<Result<BookingFileRS, AvesError>> {
+		try {
+			const apiBody = parse(BookingFileApiSchema, params);
+			const requestBody = createRootElement(XML_ROOT_ELEMENTS.BOOKING_REQUEST, {
+				RqHeader: this.createRqHeader(),
+				...apiBody,
+			});
 
-      return this.request<BookingFileRS>(
-        this.endpoints.createBooking,
-        requestBody,
-        XML_ROOT_ELEMENTS.BOOKING_RESPONSE,
-        BookingFileResponseSchema,
-      );
-    } catch (error) {
-      return err(
-        this.toAvesError(
-          error,
-          'Validation error occurred during createBooking',
-        ),
-      );
-    }
-  }
+			return this.request<BookingFileRS>(
+				this.endpoints.createBooking,
+				requestBody,
+				XML_ROOT_ELEMENTS.BOOKING_RESPONSE,
+				BookingFileResponseSchema,
+			);
+		} catch (error) {
+			return err(
+				this.toAvesError(
+					error,
+					"Validation error occurred during createBooking",
+				),
+			);
+		}
+	}
 }

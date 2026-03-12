@@ -1,23 +1,23 @@
-import * as v from 'valibot';
-import { camelToPascalKeys } from '../utils/case-transform.js';
-import { createResponseSchema } from '../utils/schema-transform.js';
-import { RsStatusSchema } from './common.js';
+import * as v from "valibot";
+import { camelToPascalKeys } from "../utils/case-transform.js";
+import { createResponseSchema } from "../utils/schema-transform.js";
+import { RsStatusSchema } from "./common.js";
 
 // ---------------------------------------------------------------------------
 // BookingFileStatus
 // ---------------------------------------------------------------------------
 
 const bookingFileStatusValueSchema = v.union([
-  v.literal('QUOTATION'),
-  v.literal('WORK_IN_PROGRESS'),
-  v.literal('CONFIRMED'),
-  v.literal('OPTIONED'),
-  v.literal('CANCELED'),
+	v.literal("QUOTATION"),
+	v.literal("WORK_IN_PROGRESS"),
+	v.literal("CONFIRMED"),
+	v.literal("OPTIONED"),
+	v.literal("CANCELED"),
 ]);
 
 const BookingFileStatusInputSchema = v.object({
-  value: bookingFileStatusValueSchema,
-  expiredDate: v.optional(v.string()),
+	value: bookingFileStatusValueSchema,
+	expiredDate: v.optional(v.string()),
 });
 
 // ---------------------------------------------------------------------------
@@ -25,12 +25,12 @@ const BookingFileStatusInputSchema = v.object({
 // ---------------------------------------------------------------------------
 
 const StatisticCodesInputSchema = v.object({
-  sCode1: v.optional(v.pipe(v.string(), v.maxLength(4))),
-  sCode2: v.optional(v.pipe(v.string(), v.maxLength(4))),
-  sCode3: v.optional(v.pipe(v.string(), v.maxLength(4))),
-  sCode4: v.optional(v.pipe(v.string(), v.maxLength(4))),
-  sCode5: v.optional(v.pipe(v.string(), v.maxLength(4))),
-  sCode6: v.optional(v.pipe(v.string(), v.maxLength(4))),
+	sCode1: v.optional(v.pipe(v.string(), v.maxLength(4))),
+	sCode2: v.optional(v.pipe(v.string(), v.maxLength(4))),
+	sCode3: v.optional(v.pipe(v.string(), v.maxLength(4))),
+	sCode4: v.optional(v.pipe(v.string(), v.maxLength(4))),
+	sCode5: v.optional(v.pipe(v.string(), v.maxLength(4))),
+	sCode6: v.optional(v.pipe(v.string(), v.maxLength(4))),
 });
 
 // ---------------------------------------------------------------------------
@@ -38,9 +38,9 @@ const StatisticCodesInputSchema = v.object({
 // ---------------------------------------------------------------------------
 
 const DestinationInputSchema = v.object({
-  code: v.optional(v.string()),
-  iataCode: v.optional(v.string()),
-  nationCode: v.optional(v.string()),
+	code: v.optional(v.string()),
+	iataCode: v.optional(v.string()),
+	nationCode: v.optional(v.string()),
 });
 
 // ---------------------------------------------------------------------------
@@ -48,8 +48,8 @@ const DestinationInputSchema = v.object({
 // ---------------------------------------------------------------------------
 
 const CustomerDetailInputSchema = v.object({
-  recordCode: v.optional(v.string()),
-  // When inserting new record, master record fields can be provided (see Common Structures)
+	recordCode: v.optional(v.string()),
+	// When inserting new record, master record fields can be provided (see Common Structures)
 });
 
 // ---------------------------------------------------------------------------
@@ -57,52 +57,52 @@ const CustomerDetailInputSchema = v.object({
 // ---------------------------------------------------------------------------
 
 const documentTypeSchema = v.union([
-  v.literal('VISA_REQUEST'),
-  v.literal('TRAVEL_INFORMATION'),
-  v.literal('VOUCHER'),
-  v.literal('BOOKING_CONTRACT'),
-  v.literal('BOOKING_CONFIRMATION'),
-  v.literal('SUPPLIER_SERVICE_LIST'),
-  v.literal('INVOICE'),
-  v.literal('PROFORMA_INVOICE'),
-  v.literal('ADEGUAMENTO'),
-  v.literal('RESERVATION_FORM'),
-  v.literal('OPEN_XML'),
-  v.literal('SALES_INVOICE'),
-  v.literal('TICKETING_TMASTER'),
-  v.literal('SUMMARY_FORM'),
+	v.literal("VISA_REQUEST"),
+	v.literal("TRAVEL_INFORMATION"),
+	v.literal("VOUCHER"),
+	v.literal("BOOKING_CONTRACT"),
+	v.literal("BOOKING_CONFIRMATION"),
+	v.literal("SUPPLIER_SERVICE_LIST"),
+	v.literal("INVOICE"),
+	v.literal("PROFORMA_INVOICE"),
+	v.literal("ADEGUAMENTO"),
+	v.literal("RESERVATION_FORM"),
+	v.literal("OPEN_XML"),
+	v.literal("SALES_INVOICE"),
+	v.literal("TICKETING_TMASTER"),
+	v.literal("SUMMARY_FORM"),
 ]);
 
 const ReservationFormCustomizablePrintParametersInputSchema = v.object({
-  makeDocumentTo: v.optional(
-    v.union([v.literal('BOOKING_CUSTOMER'), v.literal('FIRST_PASSENGER')]),
-  ),
+	makeDocumentTo: v.optional(
+		v.union([v.literal("BOOKING_CUSTOMER"), v.literal("FIRST_PASSENGER")]),
+	),
 });
 
 const TravelInformationCustomizablePrintParametersInputSchema = v.object({
-  fillInCode: v.optional(v.string()),
+	fillInCode: v.optional(v.string()),
 });
 
 const DocumentCustomizablePrintParametersInputSchema = v.union([
-  ReservationFormCustomizablePrintParametersInputSchema,
-  TravelInformationCustomizablePrintParametersInputSchema,
+	ReservationFormCustomizablePrintParametersInputSchema,
+	TravelInformationCustomizablePrintParametersInputSchema,
 ]);
 
 const InfoDocumentToPrintInputSchema = v.object({
-  documentType: documentTypeSchema,
-  documentCustomizablePrintParameters: v.optional(
-    DocumentCustomizablePrintParametersInputSchema,
-  ),
+	documentType: documentTypeSchema,
+	documentCustomizablePrintParameters: v.optional(
+		DocumentCustomizablePrintParametersInputSchema,
+	),
 });
 
 const BookingFileDocumentInputSchema = v.object({
-  printDoc: v.optional(
-    v.union([v.literal('true'), v.literal('false'), v.boolean()]),
-  ),
-  sendDocViaEmail: v.optional(
-    v.union([v.literal('true'), v.literal('false'), v.boolean()]),
-  ),
-  infoDocumentsToPrint: v.optional(v.array(InfoDocumentToPrintInputSchema)),
+	printDoc: v.optional(
+		v.union([v.literal("true"), v.literal("false"), v.boolean()]),
+	),
+	sendDocViaEmail: v.optional(
+		v.union([v.literal("true"), v.literal("false"), v.boolean()]),
+	),
+	infoDocumentsToPrint: v.optional(v.array(InfoDocumentToPrintInputSchema)),
 });
 
 // ---------------------------------------------------------------------------
@@ -110,57 +110,57 @@ const BookingFileDocumentInputSchema = v.object({
 // ---------------------------------------------------------------------------
 
 const FinancialDeadlineDetailInputSchema = v.object({
-  reschedulingCode: v.optional(v.string()),
-  expireDate: v.optional(v.string()),
-  totalAmount: v.optional(v.string()),
+	reschedulingCode: v.optional(v.string()),
+	expireDate: v.optional(v.string()),
+	totalAmount: v.optional(v.string()),
 });
 
 const DeadlineDetailInputSchema = v.object({
-  deadlineCode: v.optional(v.string()),
-  description: v.optional(v.string()),
-  expireDate: v.optional(v.string()),
+	deadlineCode: v.optional(v.string()),
+	description: v.optional(v.string()),
+	expireDate: v.optional(v.string()),
 });
 
 const paymentTypeDetailSchema = v.union([
-  v.literal('C'),
-  v.literal('B'),
-  v.literal('D'),
-  v.literal('T'),
-  v.literal('P'),
-  v.literal('R'),
-  v.literal('A'),
-  v.literal('H'),
-  v.literal('I'),
-  v.literal('J'),
-  v.literal('K'),
-  v.literal('L'),
-  v.literal('M'),
-  v.literal('N'),
-  v.literal('O'),
-  v.literal('Q'),
-  v.literal('S'),
-  v.literal('U'),
-  v.literal('V'),
+	v.literal("C"),
+	v.literal("B"),
+	v.literal("D"),
+	v.literal("T"),
+	v.literal("P"),
+	v.literal("R"),
+	v.literal("A"),
+	v.literal("H"),
+	v.literal("I"),
+	v.literal("J"),
+	v.literal("K"),
+	v.literal("L"),
+	v.literal("M"),
+	v.literal("N"),
+	v.literal("O"),
+	v.literal("Q"),
+	v.literal("S"),
+	v.literal("U"),
+	v.literal("V"),
 ]);
 
 const PaymentDetailInputSchema = v.object({
-  paymentDate: v.optional(v.string()),
-  paumentNote: v.optional(v.string()),
-  amount: v.optional(v.string()),
-  paymentUser: v.optional(v.string()),
-  paymentType: v.optional(paymentTypeDetailSchema),
+	paymentDate: v.optional(v.string()),
+	paumentNote: v.optional(v.string()),
+	amount: v.optional(v.string()),
+	paymentUser: v.optional(v.string()),
+	paymentType: v.optional(paymentTypeDetailSchema),
 });
 
 const FinancialDeadlineListInputSchema = v.object({
-  deadlineDetail: v.optional(v.array(FinancialDeadlineDetailInputSchema)),
+	deadlineDetail: v.optional(v.array(FinancialDeadlineDetailInputSchema)),
 });
 
 const DeadlineListInputSchema = v.object({
-  deadlineDetail: v.optional(v.array(DeadlineDetailInputSchema)),
+	deadlineDetail: v.optional(v.array(DeadlineDetailInputSchema)),
 });
 
 const PaymentListInputSchema = v.object({
-  paymentDetail: v.optional(v.array(PaymentDetailInputSchema)),
+	paymentDetail: v.optional(v.array(PaymentDetailInputSchema)),
 });
 
 // ---------------------------------------------------------------------------
@@ -168,85 +168,85 @@ const PaymentListInputSchema = v.object({
 // ---------------------------------------------------------------------------
 
 const SelectedPackageDetailInputSchema = v.object({
-  pCode: v.optional(v.string()),
-  startDate: v.optional(v.string()),
-  endDate: v.optional(v.string()),
-  getServicesFromPackage: v.optional(
-    v.union([v.literal('true'), v.literal('false'), v.boolean()]),
-  ),
+	pCode: v.optional(v.string()),
+	startDate: v.optional(v.string()),
+	endDate: v.optional(v.string()),
+	getServicesFromPackage: v.optional(
+		v.union([v.literal("true"), v.literal("false"), v.boolean()]),
+	),
 });
 
 const AvesServiceInfoInputSchema = v.object({
-  packageCode: v.optional(v.string()),
-  packageReference: v.optional(v.string()),
+	packageCode: v.optional(v.string()),
+	packageReference: v.optional(v.string()),
 });
 
 const avesServiceTypeSchema = v.union([
-  v.literal('TOP'),
-  v.literal('TOP_SS'),
-  v.literal('ADV'),
-  v.literal('GRP'),
-  v.literal('OTHER'),
+	v.literal("TOP"),
+	v.literal("TOP_SS"),
+	v.literal("ADV"),
+	v.literal("GRP"),
+	v.literal("OTHER"),
 ]);
 
 const toServiceTypeSchema = v.union([
-  v.literal('ACCOMODATION'),
-  v.literal('TRANSPORT'),
-  v.literal('CHARTER'),
-  v.literal('TRANSFER'),
-  v.literal('PULLMAN'),
-  v.literal('FERRY'),
-  v.literal('CRUISE'),
-  v.literal('INSURANCE'),
-  v.literal('EXTRAFEE'),
-  v.literal('PENALTY'),
-  v.literal('PROMO'),
-  v.literal('OTHER'),
-  v.literal('NOT_SET'),
-  v.literal('RESIDENCE'),
+	v.literal("ACCOMODATION"),
+	v.literal("TRANSPORT"),
+	v.literal("CHARTER"),
+	v.literal("TRANSFER"),
+	v.literal("PULLMAN"),
+	v.literal("FERRY"),
+	v.literal("CRUISE"),
+	v.literal("INSURANCE"),
+	v.literal("EXTRAFEE"),
+	v.literal("PENALTY"),
+	v.literal("PROMO"),
+	v.literal("OTHER"),
+	v.literal("NOT_SET"),
+	v.literal("RESIDENCE"),
 ]);
 
 const paxAssociatedSchema = v.object({ pax: v.string() });
 
 const SelectedServiceDetailInputSchema = v.object({
-  sCode: v.string(),
-  ssCode: v.optional(v.string()),
-  avesServiceType: avesServiceTypeSchema,
-  toServiceType: v.optional(toServiceTypeSchema),
-  subServiceDesc: v.optional(v.string()),
-  startDate: v.string(),
-  endDate: v.string(),
-  qty: v.string(),
-  pax: v.string(),
-  paxAssociated: v.optional(v.array(paxAssociatedSchema)),
-  avesSession: v.string(), // incremental counter for each update of the same service
-  avesServiceInfo: v.optional(AvesServiceInfoInputSchema),
-  supplierMasterCode: v.optional(v.string()),
-  voucherMasterCode: v.optional(v.string()),
-  hotelServiceInfo: v.optional(v.string()),
-  carRentalServiceInfo: v.optional(v.string()),
-  flightServiceInfo: v.optional(v.string()),
-  shipServiceInfo: v.optional(v.string()),
-  ticketServiceInfo: v.optional(v.string()),
-  commission: v.optional(v.string()),
-  noteList: v.optional(v.string()),
-  voucherInfo: v.optional(v.string()),
-  firstDescription: v.optional(v.string()),
-  secondDescription: v.optional(v.string()),
+	sCode: v.string(),
+	ssCode: v.optional(v.string()),
+	avesServiceType: avesServiceTypeSchema,
+	toServiceType: v.optional(toServiceTypeSchema),
+	subServiceDesc: v.optional(v.string()),
+	startDate: v.string(),
+	endDate: v.string(),
+	qty: v.string(),
+	pax: v.string(),
+	paxAssociated: v.optional(v.array(paxAssociatedSchema)),
+	avesSession: v.string(), // incremental counter for each update of the same service
+	avesServiceInfo: v.optional(AvesServiceInfoInputSchema),
+	supplierMasterCode: v.optional(v.string()),
+	voucherMasterCode: v.optional(v.string()),
+	hotelServiceInfo: v.optional(v.string()),
+	carRentalServiceInfo: v.optional(v.string()),
+	flightServiceInfo: v.optional(v.string()),
+	shipServiceInfo: v.optional(v.string()),
+	ticketServiceInfo: v.optional(v.string()),
+	commission: v.optional(v.string()),
+	noteList: v.optional(v.string()),
+	voucherInfo: v.optional(v.string()),
+	firstDescription: v.optional(v.string()),
+	secondDescription: v.optional(v.string()),
 });
 
 const SelectedPackageListInputSchema = v.object({
-  selectedPackageDetail: v.optional(v.array(SelectedPackageDetailInputSchema)),
+	selectedPackageDetail: v.optional(v.array(SelectedPackageDetailInputSchema)),
 });
 
 const SelectedServiceListInputSchema = v.object({
-  selectedServiceDetail: SelectedServiceDetailInputSchema,
+	selectedServiceDetail: SelectedServiceDetailInputSchema,
 });
 
 const ExtraQuoteServiceListInputSchema = v.object({
-  extraQuoteServiceDetail: v.optional(
-    v.array(SelectedServiceDetailInputSchema),
-  ),
+	extraQuoteServiceDetail: v.optional(
+		v.array(SelectedServiceDetailInputSchema),
+	),
 });
 
 // ---------------------------------------------------------------------------
@@ -254,13 +254,13 @@ const ExtraQuoteServiceListInputSchema = v.object({
 // ---------------------------------------------------------------------------
 
 const NoteDetailInputSchema = v.object({
-  nType: v.optional(v.string()),
-  title: v.optional(v.string()),
-  text: v.optional(v.string()),
+	nType: v.optional(v.string()),
+	title: v.optional(v.string()),
+	text: v.optional(v.string()),
 });
 
 const NoteListInputSchema = v.object({
-  noteDetail: v.optional(v.array(NoteDetailInputSchema)),
+	noteDetail: v.optional(v.array(NoteDetailInputSchema)),
 });
 
 // ---------------------------------------------------------------------------
@@ -268,46 +268,46 @@ const NoteListInputSchema = v.object({
 // ---------------------------------------------------------------------------
 
 const passengerCategoryCodeSchema = v.union([
-  v.literal('AD'),
-  v.literal('CH'),
-  v.literal('IN'),
-  v.literal('OV'),
+	v.literal("AD"),
+	v.literal("CH"),
+	v.literal("IN"),
+	v.literal("OV"),
 ]);
 
 const PassengerDetailInputSchema = v.object({
-  rph: v.string(),
-  roomRph: v.optional(v.string()),
-  billingHolder: v.optional(
-    v.union([v.literal('true'), v.literal('false'), v.boolean()]),
-  ),
-  masterRecordCode: v.optional(v.string()),
-  name: v.string(),
-  categoryCode: passengerCategoryCodeSchema,
-  sex: v.union([v.literal('M'), v.literal('F')]),
-  birthDate: v.optional(v.string()),
-  birthPlace: v.optional(v.string()),
-  nationCode: v.optional(v.string()),
-  citizenshipCode: v.optional(v.string()),
-  fiscalCode: v.optional(v.string()),
-  phoneNumber: v.optional(v.string()),
-  eMail: v.optional(v.string()),
-  notes: v.optional(v.array(NoteDetailInputSchema)),
-  flagStatus: v.optional(v.string()),
-  offerCode: v.optional(v.string()),
-  idDocInfo: v.optional(
-    v.object({
-      idType: v.optional(v.string()),
-      idCode: v.optional(v.string()),
-      idIssueLocation: v.optional(v.string()),
-      idIssueCounty: v.optional(v.string()),
-      idIssueDate: v.optional(v.string()),
-      idExpireDate: v.optional(v.string()),
-    }),
-  ),
+	rph: v.string(),
+	roomRph: v.optional(v.string()),
+	billingHolder: v.optional(
+		v.union([v.literal("true"), v.literal("false"), v.boolean()]),
+	),
+	masterRecordCode: v.optional(v.string()),
+	name: v.string(),
+	categoryCode: passengerCategoryCodeSchema,
+	sex: v.union([v.literal("M"), v.literal("F")]),
+	birthDate: v.optional(v.string()),
+	birthPlace: v.optional(v.string()),
+	nationCode: v.optional(v.string()),
+	citizenshipCode: v.optional(v.string()),
+	fiscalCode: v.optional(v.string()),
+	phoneNumber: v.optional(v.string()),
+	eMail: v.optional(v.string()),
+	notes: v.optional(v.array(NoteDetailInputSchema)),
+	flagStatus: v.optional(v.string()),
+	offerCode: v.optional(v.string()),
+	idDocInfo: v.optional(
+		v.object({
+			idType: v.optional(v.string()),
+			idCode: v.optional(v.string()),
+			idIssueLocation: v.optional(v.string()),
+			idIssueCounty: v.optional(v.string()),
+			idIssueDate: v.optional(v.string()),
+			idExpireDate: v.optional(v.string()),
+		}),
+	),
 });
 
 const PassengerListInputSchema = v.object({
-  passengerDetail: PassengerDetailInputSchema,
+	passengerDetail: PassengerDetailInputSchema,
 });
 
 // ---------------------------------------------------------------------------
@@ -315,17 +315,17 @@ const PassengerListInputSchema = v.object({
 // ---------------------------------------------------------------------------
 
 const customerPaymentTypeSchema = v.union([
-  v.literal('CASH'),
-  v.literal('BANK'),
-  v.literal('RID'),
-  v.literal('RIBA'),
-  v.literal('SPECIFIC_CODE'),
-  v.literal('NOT_SET'),
+	v.literal("CASH"),
+	v.literal("BANK"),
+	v.literal("RID"),
+	v.literal("RIBA"),
+	v.literal("SPECIFIC_CODE"),
+	v.literal("NOT_SET"),
 ]);
 
 const BookingFinancialInfoInputSchema = v.object({
-  customer_PaymentType: v.optional(customerPaymentTypeSchema),
-  customer_SpecPaymentTypeCode: v.optional(v.string()),
+	customer_PaymentType: v.optional(customerPaymentTypeSchema),
+	customer_SpecPaymentTypeCode: v.optional(v.string()),
 });
 
 // ---------------------------------------------------------------------------
@@ -333,15 +333,15 @@ const BookingFinancialInfoInputSchema = v.object({
 // ---------------------------------------------------------------------------
 
 const groupingPaxPolicySchema = v.union([
-  v.literal('GROUPED_PAX'),
-  v.literal('NOT_GROUPED_PAX'),
-  v.literal('ONE_PAX_ONLY'),
+	v.literal("GROUPED_PAX"),
+	v.literal("NOT_GROUPED_PAX"),
+	v.literal("ONE_PAX_ONLY"),
 ]);
 
 const typeDownloadFileSchema = v.union([
-  v.literal('AVES2AVES'),
-  v.literal('AVES2AVESVIA'),
-  v.literal('AVES2AVESITA'),
+	v.literal("AVES2AVES"),
+	v.literal("AVES2AVESVIA"),
+	v.literal("AVES2AVESITA"),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -353,48 +353,48 @@ const typeDownloadFileSchema = v.union([
  * Maps to BookFileRQ in AVES XML 1.8.0 CreateBookingFile.
  */
 export const BookingFileSchema = v.object({
-  createDate: v.optional(v.string()),
-  bookingFileRefCode: v.optional(v.string()),
-  travelAgentCode: v.optional(v.string()),
-  clerkName: v.optional(v.string()),
-  customerDetail: CustomerDetailInputSchema,
-  currencyCode: v.optional(v.string()),
-  markupCode: v.optional(v.string()),
-  bookingFileStatus: BookingFileStatusInputSchema,
-  statisticCodes: v.optional(StatisticCodesInputSchema),
-  destination: v.optional(DestinationInputSchema),
-  bookingFileDescription: v.optional(v.string()),
-  startDate: v.string(),
-  endDate: v.string(),
-  earlyBookingDate: v.optional(v.string()),
-  cupCode: v.optional(v.string()),
-  cigCode: v.optional(v.string()),
-  customerPromoterCode: v.optional(v.string()),
-  billingReferenceCode: v.optional(v.string()),
-  paymentReferenceCode: v.optional(v.string()),
-  bookingFileDocument: v.optional(BookingFileDocumentInputSchema),
-  financialDeadlineList: v.optional(FinancialDeadlineListInputSchema),
-  deadlineList: v.optional(DeadlineListInputSchema),
-  paymentList: v.optional(PaymentListInputSchema),
-  selectedPackageList: v.optional(SelectedPackageListInputSchema),
-  selectedServiceList: v.array(SelectedServiceListInputSchema),
-  extraQuotaRefCode: v.optional(v.string()),
-  extraQuoteServiceList: v.optional(ExtraQuoteServiceListInputSchema),
-  getExtraQuoteFromSystem: v.optional(
-    v.union([v.literal('true'), v.literal('false'), v.boolean()]),
-  ),
-  passengerList: v.array(PassengerListInputSchema),
-  noteList: v.optional(NoteListInputSchema),
-  bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
-  bookingFileCode: v.optional(v.string()),
-  groupingPaxPolicy: v.optional(groupingPaxPolicySchema),
-  groupBookingFile: v.optional(
-    v.union([v.literal('true'), v.literal('false'), v.boolean()]),
-  ),
-  typeDownloadFile: v.optional(typeDownloadFileSchema),
-  setBookingFileCodeFromStartDate: v.optional(
-    v.union([v.literal('true'), v.literal('false'), v.boolean()]),
-  ),
+	createDate: v.optional(v.string()),
+	bookingFileRefCode: v.optional(v.string()),
+	travelAgentCode: v.optional(v.string()),
+	clerkName: v.optional(v.string()),
+	customerDetail: CustomerDetailInputSchema,
+	currencyCode: v.optional(v.string()),
+	markupCode: v.optional(v.string()),
+	bookingFileStatus: BookingFileStatusInputSchema,
+	statisticCodes: v.optional(StatisticCodesInputSchema),
+	destination: v.optional(DestinationInputSchema),
+	bookingFileDescription: v.optional(v.string()),
+	startDate: v.string(),
+	endDate: v.string(),
+	earlyBookingDate: v.optional(v.string()),
+	cupCode: v.optional(v.string()),
+	cigCode: v.optional(v.string()),
+	customerPromoterCode: v.optional(v.string()),
+	billingReferenceCode: v.optional(v.string()),
+	paymentReferenceCode: v.optional(v.string()),
+	bookingFileDocument: v.optional(BookingFileDocumentInputSchema),
+	financialDeadlineList: v.optional(FinancialDeadlineListInputSchema),
+	deadlineList: v.optional(DeadlineListInputSchema),
+	paymentList: v.optional(PaymentListInputSchema),
+	selectedPackageList: v.optional(SelectedPackageListInputSchema),
+	selectedServiceList: v.array(SelectedServiceListInputSchema),
+	extraQuotaRefCode: v.optional(v.string()),
+	extraQuoteServiceList: v.optional(ExtraQuoteServiceListInputSchema),
+	getExtraQuoteFromSystem: v.optional(
+		v.union([v.literal("true"), v.literal("false"), v.boolean()]),
+	),
+	passengerList: v.array(PassengerListInputSchema),
+	noteList: v.optional(NoteListInputSchema),
+	bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
+	bookingFileCode: v.optional(v.string()),
+	groupingPaxPolicy: v.optional(groupingPaxPolicySchema),
+	groupBookingFile: v.optional(
+		v.union([v.literal("true"), v.literal("false"), v.boolean()]),
+	),
+	typeDownloadFile: v.optional(typeDownloadFileSchema),
+	setBookingFileCodeFromStartDate: v.optional(
+		v.union([v.literal("true"), v.literal("false"), v.boolean()]),
+	),
 });
 
 /**
@@ -402,42 +402,42 @@ export const BookingFileSchema = v.object({
  * Root-level startDate/endDate stay as elements; same keys in SelectedPackageDetail become @ attributes.
  */
 export const BookingFileApiSchema = v.pipe(
-  BookingFileSchema,
-  v.transform((input) => {
-    // Normalize empty paxAssociated arrays so that they become an empty XML element
-    // (<PaxAssociated/>) instead of disappearing from the XML.
-    const normalizePaxAssociated = (value: unknown): unknown => {
-      if (Array.isArray(value) && !value.length) {
-        return '';
-      }
-      return value;
-    };
+	BookingFileSchema,
+	v.transform((input) => {
+		// Normalize empty paxAssociated arrays so that they become an empty XML element
+		// (<PaxAssociated/>) instead of disappearing from the XML.
+		const normalizePaxAssociated = (value: unknown): unknown => {
+			if (Array.isArray(value) && !value.length) {
+				return "";
+			}
+			return value;
+		};
 
-    const walk = (node: unknown): unknown => {
-      if (node === null || typeof node !== 'object') {
-        return node;
-      }
-      if (Array.isArray(node)) {
-        return node.map(walk);
-      }
-      const result: Record<string, unknown> = {};
-      for (const [key, val] of Object.entries(node)) {
-        if (key === 'paxAssociated') {
-          result[key] = normalizePaxAssociated(val);
-        } else {
-          result[key] = walk(val);
-        }
-      }
-      return result;
-    };
+		const walk = (node: unknown): unknown => {
+			if (node === null || typeof node !== "object") {
+				return node;
+			}
+			if (Array.isArray(node)) {
+				return node.map(walk);
+			}
+			const result: Record<string, unknown> = {};
+			for (const [key, val] of Object.entries(node)) {
+				if (key === "paxAssociated") {
+					result[key] = normalizePaxAssociated(val);
+				} else {
+					result[key] = walk(val);
+				}
+			}
+			return result;
+		};
 
-    const normalizedInput = walk(input) as typeof input;
+		const normalizedInput = walk(input) as typeof input;
 
-    return camelToPascalKeys(normalizedInput, {
-      excludeFromAttributePrefix: ['startDate', 'endDate'],
-      excludeAttributeFromCamelToPascal: ['sCode', 'ssCode'],
-    });
-  }),
+		return camelToPascalKeys(normalizedInput, {
+			excludeFromAttributePrefix: ["startDate", "endDate"],
+			excludeAttributeFromCamelToPascal: ["sCode", "ssCode"],
+		});
+	}),
 );
 
 /**
@@ -445,8 +445,8 @@ export const BookingFileApiSchema = v.pipe(
  * BookingFileDetail shape follows Common Structures "BOOKEDFILE"; nested content is accepted and key-normalized.
  */
 export const BookingFileResponseSchema = createResponseSchema(
-  v.object({
-    RsStatus: RsStatusSchema,
-    BookingFileDetail: v.optional(v.any()),
-  }),
+	v.object({
+		RsStatus: RsStatusSchema,
+		BookingFileDetail: v.optional(v.any()),
+	}),
 );

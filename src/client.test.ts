@@ -1,57 +1,57 @@
 import {
-  type Dispatcher,
-  getGlobalDispatcher,
-  MockAgent,
-  setGlobalDispatcher,
-} from 'undici';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { AvesClient } from './client.js';
-import { AvesError } from './error.js';
+	type Dispatcher,
+	getGlobalDispatcher,
+	MockAgent,
+	setGlobalDispatcher,
+} from "undici";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { AvesClient } from "./client.js";
+import { AvesError } from "./error.js";
 
-const isBun = typeof process !== 'undefined' && !!process.versions?.bun;
+const isBun = typeof process !== "undefined" && !!process.versions?.bun;
 const describeHttp = isBun ? describe.skip : describe;
 
-describeHttp('AvesClient', () => {
-  let client: AvesClient;
-  let mockAgent: MockAgent;
-  let originalDispatcher: Dispatcher;
+describeHttp("AvesClient", () => {
+	let client: AvesClient;
+	let mockAgent: MockAgent;
+	let originalDispatcher: Dispatcher;
 
-  const baseURL = 'https://api.example.com';
-  const hostID = '000000';
-  const xtoken = 'TOKEN000000';
+	const baseURL = "https://api.example.com";
+	const hostID = "000000";
+	const xtoken = "TOKEN000000";
 
-  beforeEach(() => {
-    originalDispatcher = getGlobalDispatcher();
-    mockAgent = new MockAgent();
-    mockAgent.disableNetConnect();
-    setGlobalDispatcher(mockAgent);
+	beforeEach(() => {
+		originalDispatcher = getGlobalDispatcher();
+		mockAgent = new MockAgent();
+		mockAgent.disableNetConnect();
+		setGlobalDispatcher(mockAgent);
 
-    client = new AvesClient({ baseURL, hostID, xtoken });
-  });
+		client = new AvesClient({ baseURL, hostID, xtoken });
+	});
 
-  afterEach(async () => {
-    await mockAgent.close();
-    setGlobalDispatcher(originalDispatcher);
-  });
+	afterEach(async () => {
+		await mockAgent.close();
+		setGlobalDispatcher(originalDispatcher);
+	});
 
-  describe('constructor', () => {
-    it('should create client with correct configuration', () => {
-      expect(client).toBeInstanceOf(AvesClient);
-    });
-  });
+	describe("constructor", () => {
+		it("should create client with correct configuration", () => {
+			expect(client).toBeInstanceOf(AvesClient);
+		});
+	});
 
-  describe('search', () => {
-    it('should make search request and return camelCase response', async () => {
-      const mockClient = mockAgent.get(baseURL);
+	describe("search", () => {
+		it("should make search request and return camelCase response", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      mockClient
-        .intercept({
-          path: '/interop/masterRecords/v2/rest/Search',
-          method: 'POST',
-        })
-        .reply(
-          200,
-          `<SearchMasterRecordRS>
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/Search",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<SearchMasterRecordRS>
           <RsStatus Status="OK"/>
           <MasterRecordList>
             <MasterRecordDetail RecordCode="508558">
@@ -60,128 +60,128 @@ describeHttp('AvesClient', () => {
             </MasterRecordDetail>
           </MasterRecordList>
         </SearchMasterRecordRS>`,
-        );
+				);
 
-      const result = await client.search({
-        searchType: 'CODE',
-        recordCode: '508558',
-      });
+			const result = await client.search({
+				searchType: "CODE",
+				recordCode: "508558",
+			});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toHaveProperty('rsStatus');
-        expect(result.data.rsStatus).toHaveProperty('status', 'OK');
-        expect(result.data).toHaveProperty('masterRecordList');
-      }
-    });
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data).toHaveProperty("rsStatus");
+				expect(result.data.rsStatus).toHaveProperty("status", "OK");
+				expect(result.data).toHaveProperty("masterRecordList");
+			}
+		});
 
-    it('should validate input parameters', async () => {
-      const result = await client.search({
-        searchType: 'CODE',
-        recordCode: '1234', // Too short
-      });
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(AvesError);
-      }
-    });
+		it("should validate input parameters", async () => {
+			const result = await client.search({
+				searchType: "CODE",
+				recordCode: "1234", // Too short
+			});
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+			}
+		});
 
-    it('should handle API errors', async () => {
-      const mockClient = mockAgent.get(baseURL);
+		it("should handle API errors", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      mockClient
-        .intercept({
-          path: '/interop/masterRecords/v2/rest/Search',
-          method: 'POST',
-        })
-        .reply(
-          200,
-          `<SearchMasterRecordRS>
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/Search",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<SearchMasterRecordRS>
           <RsStatus Status="ERROR">
             <ErrorCode>1001</ErrorCode>
             <ErrorDescription>Invalid request</ErrorDescription>
           </RsStatus>
         </SearchMasterRecordRS>`,
-        );
+				);
 
-      const result = await client.search({
-        searchType: 'CODE',
-        recordCode: '508558',
-      });
+			const result = await client.search({
+				searchType: "CODE",
+				recordCode: "508558",
+			});
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.kind).toBe('api');
-        expect(result.error.code).toBe(1001);
-        expect(result.error.status).toBe('error');
-      }
-    });
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+				expect(result.error.kind).toBe("api");
+				expect(result.error.code).toBe(1001);
+				expect(result.error.status).toBe("error");
+			}
+		});
 
-    it('should handle HTTP errors', async () => {
-      const mockClient = mockAgent.get(baseURL);
+		it("should handle HTTP errors", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      mockClient
-        .intercept({
-          path: '/interop/masterRecords/v2/rest/Search',
-          method: 'POST',
-        })
-        .reply(500, 'Internal Server Error');
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/Search",
+					method: "POST",
+				})
+				.reply(500, "Internal Server Error");
 
-      const result = await client.search({
-        searchType: 'CODE',
-        recordCode: '508558',
-      });
+			const result = await client.search({
+				searchType: "CODE",
+				recordCode: "508558",
+			});
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.kind).toBe('api');
-        expect(result.error.status).toBe('error');
-        expect(result.error.code).toBe(500);
-      }
-    });
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+				expect(result.error.kind).toBe("api");
+				expect(result.error.status).toBe("error");
+				expect(result.error.code).toBe(500);
+			}
+		});
 
-    it('should transform request to PascalCase for API', async () => {
-      const mockClient = mockAgent.get(baseURL);
-      let capturedBody = '';
+		it("should transform request to PascalCase for API", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
 
-      mockClient
-        .intercept({
-          path: '/interop/masterRecords/v2/rest/Search',
-          method: 'POST',
-        })
-        .reply(200, (opts) => {
-          capturedBody = opts.body as string;
-          return `<SearchMasterRecordRS>
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/Search",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<SearchMasterRecordRS>
             <RsStatus Status="OK"/>
           </SearchMasterRecordRS>`;
-        });
+				});
 
-      await client.search({
-        searchType: 'CODE',
-        recordCode: '508558',
-        languageCode: '02',
-      });
+			await client.search({
+				searchType: "CODE",
+				recordCode: "508558",
+				languageCode: "02",
+			});
 
-      expect(capturedBody).toContain('<SearchType>CODE</SearchType>');
-      expect(capturedBody).toContain('<RecordCode>508558</RecordCode>');
-      expect(capturedBody).toContain('<LanguageCode>02</LanguageCode>');
-    });
-  });
+			expect(capturedBody).toContain("<SearchType>CODE</SearchType>");
+			expect(capturedBody).toContain("<RecordCode>508558</RecordCode>");
+			expect(capturedBody).toContain("<LanguageCode>02</LanguageCode>");
+		});
+	});
 
-  describe('upsertRecord', () => {
-    it('should make upsert request and return camelCase response', async () => {
-      const mockClient = mockAgent.get(baseURL);
+	describe("upsertRecord", () => {
+		it("should make upsert request and return camelCase response", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      mockClient
-        .intercept({
-          path: '/interop/masterRecords/v2/rest/InsertOrUpdate',
-          method: 'POST',
-        })
-        .reply(
-          200,
-          `<ManageMasterRecordRS>
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<ManageMasterRecordRS>
           <RsStatus Status="OK"/>
           <MasterRecordDetail RecordCode="508558">
             <Name>John Doe</Name>
@@ -189,158 +189,158 @@ describeHttp('AvesClient', () => {
             <ZipCode>12345</ZipCode>
           </MasterRecordDetail>
         </ManageMasterRecordRS>`,
-        );
+				);
 
-      const result = await client.upsertRecord({
-        name: 'John Doe',
-        email: 'john@example.com',
-        zipCode: '12345',
-        languageCode: '02',
-      });
+			const result = await client.upsertRecord({
+				name: "John Doe",
+				email: "john@example.com",
+				zipCode: "12345",
+				languageCode: "02",
+			});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toHaveProperty('rsStatus');
-        expect(result.data.rsStatus).toHaveProperty('status', 'OK');
-        expect(result.data).toHaveProperty('masterRecordDetail');
-        expect(result.data.masterRecordDetail).toHaveProperty(
-          'recordCode',
-          '508558',
-        );
-      }
-    });
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data).toHaveProperty("rsStatus");
+				expect(result.data.rsStatus).toHaveProperty("status", "OK");
+				expect(result.data).toHaveProperty("masterRecordDetail");
+				expect(result.data.masterRecordDetail).toHaveProperty(
+					"recordCode",
+					"508558",
+				);
+			}
+		});
 
-    it('should allow optional insertCriteria', async () => {
-      const mockClient = mockAgent.get(baseURL);
-      let capturedBody = '';
+		it("should allow optional insertCriteria", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
 
-      mockClient
-        .intercept({
-          path: '/interop/masterRecords/v2/rest/InsertOrUpdate',
-          method: 'POST',
-        })
-        .reply(200, (opts) => {
-          capturedBody = opts.body as string;
-          return `<ManageMasterRecordRS>
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<ManageMasterRecordRS>
             <RsStatus Status="OK"/>
           </ManageMasterRecordRS>`;
-        });
+				});
 
-      await client.upsertRecord({
-        name: 'John Doe',
-        languageCode: '02',
-      });
+			await client.upsertRecord({
+				name: "John Doe",
+				languageCode: "02",
+			});
 
-      expect(capturedBody).toBeDefined();
-      expect(capturedBody).toContain('<Name>John Doe</Name>');
-    });
+			expect(capturedBody).toBeDefined();
+			expect(capturedBody).toContain("<Name>John Doe</Name>");
+		});
 
-    it('should transform request to PascalCase for API', async () => {
-      const mockClient = mockAgent.get(baseURL);
-      let capturedBody = '';
+		it("should transform request to PascalCase for API", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
 
-      mockClient
-        .intercept({
-          path: '/interop/masterRecords/v2/rest/InsertOrUpdate',
-          method: 'POST',
-        })
-        .reply(200, (opts) => {
-          capturedBody = opts.body as string;
-          return `<ManageMasterRecordRS>
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<ManageMasterRecordRS>
             <RsStatus Status="OK"/>
           </ManageMasterRecordRS>`;
-        });
+				});
 
-      await client.upsertRecord({
-        name: 'John Doe',
-        email: 'john@example.com',
-        zipCode: '12345',
-        languageCode: '02',
-      });
+			await client.upsertRecord({
+				name: "John Doe",
+				email: "john@example.com",
+				zipCode: "12345",
+				languageCode: "02",
+			});
 
-      expect(capturedBody).toContain('<Name>John Doe</Name>');
-      expect(capturedBody).toContain('<Email>john@example.com</Email>');
-      expect(capturedBody).toContain('<ZipCode>12345</ZipCode>');
-    });
+			expect(capturedBody).toContain("<Name>John Doe</Name>");
+			expect(capturedBody).toContain("<Email>john@example.com</Email>");
+			expect(capturedBody).toContain("<ZipCode>12345</ZipCode>");
+		});
 
-    it('should handle API errors', async () => {
-      const mockClient = mockAgent.get(baseURL);
+		it("should handle API errors", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      mockClient
-        .intercept({
-          path: '/interop/masterRecords/v2/rest/InsertOrUpdate',
-          method: 'POST',
-        })
-        .reply(
-          200,
-          `<ManageMasterRecordRS>
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<ManageMasterRecordRS>
           <RsStatus Status="ERROR">
             <ErrorCode>1002</ErrorCode>
             <ErrorDescription>Invalid record data</ErrorDescription>
           </RsStatus>
         </ManageMasterRecordRS>`,
-        );
+				);
 
-      const result = await client.upsertRecord({
-        name: 'John Doe',
-        languageCode: '02',
-      });
+			const result = await client.upsertRecord({
+				name: "John Doe",
+				languageCode: "02",
+			});
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.kind).toBe('api');
-        expect(result.error.code).toBe(1002);
-        expect(result.error.status).toBe('error');
-      }
-    });
-  });
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+				expect(result.error.kind).toBe("api");
+				expect(result.error.code).toBe(1002);
+				expect(result.error.status).toBe("error");
+			}
+		});
+	});
 
-  describe('createBooking', () => {
-    const minimalBookingParams = {
-      customerDetail: { recordCode: '138311' },
-      bookingFileStatus: { value: 'QUOTATION' as const },
-      startDate: '2014-12-27T00:00:00',
-      endDate: '2015-01-03T00:00:00',
-      selectedServiceList: [
-        {
-          selectedServiceDetail: {
-            sCode: 'S1',
-            avesServiceType: 'TOP_SS' as const,
-            toServiceType: 'TRANSPORT' as const,
-            startDate: '2014-12-27T00:00:00',
-            endDate: '2015-01-03T00:00:00',
-            qty: '1',
-            pax: '1',
-            paxAssociated: [],
-            avesSession: '1',
-          },
-        },
-      ],
-      passengerList: [
-        {
-          passengerDetail: {
-            rph: '001',
-            roomRph: '001',
-            name: 'Adult 1',
-            categoryCode: 'AD' as const,
-            sex: 'M' as const,
-          },
-        },
-      ],
-    };
+	describe("createBooking", () => {
+		const minimalBookingParams = {
+			customerDetail: { recordCode: "138311" },
+			bookingFileStatus: { value: "QUOTATION" as const },
+			startDate: "2014-12-27T00:00:00",
+			endDate: "2015-01-03T00:00:00",
+			selectedServiceList: [
+				{
+					selectedServiceDetail: {
+						sCode: "S1",
+						avesServiceType: "TOP_SS" as const,
+						toServiceType: "TRANSPORT" as const,
+						startDate: "2014-12-27T00:00:00",
+						endDate: "2015-01-03T00:00:00",
+						qty: "1",
+						pax: "1",
+						paxAssociated: [],
+						avesSession: "1",
+					},
+				},
+			],
+			passengerList: [
+				{
+					passengerDetail: {
+						rph: "001",
+						roomRph: "001",
+						name: "Adult 1",
+						categoryCode: "AD" as const,
+						sex: "M" as const,
+					},
+				},
+			],
+		};
 
-    it('should make createBooking request and return camelCase response', async () => {
-      const mockClient = mockAgent.get(baseURL);
+		it("should make createBooking request and return camelCase response", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      mockClient
-        .intercept({
-          path: '/interop/booking/v2/rest/CreateBookingFile',
-          method: 'POST',
-        })
-        .reply(
-          200,
-          `<BookingFileRS>
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/CreateBookingFile",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<BookingFileRS>
           <RsStatus Status="OK"/>
           <BookingFileDetail BookingFileCode="14/036657">
             <CustomerRecordCode>138311</CustomerRecordCode>
@@ -349,119 +349,119 @@ describeHttp('AvesClient', () => {
             <EndDate>2015-01-03T00:00:00</EndDate>
           </BookingFileDetail>
         </BookingFileRS>`,
-        );
+				);
 
-      const result = await client.createBooking(minimalBookingParams);
+			const result = await client.createBooking(minimalBookingParams);
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toHaveProperty('rsStatus');
-        expect(result.data.rsStatus).toHaveProperty('status', 'OK');
-        expect(result.data).toHaveProperty('bookingFileDetail');
-        expect(result.data.bookingFileDetail).toHaveProperty(
-          'bookingFileCode',
-          '14/036657',
-        );
-      }
-    });
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data).toHaveProperty("rsStatus");
+				expect(result.data.rsStatus).toHaveProperty("status", "OK");
+				expect(result.data).toHaveProperty("bookingFileDetail");
+				expect(result.data.bookingFileDetail).toHaveProperty(
+					"bookingFileCode",
+					"14/036657",
+				);
+			}
+		});
 
-    it('should validate input parameters', async () => {
-      const result = await client.createBooking({
-        ...minimalBookingParams,
-        bookingFileStatus: {
-          value: 'INVALID_STATUS' as 'QUOTATION',
-        },
-      });
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(AvesError);
-      }
-    });
+		it("should validate input parameters", async () => {
+			const result = await client.createBooking({
+				...minimalBookingParams,
+				bookingFileStatus: {
+					value: "INVALID_STATUS" as "QUOTATION",
+				},
+			});
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+			}
+		});
 
-    it('should handle API errors', async () => {
-      const mockClient = mockAgent.get(baseURL);
+		it("should handle API errors", async () => {
+			const mockClient = mockAgent.get(baseURL);
 
-      mockClient
-        .intercept({
-          path: '/interop/booking/v2/rest/CreateBookingFile',
-          method: 'POST',
-        })
-        .reply(
-          200,
-          `<BookingFileRS>
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/CreateBookingFile",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<BookingFileRS>
           <RsStatus Status="ERROR">
             <ErrorCode>2001</ErrorCode>
             <ErrorDescription>Booking creation failed</ErrorDescription>
           </RsStatus>
         </BookingFileRS>`,
-        );
+				);
 
-      const result = await client.createBooking(minimalBookingParams);
+			const result = await client.createBooking(minimalBookingParams);
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(AvesError);
-        expect(result.error.kind).toBe('api');
-        expect(result.error.code).toBe(2001);
-        expect(result.error.status).toBe('error');
-      }
-    });
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+				expect(result.error.kind).toBe("api");
+				expect(result.error.code).toBe(2001);
+				expect(result.error.status).toBe("error");
+			}
+		});
 
-    it('should transform request to PascalCase with BookFileRQ root', async () => {
-      const mockClient = mockAgent.get(baseURL);
-      let capturedBody = '';
+		it("should transform request to PascalCase with BookFileRQ root", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
 
-      mockClient
-        .intercept({
-          path: '/interop/booking/v2/rest/CreateBookingFile',
-          method: 'POST',
-        })
-        .reply(200, (opts) => {
-          capturedBody = opts.body as string;
-          return `<BookingFileRS>
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/CreateBookingFile",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<BookingFileRS>
             <RsStatus Status="OK"/>
           </BookingFileRS>`;
-        });
+				});
 
-      await client.createBooking(minimalBookingParams);
+			await client.createBooking(minimalBookingParams);
 
-      expect(capturedBody).toContain('<BookFileRQ>');
-      expect(capturedBody).toContain('<CustomerDetail');
-      expect(capturedBody).toContain('RecordCode="138311"');
-      expect(capturedBody).toContain('<BookingFileStatus');
-      expect(capturedBody).toContain(
-        '<StartDate>2014-12-27T00:00:00</StartDate>',
-      );
-      expect(capturedBody).toContain('<PassengerList>');
-    });
-  });
+			expect(capturedBody).toContain("<BookFileRQ>");
+			expect(capturedBody).toContain("<CustomerDetail");
+			expect(capturedBody).toContain('RecordCode="138311"');
+			expect(capturedBody).toContain("<BookingFileStatus");
+			expect(capturedBody).toContain(
+				"<StartDate>2014-12-27T00:00:00</StartDate>",
+			);
+			expect(capturedBody).toContain("<PassengerList>");
+		});
+	});
 
-  describe('AvesError', () => {
-    it('should create error with correct properties', () => {
-      const error = new AvesError('api', 'Test error message', 'error', 1001);
+	describe("AvesError", () => {
+		it("should create error with correct properties", () => {
+			const error = new AvesError("api", "Test error message", "error", 1001);
 
-      expect(error).toBeInstanceOf(Error);
-      expect(error).toBeInstanceOf(AvesError);
-      expect(error.kind).toBe('api');
-      expect(error.message).toBe('Test error message');
-      expect(error.status).toBe('error');
-      expect(error.code).toBe(1001);
-    });
+			expect(error).toBeInstanceOf(Error);
+			expect(error).toBeInstanceOf(AvesError);
+			expect(error.kind).toBe("api");
+			expect(error.message).toBe("Test error message");
+			expect(error.status).toBe("error");
+			expect(error.code).toBe(1001);
+		});
 
-    it('should create validation error', () => {
-      const error = new AvesError('validation', 'Validation failed');
+		it("should create validation error", () => {
+			const error = new AvesError("validation", "Validation failed");
 
-      expect(error).toBeInstanceOf(AvesError);
-      expect(error.kind).toBe('validation');
-      expect(error.message).toBe('Validation failed');
-    });
+			expect(error).toBeInstanceOf(AvesError);
+			expect(error.kind).toBe("validation");
+			expect(error.message).toBe("Validation failed");
+		});
 
-    it('should create unknown error', () => {
-      const error = new AvesError('unknown', 'Unknown error occurred');
+		it("should create unknown error", () => {
+			const error = new AvesError("unknown", "Unknown error occurred");
 
-      expect(error).toBeInstanceOf(AvesError);
-      expect(error.kind).toBe('unknown');
-      expect(error.message).toBe('Unknown error occurred');
-    });
-  });
+			expect(error).toBeInstanceOf(AvesError);
+			expect(error.kind).toBe("unknown");
+			expect(error.message).toBe("Unknown error occurred");
+		});
+	});
 });

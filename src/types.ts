@@ -11,6 +11,7 @@ import type {
 	IdDocumentDetailSchema,
 	MasterRecordDetailResponseSchema,
 	MasterRecordDetailSchema,
+	SupplierRefMasterRecordsSchema,
 } from "./schemas/master-record.js";
 import type {
 	SearchMasterRecordResponseSchema,
@@ -112,6 +113,17 @@ export type AccountPolicies = InferInput<typeof AccountPoliciesSchema>;
 export type DynamicFields = InferInput<typeof DynamicFieldsSchema>;
 
 /**
+ * Supplier reference master records for a master record.
+ *
+ * @property supplierRefCode - Supplier reference code
+ * @property companyMainBusinessType - Company main business type
+ * @property carrierType - Carrier type
+ */
+export type SupplierRefMasterRecords = InferInput<
+	typeof SupplierRefMasterRecordsSchema
+>;
+
+/**
  * Master record detail for creating or updating customer, supplier, or general records.
  *
  * This is the primary input type for the `upsertRecord` method.
@@ -149,7 +161,7 @@ export type DynamicFields = InferInput<typeof DynamicFieldsSchema>;
  * @property accountPolicies - Privacy and marketing consent flags
  * @property financialDetail - Financial and payment details
  * @property dynamicFields - Custom key-value fields
- *
+ * @property supplierRefMasterRecords - Supplier reference master records
  * @example
  * ```typescript
  * const record: MasterRecordDetail = {
@@ -161,6 +173,11 @@ export type DynamicFields = InferInput<typeof DynamicFieldsSchema>;
  *   accountPolicies: {
  *     acceptPrivacyPolicies: 1,
  *     acceptNewsletterPolicies: 0,
+ *   },
+ *   supplierRefMasterRecords: {
+ *     supplierRefCode: 'SUP456',
+ *     companyMainBusinessType: 'TOUR_OPERATOR',
+ *     carrierType: 'OTHER',
  *   },
  * };
  * ```
