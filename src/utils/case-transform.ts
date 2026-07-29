@@ -155,6 +155,14 @@ const attributeRegistry: Record<string, readonly string[]> = {
 		"paymentUser",
 		"paymentType",
 	],
+	filePaymentDetail: [
+		"paymentDate",
+		"paymentNote",
+		"payerMasterCode",
+		"payerName",
+		"amount",
+		"paymentType",
+	],
 	selectedPackageDetail: [
 		"pCode",
 		"startDate",

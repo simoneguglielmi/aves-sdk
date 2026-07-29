@@ -663,6 +663,67 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
+	describe("insertFilePaymentList", () => {
+		it("should insert payments and return status OK", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/InsertFilePaymentList",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<FilePaymentListRS><RsStatus Status="OK"/></FilePaymentListRS>`;
+				});
+
+			const result = await client.insertFilePaymentList({
+				bookingFileCode: "18/000172",
+				paymentUser: "MLDN",
+				enableMultiplePayments: true,
+				operationType: "AbsoluteAmountsInsertion",
+				filePaymentList: {
+					filePaymentDetail: [
+						{
+							paymentDate: "2018-09-08",
+							paymentNote: "INCASSO",
+							amount: "100.00",
+							paymentType: "B",
+						},
+					],
+				},
+			});
+
+			expect(result.success).toBe(true);
+			if (result.success) expect(result.data.rsStatus.status).toBe("OK");
+			expect(capturedBody).toContain("<FilePaymentListRQ");
+			expect(capturedBody).toContain(
+				"<BookingFileCode>18/000172</BookingFileCode>",
+			);
+			expect(capturedBody).toContain('PaymentUser="MLDN"');
+			expect(capturedBody).toContain('PaymentType="B"');
+			expect(capturedBody).toContain('Amount="100.00"');
+		});
+
+		it("should reject payload without booking file reference", async () => {
+			const result = await client.insertFilePaymentList({
+				enableMultiplePayments: true,
+				operationType: "AbsoluteAmountsInsertion",
+				filePaymentList: {
+					filePaymentDetail: [
+						{
+							paymentDate: "2018-09-08",
+							amount: "100.00",
+							paymentType: "B",
+						},
+					],
+				},
+			} as Parameters<typeof client.insertFilePaymentList>[0]);
+			expect(result.success).toBe(false);
+			if (!result.success) expect(result.error).toBeInstanceOf(AvesError);
+		});
+	});
+
 	describe("AvesError", () => {
 		it("should create error with correct properties", () => {
 			const error = new AvesError("api", "Test error message", "error", 1001);

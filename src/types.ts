@@ -6,6 +6,7 @@ import type {
 import type {
 	BookingStatusOnlyResponseSchema,
 	CancelFileSchema,
+	FilePaymentListSchema,
 	ModFileHeaderSchema,
 	ModFileServicesSchema,
 	SetFileServiceStatusSchema,
@@ -366,12 +367,6 @@ export type BookingFileRQ = InferInput<typeof BookingFileSchema>;
  * @property rsStatus - Operation status (check for 'OK' before using result)
  * @property bookingFileDetail - Created booking file detail (camelCase); see Common Structures "BOOKEDFILE"
  */
-/**
- * Response from CreateBookingFile (BookingFileRS).
- *
- * @property rsStatus - Operation status (check for 'OK' before using result)
- * @property bookingFileDetail - Created booking file detail (camelCase); see Common Structures "BOOKEDFILE"
- */
 export type BookingFileRS = InferOutput<typeof BookingFileResponseSchema>;
 
 /**
@@ -402,12 +397,17 @@ export type SetFileServiceStatusRQ = InferInput<
 >;
 
 /**
+ * Request body for InsertFilePaymentList (FilePaymentListRQ).
+ */
+export type FilePaymentListRQ = InferInput<typeof FilePaymentListSchema>;
+
+/**
  * Response for ModServices / SetStatus / SetStatusService — same shape as CreateBookingFile.
  */
 export type BookingFileDetailRS = BookingFileRS;
 
 /**
- * Response for booking ops that return only RsStatus (Cancel / ModHeader).
+ * Response for booking ops that return only RsStatus (Cancel / ModHeader / InsertFilePaymentList).
  */
 export type BookingStatusOnlyRS = InferOutput<
 	typeof BookingStatusOnlyResponseSchema

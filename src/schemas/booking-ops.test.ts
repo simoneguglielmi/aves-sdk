@@ -4,6 +4,8 @@ import {
 	BookingFileDetailResponseSchema,
 	CancelFileApiSchema,
 	CancelFileSchema,
+	FilePaymentListApiSchema,
+	FilePaymentListSchema,
 	ModFileServicesApiSchema,
 	ModFileServicesSchema,
 	SetFileServiceStatusApiSchema,
@@ -254,5 +256,80 @@ describe("BookingFileDetailApiSchema (typed response)", () => {
 			result.bookingFileDetail?.bookedServiceList?.bookedServiceDetail?.[0]
 				.fromExternalProvider,
 		).toBe("false");
+	});
+});
+
+describe("FilePaymentListSchema", () => {
+	it("should validate AbsoluteAmountsInsertion payload", () => {
+		const result = parse(FilePaymentListSchema, {
+			bookingFileCode: "18/000172",
+			paymentUser: "MLDN",
+			enableMultiplePayments: true,
+			operationType: "AbsoluteAmountsInsertion",
+			filePaymentList: {
+				filePaymentDetail: [
+					{
+						paymentDate: "2018-09-08",
+						paymentNote: "INCASSO",
+						amount: "100.00",
+						paymentType: "B",
+					},
+					{
+						paymentDate: "2018-10-08",
+						paymentNote: "INCASSO",
+						amount: "800.25",
+						paymentType: "C",
+					},
+				],
+			},
+		});
+		expect(result.bookingFileCode).toBe("18/000172");
+		expect(result.filePaymentList.filePaymentDetail).toHaveLength(2);
+	});
+
+	it("should require bookingFileCode or bookingFileRefCode", () => {
+		const result = safeParse(FilePaymentListSchema, {
+			enableMultiplePayments: true,
+			operationType: "AbsoluteAmountsInsertion",
+			filePaymentList: {
+				filePaymentDetail: [
+					{
+						paymentDate: "2018-09-08",
+						amount: "100.00",
+						paymentType: "B",
+					},
+				],
+			},
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("should transform to PascalCase with payment attributes", () => {
+		const api = parse(FilePaymentListApiSchema, {
+			bookingFileCode: "18/000172",
+			enableMultiplePayments: true,
+			operationType: "AbsoluteAmountsInsertion",
+			filePaymentList: {
+				filePaymentDetail: [
+					{
+						paymentDate: "2018-09-08",
+						paymentNote: "INCASSO",
+						amount: "100.00",
+						paymentType: "B",
+					},
+				],
+			},
+		});
+		expect(api).toMatchObject({
+			BookingFileCode: "18/000172",
+			EnableMultiplePayments: true,
+			OperationType: "AbsoluteAmountsInsertion",
+		});
+		expect(api.FilePaymentList.FilePaymentDetail[0]).toMatchObject({
+			"@PaymentDate": "2018-09-08",
+			"@PaymentNote": "INCASSO",
+			"@Amount": "100.00",
+			"@PaymentType": "B",
+		});
 	});
 });

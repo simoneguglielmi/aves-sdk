@@ -15,6 +15,7 @@ export type {
 	DynamicFields,
 	// Master record types
 	FinancialDetail,
+	FilePaymentListRQ,
 	IdDocumentDetail,
 	// Upsert types
 	ManageMasterRecordRequest,

@@ -14,6 +14,8 @@ export const XML_ROOT_ELEMENTS = {
 	SET_STATUS_RESPONSE: "SetStatusRS",
 	SET_STATUS_SERVICE_REQUEST: "SetStatusServiceRQ",
 	SET_STATUS_SERVICE_RESPONSE: "SetStatusServiceRS",
+	FILE_PAYMENT_LIST_REQUEST: "FilePaymentListRQ",
+	FILE_PAYMENT_LIST_RESPONSE: "FilePaymentListRS",
 } as const;
 
 export type XMLRootElementValues =

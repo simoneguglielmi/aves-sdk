@@ -22,6 +22,7 @@ import {
 	BookingFileDetailResponseSchema,
 	BookingStatusOnlyResponseSchema,
 	CancelFileApiSchema,
+	FilePaymentListApiSchema,
 	ModFileHeaderApiSchema,
 	ModFileServicesApiSchema,
 	SetFileServiceStatusApiSchema,
@@ -43,6 +44,7 @@ import type {
 	BookingFileRS,
 	BookingStatusOnlyRS,
 	CancelFileRQ,
+	FilePaymentListRQ,
 	ManageMasterRecordRS,
 	MasterRecordDetail,
 	ModFileHeaderRQ,
@@ -104,6 +106,7 @@ export class AvesClient {
 			setBookingStatus: "/interop/booking/v2/rest/SetBookingFileStatus",
 			setBookingServiceStatus:
 				"/interop/booking/v2/rest/SetBookingFileServiceStatus",
+			insertFilePaymentList: "/interop/booking/v2/rest/InsertFilePaymentList",
 		} as const;
 	}
 
@@ -199,20 +202,21 @@ export class AvesClient {
 	/**
 	 * Shared booking/master request path: validate → wrap RqHeader → POST → parse response.
 	 */
-	private async invokeOp<TOut extends { rsStatus: RsStatus }>(opts: {
+	private async invokeOp<
+		TIn,
+		TApiBody extends Record<string, unknown>,
+		TOut extends { rsStatus: RsStatus },
+	>(opts: {
 		op: string;
-		params: unknown;
-		apiSchema: BaseSchema<unknown, unknown, BaseIssue<unknown>>;
+		params: TIn;
+		apiSchema: BaseSchema<TIn, TApiBody, BaseIssue<unknown>>;
 		endpoint: string;
 		requestRoot: XMLRootElementValues;
 		responseRoot: string;
 		responseSchema: BaseSchema<unknown, TOut, BaseIssue<unknown>>;
 	}): Promise<Result<TOut, AvesError>> {
 		try {
-			const apiBody = parse(opts.apiSchema, opts.params) as Record<
-				string,
-				unknown
-			>;
+			const apiBody = parse(opts.apiSchema, opts.params);
 			return this.request(
 				opts.endpoint,
 				createRootElement(opts.requestRoot, {
@@ -401,6 +405,24 @@ export class AvesClient {
 			requestRoot: XML_ROOT_ELEMENTS.SET_STATUS_SERVICE_REQUEST,
 			responseRoot: XML_ROOT_ELEMENTS.SET_STATUS_SERVICE_RESPONSE,
 			responseSchema: BookingFileDetailResponseSchema,
+		});
+	}
+
+	/**
+	 * Register one or more payments on a booking file (InsertFilePaymentList).
+	 * @param params - FilePaymentListRQ body in camelCase ({@link FilePaymentListRQ})
+	 */
+	async insertFilePaymentList(
+		params: FilePaymentListRQ,
+	): Promise<Result<BookingStatusOnlyRS, AvesError>> {
+		return this.invokeOp({
+			op: "insertFilePaymentList",
+			params,
+			apiSchema: FilePaymentListApiSchema,
+			endpoint: this.endpoints.insertFilePaymentList,
+			requestRoot: XML_ROOT_ELEMENTS.FILE_PAYMENT_LIST_REQUEST,
+			responseRoot: XML_ROOT_ELEMENTS.FILE_PAYMENT_LIST_RESPONSE,
+			responseSchema: BookingStatusOnlyResponseSchema,
 		});
 	}
 }

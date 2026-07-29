@@ -194,3 +194,71 @@ export const SetFileServiceStatusSchema = v.object({
 export const SetFileServiceStatusApiSchema = createApiSchema(
 	SetFileServiceStatusSchema,
 );
+
+// ---------------------------------------------------------------------------
+// InsertFilePaymentList — FilePaymentListRQ
+// ---------------------------------------------------------------------------
+
+const filePaymentTypeSchema = v.union([
+	v.literal("C"),
+	v.literal("B"),
+	v.literal("D"),
+	v.literal("T"),
+	v.literal("P"),
+	v.literal("R"),
+	v.literal("A"),
+	v.literal("H"),
+	v.literal("I"),
+	v.literal("J"),
+	v.literal("K"),
+	v.literal("L"),
+	v.literal("M"),
+	v.literal("N"),
+	v.literal("O"),
+	v.literal("Q"),
+	v.literal("S"),
+	v.literal("U"),
+	v.literal("V"),
+]);
+
+const filePaymentOperationTypeSchema = v.union([
+	v.literal("AbsoluteAmountsInsertion"),
+	v.literal("FinalAmountToAchieve"),
+	v.literal("FinalAmountToAchieveWithoutControls"),
+]);
+
+export const FilePaymentDetailInputSchema = v.object({
+	paymentDate: v.string(),
+	paymentNote: v.optional(v.string()),
+	payerMasterCode: v.optional(v.string()),
+	payerName: v.optional(v.string()),
+	amount: v.string(),
+	paymentType: filePaymentTypeSchema,
+});
+
+/**
+ * FilePaymentListRQ body (camelCase).
+ * Register one or more client payments on an existing booking file.
+ * Requires bookingFileCode or bookingFileRefCode.
+ */
+export const FilePaymentListSchema = v.pipe(
+	v.object({
+		bookingFileCode: v.optional(v.string()),
+		bookingFileRefCode: v.optional(v.string()),
+		paymentUser: v.optional(v.string()),
+		enableMultiplePayments: BoolishSchema,
+		operationType: filePaymentOperationTypeSchema,
+		filePaymentList: v.object({
+			filePaymentDetail: v.pipe(
+				v.array(FilePaymentDetailInputSchema),
+				v.minLength(1),
+			),
+		}),
+	}),
+	v.check(
+		(input) => Boolean(input.bookingFileCode || input.bookingFileRefCode),
+		"bookingFileCode or bookingFileRefCode is required",
+	),
+);
+
+export const FilePaymentListApiSchema = createApiSchema(FilePaymentListSchema);
