@@ -30,9 +30,15 @@ type SpecialObject =
 	| Error;
 
 /** Maps key K: strips leading @ and converts to camelCase for mapped output key */
+type OverrideCamelKey<K extends string> = K extends "RPH"
+	? "rph"
+	: K extends "TOServiceType"
+		? "toServiceType"
+		: ToCamelCase<K>;
+
 type CamelizeKey<K extends string> = K extends `@${infer Rest}`
-	? ToCamelCase<Rest>
-	: ToCamelCase<K>;
+	? OverrideCamelKey<Rest>
+	: OverrideCamelKey<K>;
 
 /** Maps key K: strips leading @ and converts to PascalCase for mapped output key */
 type PascalizeKey<K extends string> = K extends `@${infer Rest}`
@@ -149,7 +155,12 @@ const attributeRegistry: Record<string, readonly string[]> = {
 		"paymentUser",
 		"paymentType",
 	],
-	selectedPackageDetail: ["pCode", "getServicesFromPackage"],
+	selectedPackageDetail: [
+		"pCode",
+		"startDate",
+		"endDate",
+		"getServicesFromPackage",
+	],
 	selectedServiceDetail: [
 		"sCode",
 		"ssCode",
@@ -166,6 +177,24 @@ const attributeRegistry: Record<string, readonly string[]> = {
 		"supplierMasterSearchField",
 		"supplierFiscalCode",
 	],
+	serviceFare: [
+		"currencyCode",
+		"exchangeRate",
+		"cost",
+		"costTax",
+		"costType",
+		"vatCostCurrencyCode",
+		"price",
+		"priceTax",
+		"priceType",
+	],
+	cancellableBookedServiceDetail: [
+		"cancelOperationType",
+		"serviceRefType",
+		"serviceRefValue",
+	],
+	fileStatus: ["value", "expiredDate", "optionedFileExpireDatePolicy"],
+	penalty: ["apply", "specificCode"],
 	noteDetail: ["nType", "title"],
 	passengerDetail: ["rph", "roomRph", "billingHolder"],
 	bookingFinancialInfo: [
@@ -220,7 +249,9 @@ const formatAttributeField = (
 	// Some attributes in AVES XML are explicitly camel-cased in the spec
 	// (e.g. @sCode, @ssCode), so we always preserve their original field name.
 	const mustPreserveCamelCase =
-		originalField === "sCode" || originalField === "ssCode";
+		originalField === "sCode" ||
+		originalField === "ssCode" ||
+		originalField === "pCode";
 
 	if (isToExclude || mustPreserveCamelCase) {
 		return `@${originalField}`;
@@ -233,6 +264,12 @@ const formatAttributeField = (
 const pascalKeyOverrides = new Map<string, string>([
 	["toServiceType", "TOServiceType"],
 	["rph", "RPH"],
+]);
+
+// Reverse of pascalKeyOverrides for response camelCase mapping
+const camelKeyOverrides = new Map<string, string>([
+	["TOServiceType", "toServiceType"],
+	["RPH", "rph"],
 ]);
 
 /**
@@ -293,7 +330,9 @@ export function pascalToCamelKeys<T>(input: T): Camelize<T> {
 
 	for (const [key, value] of Object.entries(input)) {
 		const parsedKey = key.startsWith("@") ? key.slice(1) : key;
-		const camelKey = pascalToCamel(parsedKey);
+		const camelKey = camelKeyOverrides.has(parsedKey)
+			? (camelKeyOverrides.get(parsedKey) as string)
+			: pascalToCamel(parsedKey);
 
 		result[camelKey] = transformValue(value, pascalToCamelKeys);
 	}

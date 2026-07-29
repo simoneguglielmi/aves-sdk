@@ -3,6 +3,14 @@ import type {
 	BookingFileResponseSchema,
 	BookingFileSchema,
 } from "./schemas/booking-file.js";
+import type {
+	BookingStatusOnlyResponseSchema,
+	CancelFileSchema,
+	ModFileHeaderSchema,
+	ModFileServicesSchema,
+	SetFileServiceStatusSchema,
+	SetFileStatusSchema,
+} from "./schemas/booking-ops.js";
 import type { RqHeaderSchema, RsStatusSchema } from "./schemas/common.js";
 import type {
 	AccountPoliciesSchema,
@@ -358,7 +366,52 @@ export type BookingFileRQ = InferInput<typeof BookingFileSchema>;
  * @property rsStatus - Operation status (check for 'OK' before using result)
  * @property bookingFileDetail - Created booking file detail (camelCase); see Common Structures "BOOKEDFILE"
  */
+/**
+ * Response from CreateBookingFile (BookingFileRS).
+ *
+ * @property rsStatus - Operation status (check for 'OK' before using result)
+ * @property bookingFileDetail - Created booking file detail (camelCase); see Common Structures "BOOKEDFILE"
+ */
 export type BookingFileRS = InferOutput<typeof BookingFileResponseSchema>;
+
+/**
+ * Request body for ModBookingFileServices (ModFileServicesRQ).
+ */
+export type ModFileServicesRQ = InferInput<typeof ModFileServicesSchema>;
+
+/**
+ * Request body for ModBookingFileHeader (ModFileHeaderRQ).
+ */
+export type ModFileHeaderRQ = InferInput<typeof ModFileHeaderSchema>;
+
+/**
+ * Request body for CancelBookingFile (CancelFileRQ).
+ */
+export type CancelFileRQ = InferInput<typeof CancelFileSchema>;
+
+/**
+ * Request body for SetBookingFileStatus (SetStatusRQ).
+ */
+export type SetFileStatusRQ = InferInput<typeof SetFileStatusSchema>;
+
+/**
+ * Request body for SetBookingFileServiceStatus (SetStatusServiceRQ).
+ */
+export type SetFileServiceStatusRQ = InferInput<
+	typeof SetFileServiceStatusSchema
+>;
+
+/**
+ * Response for ModServices / SetStatus / SetStatusService — same shape as CreateBookingFile.
+ */
+export type BookingFileDetailRS = BookingFileRS;
+
+/**
+ * Response for booking ops that return only RsStatus (Cancel / ModHeader).
+ */
+export type BookingStatusOnlyRS = InferOutput<
+	typeof BookingStatusOnlyResponseSchema
+>;
 
 // ============================================================================
 // Client Configuration

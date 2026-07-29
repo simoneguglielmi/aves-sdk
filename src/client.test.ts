@@ -436,6 +436,233 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
+	describe("modBookingServices", () => {
+		const modParams = {
+			customerRecordCode: "138311",
+			bookingFileCode: "14/036654",
+			selectedServiceList: {
+				selectedServiceDetail: [
+					{
+						sCode: "HT00110840",
+						ssCode: "DL",
+						avesServiceType: "TOP" as const,
+						toServiceType: "RESIDENCE" as const,
+						startDate: "2015-01-22T00:00:00",
+						endDate: "2015-01-25T00:00:00",
+						qty: "1",
+						pax: "2",
+						paxAssociated: [],
+						avesSession: "1",
+						bookedServiceRef: "001",
+						serviceFare: {
+							currencyCode: "EUR",
+							cost: "100.00",
+							price: "120.00",
+						},
+					},
+				],
+			},
+			cancellableBookedServiceList: {
+				cancellableBookedServiceDetail: [
+					{
+						cancelOperationType: "DELETE" as const,
+						serviceRefType: "RPH" as const,
+						serviceRefValue: "002",
+					},
+				],
+			},
+			selectedPackageDetail: {
+				pCode: "2014MDE0000010",
+				startDate: "2015-01-22T00:00:00",
+				endDate: "2015-01-25T00:00:00",
+			},
+		};
+
+		it("should modify services and return typed bookingFileDetail", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/ModBookingFileServices",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<BookingFileRS>
+            <RsStatus Status="OK"/>
+            <BookingFileDetail BookingFileCode="14/036654">
+              <CustomerRecordCode>138311</CustomerRecordCode>
+              <PackageCode>2014MDE0000010</PackageCode>
+              <BookingFileStatus Value="QUOTATION"/>
+            </BookingFileDetail>
+          </BookingFileRS>`,
+				);
+
+			const result = await client.modBookingServices(modParams);
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data.bookingFileDetail?.bookingFileCode).toBe(
+					"14/036654",
+				);
+				expect(result.data.bookingFileDetail?.packageCode).toBe(
+					"2014MDE0000010",
+				);
+			}
+		});
+
+		it("should send DELETE and package attributes in XML", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/ModBookingFileServices",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<BookingFileRS><RsStatus Status="OK"/></BookingFileRS>`;
+				});
+
+			await client.modBookingServices(modParams);
+			expect(capturedBody).toContain("<ModFileServicesRQ>");
+			expect(capturedBody).toContain('CancelOperationType="DELETE"');
+			expect(capturedBody).toContain('pCode="2014MDE0000010"');
+			expect(capturedBody).toContain(
+				"<BookedServiceRef>001</BookedServiceRef>",
+			);
+			expect(capturedBody).toContain('Cost="100.00"');
+		});
+	});
+
+	describe("cancelBooking / setBookingStatus", () => {
+		it("should cancel booking file", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/CancelBookingFile",
+					method: "POST",
+				})
+				.reply(200, `<CancelFileRS><RsStatus Status="OK"/></CancelFileRS>`);
+
+			const result = await client.cancelBooking({
+				bookingFileCode: "14/000081",
+				customerRecordCode: "000170",
+			});
+			expect(result.success).toBe(true);
+			if (result.success) expect(result.data.rsStatus.status).toBe("OK");
+		});
+
+		it("should set booking status to CANCELED", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/SetBookingFileStatus",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<SetStatusRS>
+            <RsStatus Status="OK"/>
+            <BookingFileDetail BookingFileCode="14/000081">
+              <CustomerRecordCode>000170</CustomerRecordCode>
+              <BookingFileStatus Value="CANCELED"/>
+            </BookingFileDetail>
+          </SetStatusRS>`,
+				);
+
+			const result = await client.setBookingStatus({
+				customerRecordCode: "000170",
+				bookingFileCode: "14/000081",
+				fileStatus: { value: "CANCELED" },
+			});
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data.bookingFileDetail?.bookingFileStatus?.value).toBe(
+					"CANCELED",
+				);
+			}
+		});
+
+		it("should nullify a booked service line", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/SetBookingFileServiceStatus",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<SetStatusServiceRS>
+            <RsStatus Status="OK"/>
+            <BookingFileDetail BookingFileCode="18/000252">
+              <CustomerRecordCode>000001</CustomerRecordCode>
+              <BookedServiceList>
+                <BookedServiceDetail RPH="002" ServiceCode="S1">
+                  <ServiceStatus>NULLIFIED</ServiceStatus>
+                </BookedServiceDetail>
+              </BookedServiceList>
+            </BookingFileDetail>
+          </SetStatusServiceRS>`,
+				);
+
+			const result = await client.setBookingServiceStatus({
+				customerRecordCode: "000001",
+				bookingFileCode: "18/000252",
+				bookingServiceRef: "002",
+				bookingFileServiceStatus: "NULLIFIED",
+			});
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(
+					result.data.bookingFileDetail?.bookedServiceList
+						?.bookedServiceDetail?.[0].serviceStatus,
+				).toBe("NULLIFIED");
+			}
+		});
+
+		it("should reject setBookingStatus with invalid status", async () => {
+			const result = await client.setBookingStatus({
+				customerRecordCode: "000170",
+				bookingFileCode: "14/000081",
+				fileStatus: { value: "INVALID" as "CANCELED" },
+			});
+			expect(result.success).toBe(false);
+			if (!result.success) expect(result.error).toBeInstanceOf(AvesError);
+		});
+	});
+
+	describe("modBookingHeader", () => {
+		it("should modify header and return status-only response", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/ModBookingFileHeader",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<ModFileHeaderRS><RsStatus Status="OK"/></ModFileHeaderRS>`,
+				);
+
+			const result = await client.modBookingHeader({
+				bookingFileCode: "14/000043",
+				bookingFileStartDate: "2014-04-28",
+				customerRecordCode: "103737",
+				passengerList: {
+					passengerDetail: [
+						{
+							rph: "001",
+							name: "ADULTI 001",
+							sex: "M",
+							birthDate: "1964-09-26T00:00:00",
+						},
+					],
+				},
+			});
+			expect(result.success).toBe(true);
+			if (result.success) expect(result.data.rsStatus.status).toBe("OK");
+		});
+	});
+
 	describe("AvesError", () => {
 		it("should create error with correct properties", () => {
 			const error = new AvesError("api", "Test error message", "error", 1001);

@@ -6,9 +6,12 @@ export { AvesError } from "./error.js";
 export type {
 	AccountPolicies,
 	AvesClientOptions,
-	// Booking file (CreateBookingFile)
+	BookingFileDetailRS,
+	// Booking file (CreateBookingFile + ops)
 	BookingFileRQ,
 	BookingFileRS,
+	BookingStatusOnlyRS,
+	CancelFileRQ,
 	DynamicFields,
 	// Master record types
 	FinancialDetail,
@@ -18,9 +21,13 @@ export type {
 	ManageMasterRecordRS,
 	MasterRecordDetail,
 	MasterRecordDetailResponse,
+	ModFileHeaderRQ,
+	ModFileServicesRQ,
 	RqHeader,
 	RsStatus,
 	// Search types
 	SearchMasterRecord,
 	SearchMasterRecordRS,
+	SetFileServiceStatusRQ,
+	SetFileStatusRQ,
 } from "./types.js";

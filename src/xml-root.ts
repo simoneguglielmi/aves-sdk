@@ -5,6 +5,15 @@ export const XML_ROOT_ELEMENTS = {
 	UPSERT_RESPONSE: "ManageMasterRecordRS",
 	BOOKING_REQUEST: "BookFileRQ",
 	BOOKING_RESPONSE: "BookingFileRS",
+	MOD_FILE_SERVICES_REQUEST: "ModFileServicesRQ",
+	MOD_FILE_HEADER_REQUEST: "ModFileHeaderRQ",
+	MOD_FILE_HEADER_RESPONSE: "ModFileHeaderRS",
+	CANCEL_FILE_REQUEST: "CancelFileRQ",
+	CANCEL_FILE_RESPONSE: "CancelFileRS",
+	SET_STATUS_REQUEST: "SetStatusRQ",
+	SET_STATUS_RESPONSE: "SetStatusRS",
+	SET_STATUS_SERVICE_REQUEST: "SetStatusServiceRQ",
+	SET_STATUS_SERVICE_RESPONSE: "SetStatusServiceRS",
 } as const;
 
 export type XMLRootElementValues =

@@ -18,6 +18,15 @@ import {
 	BookingFileApiSchema,
 	BookingFileResponseSchema,
 } from "./schemas/booking-file.js";
+import {
+	BookingFileDetailResponseSchema,
+	BookingStatusOnlyResponseSchema,
+	CancelFileApiSchema,
+	ModFileHeaderApiSchema,
+	ModFileServicesApiSchema,
+	SetFileServiceStatusApiSchema,
+	SetFileStatusApiSchema,
+} from "./schemas/booking-ops.js";
 import { MasterRecordDetailApiSchema } from "./schemas/master-record.js";
 import {
 	SearchMasterRecordRequestSchema,
@@ -29,19 +38,30 @@ import {
 } from "./schemas/upsert.js";
 import type {
 	AvesClientOptions,
+	BookingFileDetailRS,
 	BookingFileRQ,
 	BookingFileRS,
+	BookingStatusOnlyRS,
+	CancelFileRQ,
 	ManageMasterRecordRS,
 	MasterRecordDetail,
+	ModFileHeaderRQ,
+	ModFileServicesRQ,
 	RsStatus,
 	SearchMasterRecord,
 	SearchMasterRecordRS,
+	SetFileServiceStatusRQ,
+	SetFileStatusRQ,
 } from "./types.js";
 import { err, isOk, ok, type Result } from "./utils/result.js";
 import { createTimeoutSignal } from "./utils/timeout.js";
 import { parseUrl } from "./utils/url.js";
 import { jsonToXml, xmlToJson } from "./xml-client.js";
-import { createRootElement, XML_ROOT_ELEMENTS } from "./xml-root.js";
+import {
+	createRootElement,
+	XML_ROOT_ELEMENTS,
+	type XMLRootElementValues,
+} from "./xml-root.js";
 
 /**
  * AVES XML REST API client
@@ -78,6 +98,12 @@ export class AvesClient {
 			search: "/interop/masterRecords/v2/rest/Search",
 			upsert: "/interop/masterRecords/v2/rest/InsertOrUpdate",
 			createBooking: "/interop/booking/v2/rest/CreateBookingFile",
+			modBookingServices: "/interop/booking/v2/rest/ModBookingFileServices",
+			modBookingHeader: "/interop/booking/v2/rest/ModBookingFileHeader",
+			cancelBooking: "/interop/booking/v2/rest/CancelBookingFile",
+			setBookingStatus: "/interop/booking/v2/rest/SetBookingFileStatus",
+			setBookingServiceStatus:
+				"/interop/booking/v2/rest/SetBookingFileServiceStatus",
 		} as const;
 	}
 
@@ -171,6 +197,39 @@ export class AvesClient {
 	}
 
 	/**
+	 * Shared booking/master request path: validate → wrap RqHeader → POST → parse response.
+	 */
+	private async invokeOp<TOut extends { rsStatus: RsStatus }>(opts: {
+		op: string;
+		params: unknown;
+		apiSchema: BaseSchema<unknown, unknown, BaseIssue<unknown>>;
+		endpoint: string;
+		requestRoot: XMLRootElementValues;
+		responseRoot: string;
+		responseSchema: BaseSchema<unknown, TOut, BaseIssue<unknown>>;
+	}): Promise<Result<TOut, AvesError>> {
+		try {
+			const apiBody = parse(opts.apiSchema, opts.params) as Record<
+				string,
+				unknown
+			>;
+			return this.request(
+				opts.endpoint,
+				createRootElement(opts.requestRoot, {
+					RqHeader: this.createRqHeader(),
+					...apiBody,
+				}),
+				opts.responseRoot,
+				opts.responseSchema,
+			);
+		} catch (error) {
+			return err(
+				this.toAvesError(error, `Validation error occurred during ${opts.op}`),
+			);
+		}
+	}
+
+	/**
 	 * Search for master records
 	 * @param params - Search master record request body in camelCase ({@link SearchMasterRecord})
 	 * @returns Result containing list of matching master records in camelCase or error
@@ -239,31 +298,109 @@ export class AvesClient {
 	/**
 	 * Create a booking file (CreateBookingFile).
 	 * @param params - Booking file request body in camelCase ({@link BookingFileRQ})
-	 * @returns Result containing booking file detail in camelCase or error
 	 */
 	async createBooking(
 		params: BookingFileRQ,
 	): Promise<Result<BookingFileRS, AvesError>> {
-		try {
-			const apiBody = parse(BookingFileApiSchema, params);
-			const requestBody = createRootElement(XML_ROOT_ELEMENTS.BOOKING_REQUEST, {
-				RqHeader: this.createRqHeader(),
-				...apiBody,
-			});
+		return this.invokeOp({
+			op: "createBooking",
+			params,
+			apiSchema: BookingFileApiSchema,
+			endpoint: this.endpoints.createBooking,
+			requestRoot: XML_ROOT_ELEMENTS.BOOKING_REQUEST,
+			responseRoot: XML_ROOT_ELEMENTS.BOOKING_RESPONSE,
+			responseSchema: BookingFileResponseSchema,
+		});
+	}
 
-			return this.request<BookingFileRS>(
-				this.endpoints.createBooking,
-				requestBody,
-				XML_ROOT_ELEMENTS.BOOKING_RESPONSE,
-				BookingFileResponseSchema,
-			);
-		} catch (error) {
-			return err(
-				this.toAvesError(
-					error,
-					"Validation error occurred during createBooking",
-				),
-			);
-		}
+	/**
+	 * Modify booked services: add/replace lines, assign package, delete/nullify cost items.
+	 * @param params - ModFileServicesRQ body in camelCase ({@link ModFileServicesRQ})
+	 */
+	async modBookingServices(
+		params: ModFileServicesRQ,
+	): Promise<Result<BookingFileDetailRS, AvesError>> {
+		return this.invokeOp({
+			op: "modBookingServices",
+			params,
+			apiSchema: ModFileServicesApiSchema,
+			endpoint: this.endpoints.modBookingServices,
+			requestRoot: XML_ROOT_ELEMENTS.MOD_FILE_SERVICES_REQUEST,
+			responseRoot: XML_ROOT_ELEMENTS.BOOKING_RESPONSE,
+			responseSchema: BookingFileDetailResponseSchema,
+		});
+	}
+
+	/**
+	 * Modify booking file header (customer, passengers, notes, financial info).
+	 * Does not change package or cost lines.
+	 * @param params - ModFileHeaderRQ body in camelCase ({@link ModFileHeaderRQ})
+	 */
+	async modBookingHeader(
+		params: ModFileHeaderRQ,
+	): Promise<Result<BookingStatusOnlyRS, AvesError>> {
+		return this.invokeOp({
+			op: "modBookingHeader",
+			params,
+			apiSchema: ModFileHeaderApiSchema,
+			endpoint: this.endpoints.modBookingHeader,
+			requestRoot: XML_ROOT_ELEMENTS.MOD_FILE_HEADER_REQUEST,
+			responseRoot: XML_ROOT_ELEMENTS.MOD_FILE_HEADER_RESPONSE,
+			responseSchema: BookingStatusOnlyResponseSchema,
+		});
+	}
+
+	/**
+	 * Delete a booking file (CancelBookingFile).
+	 * @param params - CancelFileRQ body in camelCase ({@link CancelFileRQ})
+	 */
+	async cancelBooking(
+		params: CancelFileRQ,
+	): Promise<Result<BookingStatusOnlyRS, AvesError>> {
+		return this.invokeOp({
+			op: "cancelBooking",
+			params,
+			apiSchema: CancelFileApiSchema,
+			endpoint: this.endpoints.cancelBooking,
+			requestRoot: XML_ROOT_ELEMENTS.CANCEL_FILE_REQUEST,
+			responseRoot: XML_ROOT_ELEMENTS.CANCEL_FILE_RESPONSE,
+			responseSchema: BookingStatusOnlyResponseSchema,
+		});
+	}
+
+	/**
+	 * Change booking file status (incl. CANCELED / NULLIFIED).
+	 * @param params - SetStatusRQ body in camelCase ({@link SetFileStatusRQ})
+	 */
+	async setBookingStatus(
+		params: SetFileStatusRQ,
+	): Promise<Result<BookingFileDetailRS, AvesError>> {
+		return this.invokeOp({
+			op: "setBookingStatus",
+			params,
+			apiSchema: SetFileStatusApiSchema,
+			endpoint: this.endpoints.setBookingStatus,
+			requestRoot: XML_ROOT_ELEMENTS.SET_STATUS_REQUEST,
+			responseRoot: XML_ROOT_ELEMENTS.SET_STATUS_RESPONSE,
+			responseSchema: BookingFileDetailResponseSchema,
+		});
+	}
+
+	/**
+	 * Nullify a single booked service line (SetBookingFileServiceStatus).
+	 * @param params - SetStatusServiceRQ body in camelCase ({@link SetFileServiceStatusRQ})
+	 */
+	async setBookingServiceStatus(
+		params: SetFileServiceStatusRQ,
+	): Promise<Result<BookingFileDetailRS, AvesError>> {
+		return this.invokeOp({
+			op: "setBookingServiceStatus",
+			params,
+			apiSchema: SetFileServiceStatusApiSchema,
+			endpoint: this.endpoints.setBookingServiceStatus,
+			requestRoot: XML_ROOT_ELEMENTS.SET_STATUS_SERVICE_REQUEST,
+			responseRoot: XML_ROOT_ELEMENTS.SET_STATUS_SERVICE_RESPONSE,
+			responseSchema: BookingFileDetailResponseSchema,
+		});
 	}
 }
