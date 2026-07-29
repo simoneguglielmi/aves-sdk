@@ -8,6 +8,10 @@ Type-safe TypeScript SDK for the AVES XML REST API. Handles XML parsing, Valibot
 npm install aves-sdk
 # or
 yarn add aves-sdk
+# or
+pnpm add aves-sdk
+# or
+bun add aves-sdk
 ```
 
 ## Quick Start
@@ -31,7 +35,11 @@ const searchResult = await client.search({
 if (searchResult.success) {
   console.log(searchResult.data.masterRecordList);
 } else {
-  console.error(searchResult.error.kind, searchResult.error.message, searchResult.error.code);
+  console.error(
+    searchResult.error.kind,
+    searchResult.error.message,
+    searchResult.error.code,
+  );
 }
 ```
 
@@ -45,13 +53,13 @@ if (searchResult.success) {
 new AvesClient(options: AvesClientOptions)
 ```
 
-| Option | Description |
-| --- | --- |
-| `baseURL` | AVES API base URL |
-| `hostID` | 6-digit host id |
-| `xtoken` | Auth token |
+| Option         | Description                    |
+| -------------- | ------------------------------ |
+| `baseURL`      | AVES API base URL              |
+| `hostID`       | 6-digit host id                |
+| `xtoken`       | Auth token                     |
 | `languageCode` | Optional 2-digit language code |
-| `timeoutMs` | Optional request timeout |
+| `timeoutMs`    | Optional request timeout       |
 
 All methods return `Result<T, AvesError>`:
 
@@ -67,16 +75,16 @@ type Result<T, E> = { success: true; data: T } | { success: false; error: E };
 
 Search by `searchType`. TypeScript enforces the required fields per variant.
 
-| `searchType` | Required fields |
-| --- | --- |
-| `'CODE'` | `recordCode` |
-| `'NAME'` | `name` (+ optional `city`) |
-| `'VATCODE'` | `vatCode` (+ optional `phoneNumber`) |
-| `'ZONE'` | `zipCode`, `countyCode` (+ optional `city`) |
-| `'CATEGORY'` | `categoryCode` |
-| `'EMAIL'` | `email` |
-| `'LASTMODDATE'` | `lastModificationDate: { minDate, maxDate }` |
-| `'SEARCH_FIELD'` / `'EXTERNAL_REF_CODE'` | `searchFieldValue` |
+| `searchType`                             | Required fields                              |
+| ---------------------------------------- | -------------------------------------------- |
+| `'CODE'`                                 | `recordCode`                                 |
+| `'NAME'`                                 | `name` (+ optional `city`)                   |
+| `'VATCODE'`                              | `vatCode` (+ optional `phoneNumber`)         |
+| `'ZONE'`                                 | `zipCode`, `countyCode` (+ optional `city`)  |
+| `'CATEGORY'`                             | `categoryCode`                               |
+| `'EMAIL'`                                | `email`                                      |
+| `'LASTMODDATE'`                          | `lastModificationDate: { minDate, maxDate }` |
+| `'SEARCH_FIELD'` / `'EXTERNAL_REF_CODE'` | `searchFieldValue`                           |
 
 ```typescript
 const byCode = await client.search({
@@ -122,15 +130,15 @@ if (result.success) {
 
 `*List` request fields are **flat arrays of Detail objects**. The SDK wraps them to AVES List/Detail XML automatically.
 
-| Method | Purpose |
-| --- | --- |
-| `createBooking` | Create booking file |
-| `modBookingServices` | Add/replace services, assign package, delete/nullify lines |
-| `modBookingHeader` | Header only (pax, notes, billing) — no costs |
-| `cancelBooking` | Delete booking file |
-| `setBookingStatus` | Change file status (`CANCELED` / `NULLIFIED` / …) |
-| `setBookingServiceStatus` | Nullify a single service line |
-| `insertFilePaymentList` | Register payments on a booking |
+| Method                    | Purpose                                                    |
+| ------------------------- | ---------------------------------------------------------- |
+| `createBooking`           | Create booking file                                        |
+| `modBookingServices`      | Add/replace services, assign package, delete/nullify lines |
+| `modBookingHeader`        | Header only (pax, notes, billing) — no costs               |
+| `cancelBooking`           | Delete booking file                                        |
+| `setBookingStatus`        | Change file status (`CANCELED` / `NULLIFIED` / …)          |
+| `setBookingServiceStatus` | Nullify a single service line                              |
+| `insertFilePaymentList`   | Register payments on a booking                             |
 
 #### `createBooking(params)`
 
@@ -261,7 +269,10 @@ await client.cancelBooking({
 ```typescript
 import { AvesClient, AvesError } from 'aves-sdk';
 
-const result = await client.search({ searchType: 'CODE', recordCode: '508558' });
+const result = await client.search({
+  searchType: 'CODE',
+  recordCode: '508558',
+});
 
 if (!result.success) {
   // AvesError: kind ('validation' | 'api' | 'unknown'), message, status?, code?
