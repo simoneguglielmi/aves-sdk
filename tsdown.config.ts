@@ -9,5 +9,5 @@ export default defineConfig({
   minify: true,
   treeshake: true,
   target: false,
-  external: ['valibot', 'undici', 'fast-xml-parser'],
+  deps: { neverBundle: ['valibot', 'undici', 'fast-xml-parser'] },
 });
