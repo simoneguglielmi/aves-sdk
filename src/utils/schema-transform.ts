@@ -19,6 +19,20 @@ export function createApiSchema<
 }
 
 /**
+ * Normalize XML one-or-many nodes into a typed array.
+ */
+export function oneOrMany<
+	TSchema extends BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
+>(itemSchema: TSchema) {
+	return v.pipe(
+		v.union([v.array(itemSchema), itemSchema]),
+		v.transform((input): v.InferOutput<TSchema>[] =>
+			Array.isArray(input) ? input : [input],
+		),
+	);
+}
+
+/**
  * Creates a schema that transforms PascalCase API responses to camelCase
  */
 export function createResponseSchema<
@@ -42,12 +56,10 @@ export function createApiValidationSchema<
 >(inputSchema: v.ObjectSchema<TEntries, TMessage>) {
 	const validationEntries: Record<string, unknown> = {};
 
-	// Build validation schema based on ATTRIBUTE_FIELDS
 	for (const key in inputSchema.entries) {
 		const isAttribute = ATTRIBUTE_FIELDS.has(key);
 		const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
 		const finalKey = isAttribute ? `@${pascalKey}` : pascalKey;
-
 		validationEntries[finalKey] = inputSchema.entries[key];
 	}
 

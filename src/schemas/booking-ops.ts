@@ -1,5 +1,11 @@
 import * as v from "valibot";
 import {
+	createBookingApiSchema,
+	FILE_PAYMENT_LIST_KEYS,
+	MOD_HEADER_LIST_KEYS,
+	MOD_SERVICES_LIST_KEYS,
+} from "../utils/booking-transform.js";
+import {
 	createApiSchema,
 	createResponseSchema,
 } from "../utils/schema-transform.js";
@@ -14,7 +20,7 @@ import {
 } from "./booking-file.js";
 import {
 	BoolishSchema,
-	createBookingApiSchema,
+	PaymentTypeSchema,
 	SetFileStatusValueSchema,
 } from "./booking-shared.js";
 import { RsStatusSchema } from "./common.js";
@@ -48,44 +54,27 @@ export const CancellableBookedServiceDetailInputSchema = v.object({
 
 /**
  * ModFileServicesRQ body (camelCase).
- * Add/replace services, assign package, and/or cancel cost lines.
- *
- * Note: SelectedServiceList shape differs from CreateBookingFile —
- * Create uses `{ selectedServiceDetail: one }[]`;
- * Mod uses `{ selectedServiceDetail: one[] }` (AVES wire).
+ * `*List` fields are flat Detail arrays; wire wrap happens in ModFileServicesApiSchema.
  */
 export const ModFileServicesSchema = v.object({
 	customerRecordCode: v.string(),
 	bookingFileCode: v.string(),
 	currencyCode: v.optional(v.string()),
-	deadlineList: v.optional(
-		v.object({
-			deadlineDetail: v.optional(v.array(ModDeadlineDetailInputSchema)),
-		}),
-	),
+	deadlineList: v.optional(v.array(ModDeadlineDetailInputSchema)),
 	selectedPackageDetail: v.optional(SelectedPackageDetailInputSchema),
-	selectedServiceList: v.object({
-		selectedServiceDetail: v.pipe(
-			v.array(SelectedServiceDetailInputSchema),
-			v.minLength(1),
-		),
-	}),
+	selectedServiceList: v.pipe(
+		v.array(SelectedServiceDetailInputSchema),
+		v.minLength(1),
+	),
 	cancellableBookedServiceList: v.optional(
-		v.object({
-			cancellableBookedServiceDetail: v.optional(
-				v.array(CancellableBookedServiceDetailInputSchema),
-			),
-		}),
+		v.array(CancellableBookedServiceDetailInputSchema),
 	),
-	passengerList: v.optional(
-		v.object({
-			passengerDetail: v.optional(v.array(PassengerDetailPatchInputSchema)),
-		}),
-	),
+	passengerList: v.optional(v.array(PassengerDetailPatchInputSchema)),
 });
 
 export const ModFileServicesApiSchema = createBookingApiSchema(
 	ModFileServicesSchema,
+	{ listKeys: MOD_SERVICES_LIST_KEYS },
 );
 
 // ---------------------------------------------------------------------------
@@ -109,29 +98,26 @@ export const ModFileHeaderSchema = v.object({
 	cigCode: v.optional(v.string()),
 	customerPromoterCode: v.optional(v.string()),
 	bookingNote: v.optional(v.string()),
-	passengerList: v.optional(
-		v.object({
-			passengerDetail: v.optional(v.array(PassengerDetailPatchInputSchema)),
-		}),
-	),
+	passengerList: v.optional(v.array(PassengerDetailPatchInputSchema)),
 	statisticCodes: v.optional(StatisticCodesInputSchema),
 	bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
 	financialDeadlineList: v.optional(
-		v.object({
-			deadlineDetail: v.optional(
-				v.array(
-					v.object({
-						reschedulingCode: v.string(),
-						expireDate: v.string(),
-						totalAmount: v.string(),
-					}),
-				),
-			),
-		}),
+		v.array(
+			v.object({
+				reschedulingCode: v.string(),
+				expireDate: v.string(),
+				totalAmount: v.string(),
+			}),
+		),
 	),
 });
 
-export const ModFileHeaderApiSchema = createApiSchema(ModFileHeaderSchema);
+export const ModFileHeaderApiSchema = createBookingApiSchema(
+	ModFileHeaderSchema,
+	{
+		listKeys: MOD_HEADER_LIST_KEYS,
+	},
+);
 
 // ---------------------------------------------------------------------------
 // CancelBookingFile — CancelFileRQ
@@ -199,28 +185,6 @@ export const SetFileServiceStatusApiSchema = createApiSchema(
 // InsertFilePaymentList — FilePaymentListRQ
 // ---------------------------------------------------------------------------
 
-const filePaymentTypeSchema = v.union([
-	v.literal("C"),
-	v.literal("B"),
-	v.literal("D"),
-	v.literal("T"),
-	v.literal("P"),
-	v.literal("R"),
-	v.literal("A"),
-	v.literal("H"),
-	v.literal("I"),
-	v.literal("J"),
-	v.literal("K"),
-	v.literal("L"),
-	v.literal("M"),
-	v.literal("N"),
-	v.literal("O"),
-	v.literal("Q"),
-	v.literal("S"),
-	v.literal("U"),
-	v.literal("V"),
-]);
-
 const filePaymentOperationTypeSchema = v.union([
 	v.literal("AbsoluteAmountsInsertion"),
 	v.literal("FinalAmountToAchieve"),
@@ -233,13 +197,12 @@ export const FilePaymentDetailInputSchema = v.object({
 	payerMasterCode: v.optional(v.string()),
 	payerName: v.optional(v.string()),
 	amount: v.string(),
-	paymentType: filePaymentTypeSchema,
+	paymentType: PaymentTypeSchema,
 });
 
 /**
  * FilePaymentListRQ body (camelCase).
- * Register one or more client payments on an existing booking file.
- * Requires bookingFileCode or bookingFileRefCode.
+ * `filePaymentList` is a flat Detail array; wire wrap happens in FilePaymentListApiSchema.
  */
 export const FilePaymentListSchema = v.pipe(
 	v.object({
@@ -248,12 +211,10 @@ export const FilePaymentListSchema = v.pipe(
 		paymentUser: v.optional(v.string()),
 		enableMultiplePayments: BoolishSchema,
 		operationType: filePaymentOperationTypeSchema,
-		filePaymentList: v.object({
-			filePaymentDetail: v.pipe(
-				v.array(FilePaymentDetailInputSchema),
-				v.minLength(1),
-			),
-		}),
+		filePaymentList: v.pipe(
+			v.array(FilePaymentDetailInputSchema),
+			v.minLength(1),
+		),
 	}),
 	v.check(
 		(input) => Boolean(input.bookingFileCode || input.bookingFileRefCode),
@@ -261,4 +222,7 @@ export const FilePaymentListSchema = v.pipe(
 	),
 );
 
-export const FilePaymentListApiSchema = createApiSchema(FilePaymentListSchema);
+export const FilePaymentListApiSchema = createBookingApiSchema(
+	FilePaymentListSchema,
+	{ listKeys: FILE_PAYMENT_LIST_KEYS },
+);

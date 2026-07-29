@@ -1,6 +1,4 @@
-import type { BaseIssue, BaseSchema } from "valibot";
 import * as v from "valibot";
-import { camelToPascalKeys } from "../utils/case-transform.js";
 
 /** AVES bool-ish wire values */
 export const BoolishSchema = v.union([
@@ -53,22 +51,18 @@ const statusAliasToCanonical = {
 } as const;
 
 export type CanonicalBookingFileStatus =
-	| "QUOTATION"
-	| "WORK_IN_PROGRESS"
-	| "CONFIRMED"
-	| "OPTIONED"
-	| "REQUEST"
-	| "NULLIFIED"
-	| "CANCELED";
+	| Exclude<
+			v.InferOutput<typeof BookingFileStatusWireSchema>,
+			keyof typeof statusAliasToCanonical
+	  >
+	| (typeof statusAliasToCanonical)[keyof typeof statusAliasToCanonical];
 
+/** Normalize BOOKEDFILE status wire aliases to canonical SDK values. */
 export function canonicalizeBookingFileStatus(
 	value: v.InferOutput<typeof BookingFileStatusWireSchema>,
 ): CanonicalBookingFileStatus {
-	if (value in statusAliasToCanonical) {
-		return statusAliasToCanonical[
-			value as keyof typeof statusAliasToCanonical
-		] as CanonicalBookingFileStatus;
-	}
+	if (value in statusAliasToCanonical)
+		return statusAliasToCanonical[value as keyof typeof statusAliasToCanonical];
 	return value as CanonicalBookingFileStatus;
 }
 
@@ -114,44 +108,25 @@ export const BookedServiceStatusSchema = v.union([
 	v.literal("MESSAGE"),
 ]);
 
-// ---------------------------------------------------------------------------
-// Booking request transform (Create + Mod share this)
-// ---------------------------------------------------------------------------
-
-/**
- * Empty paxAssociated [] → "" so XML emits `<PaxAssociated/>` instead of omitting the tag.
- */
-export function normalizeEmptyPaxAssociated<T>(input: T): T {
-	const walk = (node: unknown): unknown => {
-		if (node === null || typeof node !== "object") return node;
-		if (Array.isArray(node)) return node.map(walk);
-		const result: Record<string, unknown> = {};
-		for (const [key, val] of Object.entries(node)) {
-			if (key === "paxAssociated" && Array.isArray(val) && !val.length) {
-				result[key] = "";
-				continue;
-			}
-			result[key] = walk(val);
-		}
-		return result;
-	};
-	return walk(input) as T;
-}
-
-/**
- * camelCase booking body → PascalCase / @attrs for AVES XML.
- * Root startDate/endDate stay elements; nested package dates become attributes.
- */
-export function toBookingApiBody<T>(input: T) {
-	return camelToPascalKeys(normalizeEmptyPaxAssociated(input), {
-		excludeFromAttributePrefix: ["startDate", "endDate"],
-		excludeAttributeFromCamelToPascal: ["sCode", "ssCode", "pCode"],
-	});
-}
-
-/** Pipe a camelCase booking input schema into the shared AVES request transform. */
-export function createBookingApiSchema<
-	TInput extends BaseSchema<unknown, unknown, BaseIssue<unknown>>,
->(inputSchema: TInput) {
-	return v.pipe(inputSchema, v.transform(toBookingApiBody));
-}
+/** Payment type codes (Create paymentList + InsertFilePaymentList) */
+export const PaymentTypeSchema = v.union([
+	v.literal("C"),
+	v.literal("B"),
+	v.literal("D"),
+	v.literal("T"),
+	v.literal("P"),
+	v.literal("R"),
+	v.literal("A"),
+	v.literal("H"),
+	v.literal("I"),
+	v.literal("J"),
+	v.literal("K"),
+	v.literal("L"),
+	v.literal("M"),
+	v.literal("N"),
+	v.literal("O"),
+	v.literal("Q"),
+	v.literal("S"),
+	v.literal("U"),
+	v.literal("V"),
+]);

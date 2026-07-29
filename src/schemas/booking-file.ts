@@ -1,4 +1,9 @@
 import * as v from "valibot";
+import {
+	CREATE_ARRAY_OF_ONE,
+	CREATE_BOOKING_LIST_KEYS,
+	createBookingApiSchema,
+} from "../utils/booking-transform.js";
 import { createResponseSchema } from "../utils/schema-transform.js";
 import {
 	BookingFileDetailApiSchema,
@@ -9,7 +14,7 @@ import {
 	AvesServiceTypeSchema,
 	BookingFileStatusRequestSchema,
 	BoolishSchema,
-	createBookingApiSchema,
+	PaymentTypeSchema,
 	ToServiceTypeSchema,
 } from "./booking-shared.js";
 import { RsStatusSchema } from "./common.js";
@@ -120,46 +125,12 @@ const DeadlineDetailInputSchema = v.object({
 	expireDate: v.optional(v.string()),
 });
 
-const paymentTypeDetailSchema = v.union([
-	v.literal("C"),
-	v.literal("B"),
-	v.literal("D"),
-	v.literal("T"),
-	v.literal("P"),
-	v.literal("R"),
-	v.literal("A"),
-	v.literal("H"),
-	v.literal("I"),
-	v.literal("J"),
-	v.literal("K"),
-	v.literal("L"),
-	v.literal("M"),
-	v.literal("N"),
-	v.literal("O"),
-	v.literal("Q"),
-	v.literal("S"),
-	v.literal("U"),
-	v.literal("V"),
-]);
-
 const PaymentDetailInputSchema = v.object({
 	paymentDate: v.optional(v.string()),
 	paumentNote: v.optional(v.string()),
 	amount: v.optional(v.string()),
 	paymentUser: v.optional(v.string()),
-	paymentType: v.optional(paymentTypeDetailSchema),
-});
-
-const FinancialDeadlineListInputSchema = v.object({
-	deadlineDetail: v.optional(v.array(FinancialDeadlineDetailInputSchema)),
-});
-
-const DeadlineListInputSchema = v.object({
-	deadlineDetail: v.optional(v.array(DeadlineDetailInputSchema)),
-});
-
-const PaymentListInputSchema = v.object({
-	paymentDetail: v.optional(v.array(PaymentDetailInputSchema)),
+	paymentType: v.optional(PaymentTypeSchema),
 });
 
 // ---------------------------------------------------------------------------
@@ -249,20 +220,6 @@ export const SelectedPackageDetailInputSchema = v.object({
 	getServicesFromPackage: v.optional(BoolishSchema),
 });
 
-const SelectedPackageListInputSchema = v.object({
-	selectedPackageDetail: v.optional(v.array(SelectedPackageDetailInputSchema)),
-});
-
-const SelectedServiceListInputSchema = v.object({
-	selectedServiceDetail: SelectedServiceDetailInputSchema,
-});
-
-const ExtraQuoteServiceListInputSchema = v.object({
-	extraQuoteServiceDetail: v.optional(
-		v.array(SelectedServiceDetailInputSchema),
-	),
-});
-
 // ---------------------------------------------------------------------------
 // NoteList
 // ---------------------------------------------------------------------------
@@ -271,10 +228,6 @@ const NoteDetailInputSchema = v.object({
 	nType: v.optional(v.string()),
 	title: v.optional(v.string()),
 	text: v.optional(v.string()),
-});
-
-const NoteListInputSchema = v.object({
-	noteDetail: v.optional(v.array(NoteDetailInputSchema)),
 });
 
 // ---------------------------------------------------------------------------
@@ -329,10 +282,6 @@ export const PassengerDetailPatchInputSchema = v.object({
 	categoryCode: v.optional(passengerCategoryCodeSchema),
 });
 
-const PassengerListInputSchema = v.object({
-	passengerDetail: PassengerDetailCreateInputSchema,
-});
-
 // ---------------------------------------------------------------------------
 // BookingFinancialInfo
 // ---------------------------------------------------------------------------
@@ -374,6 +323,7 @@ const typeDownloadFileSchema = v.union([
 /**
  * Booking file request body schema (camelCase input).
  * Maps to BookFileRQ in AVES XML 1.8.0 CreateBookingFile.
+ * `*List` fields are flat Detail arrays; wire wrap happens in BookingFileApiSchema.
  */
 export const BookingFileSchema = v.object({
 	createDate: v.optional(v.string()),
@@ -396,16 +346,18 @@ export const BookingFileSchema = v.object({
 	billingReferenceCode: v.optional(v.string()),
 	paymentReferenceCode: v.optional(v.string()),
 	bookingFileDocument: v.optional(BookingFileDocumentInputSchema),
-	financialDeadlineList: v.optional(FinancialDeadlineListInputSchema),
-	deadlineList: v.optional(DeadlineListInputSchema),
-	paymentList: v.optional(PaymentListInputSchema),
-	selectedPackageList: v.optional(SelectedPackageListInputSchema),
-	selectedServiceList: v.array(SelectedServiceListInputSchema),
+	financialDeadlineList: v.optional(
+		v.array(FinancialDeadlineDetailInputSchema),
+	),
+	deadlineList: v.optional(v.array(DeadlineDetailInputSchema)),
+	paymentList: v.optional(v.array(PaymentDetailInputSchema)),
+	selectedPackageList: v.optional(v.array(SelectedPackageDetailInputSchema)),
+	selectedServiceList: v.array(SelectedServiceDetailInputSchema),
 	extraQuotaRefCode: v.optional(v.string()),
-	extraQuoteServiceList: v.optional(ExtraQuoteServiceListInputSchema),
+	extraQuoteServiceList: v.optional(v.array(SelectedServiceDetailInputSchema)),
 	getExtraQuoteFromSystem: v.optional(BoolishSchema),
-	passengerList: v.array(PassengerListInputSchema),
-	noteList: v.optional(NoteListInputSchema),
+	passengerList: v.array(PassengerDetailCreateInputSchema),
+	noteList: v.optional(v.array(NoteDetailInputSchema)),
 	bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
 	bookingFileCode: v.optional(v.string()),
 	groupingPaxPolicy: v.optional(groupingPaxPolicySchema),
@@ -415,10 +367,12 @@ export const BookingFileSchema = v.object({
 });
 
 /**
- * Booking file schema for API requests (transforms to PascalCase for BookFileRQ).
- * Uses the shared Create+Mod booking transform.
+ * Booking file schema for API requests (list wrap + PascalCase for BookFileRQ).
  */
-export const BookingFileApiSchema = createBookingApiSchema(BookingFileSchema);
+export const BookingFileApiSchema = createBookingApiSchema(BookingFileSchema, {
+	listKeys: CREATE_BOOKING_LIST_KEYS,
+	arrayOfOne: CREATE_ARRAY_OF_ONE,
+});
 
 /**
  * Shared booking response (Create / ModServices / SetStatus / SetStatusService).

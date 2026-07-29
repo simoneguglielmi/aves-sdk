@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import { oneOrMany } from "../utils/schema-transform.js";
 import {
 	AvesServiceTypeSchema,
 	BookedServiceStatusSchema,
@@ -6,20 +7,6 @@ import {
 	canonicalizeBookingFileStatus,
 	ToServiceTypeSchema,
 } from "./booking-shared.js";
-
-/**
- * Normalize XML one-or-many nodes into a typed array.
- */
-export function oneOrMany<
-	TSchema extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
->(itemSchema: TSchema) {
-	return v.pipe(
-		v.union([v.array(itemSchema), itemSchema]),
-		v.transform((input): v.InferOutput<TSchema>[] =>
-			Array.isArray(input) ? input : [input],
-		),
-	);
-}
 
 const stringish = v.union([v.string(), v.number()]);
 

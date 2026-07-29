@@ -304,28 +304,24 @@ describeHttp("AvesClient", () => {
 			endDate: "2015-01-03T00:00:00",
 			selectedServiceList: [
 				{
-					selectedServiceDetail: {
-						sCode: "S1",
-						avesServiceType: "TOP_SS" as const,
-						toServiceType: "TRANSPORT" as const,
-						startDate: "2014-12-27T00:00:00",
-						endDate: "2015-01-03T00:00:00",
-						qty: "1",
-						pax: "1",
-						paxAssociated: [],
-						avesSession: "1",
-					},
+					sCode: "S1",
+					avesServiceType: "TOP_SS" as const,
+					toServiceType: "TRANSPORT" as const,
+					startDate: "2014-12-27T00:00:00",
+					endDate: "2015-01-03T00:00:00",
+					qty: "1",
+					pax: "1",
+					paxAssociated: [],
+					avesSession: "1",
 				},
 			],
 			passengerList: [
 				{
-					passengerDetail: {
-						rph: "001",
-						roomRph: "001",
-						name: "Adult 1",
-						categoryCode: "AD" as const,
-						sex: "M" as const,
-					},
+					rph: "001",
+					roomRph: "001",
+					name: "Adult 1",
+					categoryCode: "AD" as const,
+					sex: "M" as const,
 				},
 			],
 		};
@@ -440,37 +436,33 @@ describeHttp("AvesClient", () => {
 		const modParams = {
 			customerRecordCode: "138311",
 			bookingFileCode: "14/036654",
-			selectedServiceList: {
-				selectedServiceDetail: [
-					{
-						sCode: "HT00110840",
-						ssCode: "DL",
-						avesServiceType: "TOP" as const,
-						toServiceType: "RESIDENCE" as const,
-						startDate: "2015-01-22T00:00:00",
-						endDate: "2015-01-25T00:00:00",
-						qty: "1",
-						pax: "2",
-						paxAssociated: [],
-						avesSession: "1",
-						bookedServiceRef: "001",
-						serviceFare: {
-							currencyCode: "EUR",
-							cost: "100.00",
-							price: "120.00",
-						},
+			selectedServiceList: [
+				{
+					sCode: "HT00110840",
+					ssCode: "DL",
+					avesServiceType: "TOP" as const,
+					toServiceType: "RESIDENCE" as const,
+					startDate: "2015-01-22T00:00:00",
+					endDate: "2015-01-25T00:00:00",
+					qty: "1",
+					pax: "2",
+					paxAssociated: [],
+					avesSession: "1",
+					bookedServiceRef: "001",
+					serviceFare: {
+						currencyCode: "EUR",
+						cost: "100.00",
+						price: "120.00",
 					},
-				],
-			},
-			cancellableBookedServiceList: {
-				cancellableBookedServiceDetail: [
-					{
-						cancelOperationType: "DELETE" as const,
-						serviceRefType: "RPH" as const,
-						serviceRefValue: "002",
-					},
-				],
-			},
+				},
+			],
+			cancellableBookedServiceList: [
+				{
+					cancelOperationType: "DELETE" as const,
+					serviceRefType: "RPH" as const,
+					serviceRefValue: "002",
+				},
+			],
 			selectedPackageDetail: {
 				pCode: "2014MDE0000010",
 				startDate: "2015-01-22T00:00:00",
@@ -647,16 +639,14 @@ describeHttp("AvesClient", () => {
 				bookingFileCode: "14/000043",
 				bookingFileStartDate: "2014-04-28",
 				customerRecordCode: "103737",
-				passengerList: {
-					passengerDetail: [
-						{
-							rph: "001",
-							name: "ADULTI 001",
-							sex: "M",
-							birthDate: "1964-09-26T00:00:00",
-						},
-					],
-				},
+				passengerList: [
+					{
+						rph: "001",
+						name: "ADULTI 001",
+						sex: "M",
+						birthDate: "1964-09-26T00:00:00",
+					},
+				],
 			});
 			expect(result.success).toBe(true);
 			if (result.success) expect(result.data.rsStatus.status).toBe("OK");
@@ -682,16 +672,14 @@ describeHttp("AvesClient", () => {
 				paymentUser: "MLDN",
 				enableMultiplePayments: true,
 				operationType: "AbsoluteAmountsInsertion",
-				filePaymentList: {
-					filePaymentDetail: [
-						{
-							paymentDate: "2018-09-08",
-							paymentNote: "INCASSO",
-							amount: "100.00",
-							paymentType: "B",
-						},
-					],
-				},
+				filePaymentList: [
+					{
+						paymentDate: "2018-09-08",
+						paymentNote: "INCASSO",
+						amount: "100.00",
+						paymentType: "B",
+					},
+				],
 			});
 
 			expect(result.success).toBe(true);
@@ -709,15 +697,13 @@ describeHttp("AvesClient", () => {
 			const result = await client.insertFilePaymentList({
 				enableMultiplePayments: true,
 				operationType: "AbsoluteAmountsInsertion",
-				filePaymentList: {
-					filePaymentDetail: [
-						{
-							paymentDate: "2018-09-08",
-							amount: "100.00",
-							paymentType: "B",
-						},
-					],
-				},
+				filePaymentList: [
+					{
+						paymentDate: "2018-09-08",
+						amount: "100.00",
+						paymentType: "B",
+					},
+				],
 			} as Parameters<typeof client.insertFilePaymentList>[0]);
 			expect(result.success).toBe(false);
 			if (!result.success) expect(result.error).toBeInstanceOf(AvesError);

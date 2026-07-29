@@ -34,7 +34,7 @@ const serviceDetail = {
 
 describe("ModFileServicesSchema", () => {
 	it("should validate overwrite payload with package + delete + services", () => {
-		const input = {
+		const result = parse(ModFileServicesSchema, {
 			customerRecordCode: "138311",
 			bookingFileCode: "14/036654",
 			selectedPackageDetail: {
@@ -42,34 +42,34 @@ describe("ModFileServicesSchema", () => {
 				startDate: "2015-01-22T00:00:00",
 				endDate: "2015-01-25T00:00:00",
 			},
-			cancellableBookedServiceList: {
-				cancellableBookedServiceDetail: [
-					{
-						cancelOperationType: "DELETE" as const,
-						serviceRefType: "RPH" as const,
-						serviceRefValue: "001",
-					},
-				],
-			},
-			selectedServiceList: {
-				selectedServiceDetail: [serviceDetail],
-			},
-		};
-
-		const result = parse(ModFileServicesSchema, input);
-		expect(result.bookingFileCode).toBe("14/036654");
-		expect(result.selectedPackageDetail?.pCode).toBe("2014MDE0000010");
-		expect(
-			result.cancellableBookedServiceList?.cancellableBookedServiceDetail?.[0]
-				.cancelOperationType,
-		).toBe("DELETE");
+			cancellableBookedServiceList: [
+				{
+					cancelOperationType: "DELETE",
+					serviceRefType: "RPH",
+					serviceRefValue: "001",
+				},
+			],
+			selectedServiceList: [serviceDetail],
+		});
+		expect(result).toMatchObject({
+			bookingFileCode: "14/036654",
+			selectedPackageDetail: { pCode: "2014MDE0000010" },
+			cancellableBookedServiceList: [
+				{
+					cancelOperationType: "DELETE",
+					serviceRefType: "RPH",
+					serviceRefValue: "001",
+				},
+			],
+			selectedServiceList: [serviceDetail],
+		});
 	});
 
-	it("should reject empty selectedServiceDetail", () => {
+	it("should reject empty selectedServiceList", () => {
 		const result = safeParse(ModFileServicesSchema, {
 			customerRecordCode: "138311",
 			bookingFileCode: "14/036654",
-			selectedServiceList: { selectedServiceDetail: [] },
+			selectedServiceList: [],
 		});
 		expect(result.success).toBe(false);
 	});
@@ -83,18 +83,14 @@ describe("ModFileServicesSchema", () => {
 				startDate: "2015-01-22T00:00:00",
 				endDate: "2015-01-25T00:00:00",
 			},
-			cancellableBookedServiceList: {
-				cancellableBookedServiceDetail: [
-					{
-						cancelOperationType: "NULLIFY" as const,
-						serviceRefType: "RPH" as const,
-						serviceRefValue: "002",
-					},
-				],
-			},
-			selectedServiceList: {
-				selectedServiceDetail: [serviceDetail],
-			},
+			cancellableBookedServiceList: [
+				{
+					cancelOperationType: "NULLIFY",
+					serviceRefType: "RPH",
+					serviceRefValue: "002",
+				},
+			],
+			selectedServiceList: [serviceDetail],
 		});
 
 		expect(api).toHaveProperty("CustomerRecordCode", "138311");
@@ -105,21 +101,29 @@ describe("ModFileServicesSchema", () => {
 			"@EndDate": "2015-01-25T00:00:00",
 		});
 		expect(
-			api.CancellableBookedServiceList?.CancellableBookedServiceDetail?.[0],
+			api.CancellableBookedServiceList,
 		).toMatchObject({
-			"@CancelOperationType": "NULLIFY",
-			"@ServiceRefType": "RPH",
-			"@ServiceRefValue": "002",
+			CancellableBookedServiceDetail: [
+				{
+					"@CancelOperationType": "NULLIFY",
+					"@ServiceRefType": "RPH",
+					"@ServiceRefValue": "002",
+				},
+			],
 		});
-		expect(api.SelectedServiceList.SelectedServiceDetail[0]).toMatchObject({
-			"@sCode": "HT00110840",
-			"@ssCode": "DL",
-			BookedServiceRef: "001",
-			ServiceFare: {
-				"@CurrencyCode": "EUR",
-				"@Cost": "100.00",
-				"@Price": "120.00",
-			},
+		expect(api.SelectedServiceList).toMatchObject({
+			SelectedServiceDetail: [
+				{
+					"@sCode": "HT00110840",
+					"@ssCode": "DL",
+					BookedServiceRef: "001",
+					ServiceFare: {
+						"@CurrencyCode": "EUR",
+						"@Cost": "100.00",
+						"@Price": "120.00",
+					},
+				},
+			],
 		});
 	});
 });
@@ -266,40 +270,51 @@ describe("FilePaymentListSchema", () => {
 			paymentUser: "MLDN",
 			enableMultiplePayments: true,
 			operationType: "AbsoluteAmountsInsertion",
-			filePaymentList: {
-				filePaymentDetail: [
-					{
-						paymentDate: "2018-09-08",
-						paymentNote: "INCASSO",
-						amount: "100.00",
-						paymentType: "B",
-					},
-					{
-						paymentDate: "2018-10-08",
-						paymentNote: "INCASSO",
-						amount: "800.25",
-						paymentType: "C",
-					},
-				],
-			},
+			filePaymentList: [
+				{
+					paymentDate: "2018-09-08",
+					paymentNote: "INCASSO",
+					amount: "100.00",
+					paymentType: "B",
+				},
+				{
+					paymentDate: "2018-10-08",
+					paymentNote: "INCASSO",
+					amount: "800.25",
+					paymentType: "C",
+				},
+			],
 		});
-		expect(result.bookingFileCode).toBe("18/000172");
-		expect(result.filePaymentList.filePaymentDetail).toHaveLength(2);
+		expect(result).toMatchObject({
+			bookingFileCode: "18/000172",
+			filePaymentList: [
+				{
+					paymentDate: "2018-09-08",
+					paymentNote: "INCASSO",
+					amount: "100.00",
+					paymentType: "B",
+				},
+				{
+					paymentDate: "2018-10-08",
+					paymentNote: "INCASSO",
+					amount: "800.25",
+					paymentType: "C",
+				},
+			],
+		});
 	});
 
 	it("should require bookingFileCode or bookingFileRefCode", () => {
 		const result = safeParse(FilePaymentListSchema, {
 			enableMultiplePayments: true,
 			operationType: "AbsoluteAmountsInsertion",
-			filePaymentList: {
-				filePaymentDetail: [
-					{
-						paymentDate: "2018-09-08",
-						amount: "100.00",
-						paymentType: "B",
-					},
-				],
-			},
+			filePaymentList: [
+				{
+					paymentDate: "2018-09-08",
+					amount: "100.00",
+					paymentType: "B",
+				},
+			],
 		});
 		expect(result.success).toBe(false);
 	});
@@ -309,27 +324,29 @@ describe("FilePaymentListSchema", () => {
 			bookingFileCode: "18/000172",
 			enableMultiplePayments: true,
 			operationType: "AbsoluteAmountsInsertion",
-			filePaymentList: {
-				filePaymentDetail: [
-					{
-						paymentDate: "2018-09-08",
-						paymentNote: "INCASSO",
-						amount: "100.00",
-						paymentType: "B",
-					},
-				],
-			},
+			filePaymentList: [
+				{
+					paymentDate: "2018-09-08",
+					paymentNote: "INCASSO",
+					amount: "100.00",
+					paymentType: "B",
+				},
+			],
 		});
 		expect(api).toMatchObject({
 			BookingFileCode: "18/000172",
 			EnableMultiplePayments: true,
 			OperationType: "AbsoluteAmountsInsertion",
-		});
-		expect(api.FilePaymentList.FilePaymentDetail[0]).toMatchObject({
-			"@PaymentDate": "2018-09-08",
-			"@PaymentNote": "INCASSO",
-			"@Amount": "100.00",
-			"@PaymentType": "B",
+			FilePaymentList: {
+				FilePaymentDetail: [
+					{
+						"@PaymentDate": "2018-09-08",
+						"@PaymentNote": "INCASSO",
+						"@Amount": "100.00",
+						"@PaymentType": "B",
+					},
+				],
+			},
 		});
 	});
 });
