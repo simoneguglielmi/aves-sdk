@@ -2,15 +2,6 @@
 
 Type-safe TypeScript SDK for the AVES XML REST API. Handles XML parsing, Valibot validation, camelCase ↔ PascalCase / `@` attrs, and returns `Result` instead of throwing.
 
-## Release 1.7.0
-
-- **Package / Program catalog**: `searchPackages`, `searchTopServices`, `getPackageDetail`, `commitPackage` (namespaced under `client.packages` + flat aliases)
-- **Search booking files**: `searchBookingFiles` (`FILE_CODE` | `PAX_NAME` | `PACKAGE_CODE` | `OTHER`)
-- **Client split**: `AvesTransport`, `MasterRecordsClient`, `BookingClient`, `PackageCatalogClient`; DI via `AvesClientDeps`
-- **Wire shapes**: per-request `WireShape` (replaces global attr set); `InsertFilePaymentList` root `paymentUser` is `@PaymentUser`
-- **Unified outbound path**: `createApiSchema` / `toWireBody` / `invokeOp` (optional `bodyKey` for master upsert)
-- Flat methods remain as auto-bound compat aliases; prefer `client.booking.*` / `client.packages.*` / `client.master.*`
-
 ## Installation
 
 ```bash
@@ -409,39 +400,23 @@ Editing CreateBooking shapes does not affect SearchFile or AvesSearch.
 
 ---
 
-## Architecture notes (recent changes)
+## Architecture
 
-Documented here so consumers and contributors know what moved and why.
+`AvesClient` (`src/client.ts`) is a thin facade over DI-friendly domain clients:
 
-### Client layout
+| Module | Role |
+| ------ | ---- |
+| `AvesTransport` | HTTP + XML encode/decode + `invokeOp` (optional `bodyKey`) |
+| `MasterRecordsClient` | search / upsert |
+| `BookingClient` | booking file ops + search practices |
+| `PackageCatalogClient` | package/program catalog |
+| `client/types.ts` | `AvesClientDeps` / `AvesClientFlat` |
+| `client/flat-aliases.ts` | bind flat compat methods from domain prototypes |
+| `src/xml/` | XML root helpers + JSON ↔ XML |
 
-- `AvesClient` (`src/client.ts`) is a thin facade over DI-friendly domain clients:
-  - `AvesTransport` — HTTP + XML encode/decode + `invokeOp` (optional `bodyKey`)
-  - `MasterRecordsClient` — search / upsert (same `invokeOp` as booking/packages)
-  - `BookingClient` — booking file ops + search practices
-  - `PackageCatalogClient` — package/program catalog
-  - `client/types.ts` — `AvesClientDeps` / `AvesClientFlat`
-  - `client/flat-aliases.ts` — auto-bind flat compat methods from domain prototypes
-- Flat aliases (`client.createBooking`, …) are attached once in the constructor — add a domain method, flat + namespaced both work.
-- XML helpers live under `src/xml/` (`root.ts`, `client.ts`).
+Flat aliases (`client.createBooking`, …) are attached in the constructor — add a domain method once and both surfaces work.
 
-### Wire model
-
-- **Removed** global `ATTRIBUTE_FIELDS` Set.
-- **Added** tree-scoped `WireShape` (`attrs` / `preserveCamel` / `children`), one shape family per request root.
-- **Bug fix**: InsertFilePaymentList root `paymentUser` emits `PaymentUser="…"` via `filePaymentListRequestWire`.
-- **Single transform API**: `createApiSchema` / `toWireBody` (list wrap optional). No parallel `createWireApiSchema` / `toBookingApiBody`.
-- AvesSearch nests `BaseSearch` with `baseSearchWire`, then `toWireBody` + `avesSearchWire` for the rest.
-
-### Package / Program APIs
-
-- Methods: `searchPackages`, `searchTopServices`, `getPackageDetail`, `commitPackage` (+ flat aliases).
-- Schemas in `src/schemas/package-catalog.ts` and `search-booking-file.ts`.
-- No Create Package API in AVES XML 1.8.0 — commit publishes an existing package.
-
-### Docs
-
-- Versioned spike / implementation MD guides removed from git; local `docs/` is gitignored.
+Outbound path: validate → `createApiSchema` / `toWireBody` → `invokeOp` → XML POST.
 
 ---
 
