@@ -1,6 +1,5 @@
-import type { BaseSchema } from "valibot";
-import * as v from "valibot";
 import { camelToPascalKeys } from "./case-transform.js";
+import type { WireShape } from "./wire-shapes.js";
 
 /** Only naming exception: financialDeadlineList → deadlineDetail */
 const DETAIL_KEY_OVERRIDES: Record<string, string> = {
@@ -11,7 +10,7 @@ function detailKeyFor(listKey: string) {
 	return DETAIL_KEY_OVERRIDES[listKey] ?? listKey.replace(/List$/, "Detail");
 }
 
-export type BookingListWrapOptions = {
+export type ListWrapOptions = {
 	listKeys: readonly string[];
 	/** Create-only: wrap each item as `{ detailKey: item }` instead of `{ detailKey: items }` */
 	arrayOfOne?: ReadonlySet<string>;
@@ -23,7 +22,7 @@ export type BookingListWrapOptions = {
  */
 export function wrapListDetails(
 	input: Record<string, unknown>,
-	{ listKeys, arrayOfOne }: BookingListWrapOptions,
+	{ listKeys, arrayOfOne }: ListWrapOptions,
 ): Record<string, unknown> {
 	const out: Record<string, unknown> = { ...input };
 	const one = arrayOfOne ?? new Set<string>();
@@ -89,27 +88,13 @@ export function normalizeEmptyPaxAssociated<T>(input: T): T {
 }
 
 /**
- * camelCase booking body → list wrap (optional) → PascalCase / @attrs for AVES XML.
+ * camelCase body → optional list wrap → PascalCase / @attrs via required wire shape.
  */
-export function toBookingApiBody(
+export function toWireBody(
 	input: Record<string, unknown>,
-	wrap?: BookingListWrapOptions,
+	shape: WireShape,
+	wrap?: ListWrapOptions,
 ) {
 	const body = wrap ? wrapListDetails(input, wrap) : input;
-	return camelToPascalKeys(normalizeEmptyPaxAssociated(body), {
-		excludeFromAttributePrefix: ["startDate", "endDate"],
-		excludeAttributeFromCamelToPascal: ["sCode", "ssCode", "pCode"],
-	});
-}
-
-/** Validate camelCase input, then shape to AVES wire (list wrap + PascalCase). */
-export function createBookingApiSchema<
-	TInput extends BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
->(inputSchema: TInput, wrap?: BookingListWrapOptions) {
-	return v.pipe(
-		inputSchema,
-		v.transform((input) =>
-			toBookingApiBody(input as Record<string, unknown>, wrap),
-		),
-	);
+	return camelToPascalKeys(normalizeEmptyPaxAssociated(body), shape);
 }

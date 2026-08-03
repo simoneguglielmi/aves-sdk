@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { jsonToXml, xmlToJson } from "./xml-client.js";
+import { jsonToXml, xmlToJson } from "./client.js";
 
-describe("xml-client", () => {
+describe("xml/client", () => {
 	describe("jsonToXml", () => {
 		it("should convert simple JSON to XML", () => {
 			const json = {

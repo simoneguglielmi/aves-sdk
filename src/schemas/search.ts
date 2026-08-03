@@ -3,6 +3,7 @@ import {
 	createApiSchema,
 	createResponseSchema,
 } from "../utils/schema-transform.js";
+import { searchMasterWire } from "../utils/wire-shapes.js";
 import { RqHeaderSchema, RsStatusSchema } from "./common.js";
 import { MasterRecordDetailApiValidationSchema } from "./master-record.js";
 
@@ -116,23 +117,13 @@ export const SearchMasterRecordSchema = v.union([
 	ExternalRefCodeSearchSchema,
 ]);
 
-const transformRecordCode = (input: Record<string, unknown>) => {
-	if (!("@RecordCode" in input)) return input;
-	const recordCode = input["@RecordCode"];
-	if (!recordCode) return input;
-	const { "@RecordCode": _discard, ...rest } = input;
-	return {
-		...rest,
-		RecordCode: recordCode,
-	};
-};
-
 /**
- * Search master record schema for API requests (transforms to PascalCase)
+ * Search master record schema for API requests (transforms to PascalCase).
+ * recordCode stays an element (not @attr) via {@link searchMasterWire}.
  */
-export const SearchMasterRecordApiSchema = v.pipe(
-	createApiSchema(SearchMasterRecordSchema),
-	v.transform((input) => transformRecordCode(input)),
+export const SearchMasterRecordApiSchema = createApiSchema(
+	SearchMasterRecordSchema,
+	searchMasterWire,
 );
 
 /**

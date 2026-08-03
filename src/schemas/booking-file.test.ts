@@ -1,6 +1,6 @@
 import { parse } from "valibot";
 import { describe, expect, it } from "vitest";
-import { createRootElement, XML_ROOT_ELEMENTS } from "../xml-root.js";
+import { createRootElement, XML_ROOT_ELEMENTS } from "../xml/root.js";
 import {
 	BookingFileApiSchema,
 	BookingFileResponseSchema,
@@ -152,9 +152,7 @@ describe("BookingFileApiSchema", () => {
 				"@ExpiredDate": "2014-09-26T23:59:00",
 			},
 			StartDate: "2014-12-27T00:00:00",
-			SelectedServiceList: [
-				{ SelectedServiceDetail: { "@sCode": "S1" } },
-			],
+			SelectedServiceList: [{ SelectedServiceDetail: { "@sCode": "S1" } }],
 			PassengerList: [
 				{ PassengerDetail: { "@RPH": "001", "@RoomRph": "001" } },
 			],

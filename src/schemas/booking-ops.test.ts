@@ -100,9 +100,7 @@ describe("ModFileServicesSchema", () => {
 			"@StartDate": "2015-01-22T00:00:00",
 			"@EndDate": "2015-01-25T00:00:00",
 		});
-		expect(
-			api.CancellableBookedServiceList,
-		).toMatchObject({
+		expect(api.CancellableBookedServiceList).toMatchObject({
 			CancellableBookedServiceDetail: [
 				{
 					"@CancelOperationType": "NULLIFY",
@@ -322,6 +320,7 @@ describe("FilePaymentListSchema", () => {
 	it("should transform to PascalCase with payment attributes", () => {
 		const api = parse(FilePaymentListApiSchema, {
 			bookingFileCode: "18/000172",
+			paymentUser: "MLDN",
 			enableMultiplePayments: true,
 			operationType: "AbsoluteAmountsInsertion",
 			filePaymentList: [
@@ -335,6 +334,7 @@ describe("FilePaymentListSchema", () => {
 		});
 		expect(api).toMatchObject({
 			BookingFileCode: "18/000172",
+			"@PaymentUser": "MLDN",
 			EnableMultiplePayments: true,
 			OperationType: "AbsoluteAmountsInsertion",
 			FilePaymentList: {

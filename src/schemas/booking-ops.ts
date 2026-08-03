@@ -1,6 +1,5 @@
 import * as v from "valibot";
 import {
-	createBookingApiSchema,
 	FILE_PAYMENT_LIST_KEYS,
 	MOD_HEADER_LIST_KEYS,
 	MOD_SERVICES_LIST_KEYS,
@@ -9,6 +8,12 @@ import {
 	createApiSchema,
 	createResponseSchema,
 } from "../utils/schema-transform.js";
+import {
+	bookingFileWire,
+	elementOnlyWire,
+	filePaymentListRequestWire,
+	setFileStatusWire,
+} from "../utils/wire-shapes.js";
 import {
 	BookingFileDocumentInputSchema,
 	BookingFileResponseSchema,
@@ -72,8 +77,9 @@ export const ModFileServicesSchema = v.object({
 	passengerList: v.optional(v.array(PassengerDetailPatchInputSchema)),
 });
 
-export const ModFileServicesApiSchema = createBookingApiSchema(
+export const ModFileServicesApiSchema = createApiSchema(
 	ModFileServicesSchema,
+	bookingFileWire,
 	{ listKeys: MOD_SERVICES_LIST_KEYS },
 );
 
@@ -112,11 +118,10 @@ export const ModFileHeaderSchema = v.object({
 	),
 });
 
-export const ModFileHeaderApiSchema = createBookingApiSchema(
+export const ModFileHeaderApiSchema = createApiSchema(
 	ModFileHeaderSchema,
-	{
-		listKeys: MOD_HEADER_LIST_KEYS,
-	},
+	bookingFileWire,
+	{ listKeys: MOD_HEADER_LIST_KEYS },
 );
 
 // ---------------------------------------------------------------------------
@@ -128,7 +133,10 @@ export const CancelFileSchema = v.object({
 	customerRecordCode: v.string(),
 });
 
-export const CancelFileApiSchema = createApiSchema(CancelFileSchema);
+export const CancelFileApiSchema = createApiSchema(
+	CancelFileSchema,
+	elementOnlyWire,
+);
 
 // ---------------------------------------------------------------------------
 // SetBookingFileStatus — SetStatusRQ
@@ -163,7 +171,10 @@ export const SetFileStatusSchema = v.object({
 	simulateCancelAndGetPenaltyAmount: v.optional(BoolishSchema),
 });
 
-export const SetFileStatusApiSchema = createApiSchema(SetFileStatusSchema);
+export const SetFileStatusApiSchema = createApiSchema(
+	SetFileStatusSchema,
+	setFileStatusWire,
+);
 
 // ---------------------------------------------------------------------------
 // SetBookingFileServiceStatus — SetStatusServiceRQ
@@ -179,6 +190,7 @@ export const SetFileServiceStatusSchema = v.object({
 
 export const SetFileServiceStatusApiSchema = createApiSchema(
 	SetFileServiceStatusSchema,
+	elementOnlyWire,
 );
 
 // ---------------------------------------------------------------------------
@@ -222,7 +234,8 @@ export const FilePaymentListSchema = v.pipe(
 	),
 );
 
-export const FilePaymentListApiSchema = createBookingApiSchema(
+export const FilePaymentListApiSchema = createApiSchema(
 	FilePaymentListSchema,
+	filePaymentListRequestWire,
 	{ listKeys: FILE_PAYMENT_LIST_KEYS },
 );

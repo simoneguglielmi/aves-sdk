@@ -10,5 +10,5 @@ dist
 .DS_Store
 *.tgz
 src/test/*
-docs/*
-!docs/*.md
+docs/
+.claude

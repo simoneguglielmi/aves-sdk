@@ -2,9 +2,12 @@ import * as v from "valibot";
 import {
 	CREATE_ARRAY_OF_ONE,
 	CREATE_BOOKING_LIST_KEYS,
-	createBookingApiSchema,
 } from "../utils/booking-transform.js";
-import { createResponseSchema } from "../utils/schema-transform.js";
+import {
+	createApiSchema,
+	createResponseSchema,
+} from "../utils/schema-transform.js";
+import { bookingFileWire } from "../utils/wire-shapes.js";
 import {
 	BookingFileDetailApiSchema,
 	PrintableDocumentsListApiSchema,
@@ -369,10 +372,14 @@ export const BookingFileSchema = v.object({
 /**
  * Booking file schema for API requests (list wrap + PascalCase for BookFileRQ).
  */
-export const BookingFileApiSchema = createBookingApiSchema(BookingFileSchema, {
-	listKeys: CREATE_BOOKING_LIST_KEYS,
-	arrayOfOne: CREATE_ARRAY_OF_ONE,
-});
+export const BookingFileApiSchema = createApiSchema(
+	BookingFileSchema,
+	bookingFileWire,
+	{
+		listKeys: CREATE_BOOKING_LIST_KEYS,
+		arrayOfOne: CREATE_ARRAY_OF_ONE,
+	},
+);
 
 /**
  * Shared booking response (Create / ModServices / SetStatus / SetStatusService).

@@ -1,20 +1,21 @@
 import type { BaseSchema, ObjectEntries } from "valibot";
 import * as v from "valibot";
-import {
-	ATTRIBUTE_FIELDS,
-	camelToPascalKeys,
-	pascalToCamelKeys,
-} from "./case-transform.js";
+import { type ListWrapOptions, toWireBody } from "./booking-transform.js";
+import { camelToPascalKeys, pascalToCamelKeys } from "./case-transform.js";
+import type { WireShape } from "./wire-shapes.js";
 
 /**
- * Creates a schema that transforms camelCase input to PascalCase for API requests
+ * camelCase input → optional list wrap → PascalCase / @attrs via required wire shape.
+ * Use `elementOnlyWire` (`{}`) when the root has no attributes.
  */
 export function createApiSchema<
 	TInput extends BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
->(inputSchema: TInput) {
+>(inputSchema: TInput, shape: WireShape, wrap?: ListWrapOptions) {
 	return v.pipe(
 		inputSchema,
-		v.transform((input) => camelToPascalKeys(input)),
+		v.transform((input) =>
+			toWireBody(input as Record<string, unknown>, shape, wrap),
+		),
 	);
 }
 
@@ -45,23 +46,29 @@ export function createResponseSchema<
 }
 
 /**
- * Creates a validation schema for already-transformed PascalCase data with @ attributes
- * Used for nested objects like AccountPolicies, FinancialDetail, DynamicFields
- * Takes the same input schema used in createApiSchema and generates the validation schema
- * by directly using the ATTRIBUTE_FIELDS logic to determine which fields become attributes
+ * Validation schema for already-transformed PascalCase/@attr payloads.
+ * Uses `shape.attrs` (not a global field set) to decide `@` vs element.
  */
 export function createApiValidationSchema<
 	TEntries extends ObjectEntries,
 	TMessage extends v.ErrorMessage<v.ObjectIssue> | undefined,
->(inputSchema: v.ObjectSchema<TEntries, TMessage>) {
+>(inputSchema: v.ObjectSchema<TEntries, TMessage>, shape: WireShape = {}) {
 	const validationEntries: Record<string, unknown> = {};
+	const attrs = shape.attrs ?? [];
+	const preserve = shape.preserveCamel ?? [];
 
 	for (const key in inputSchema.entries) {
-		const isAttribute = ATTRIBUTE_FIELDS.has(key);
 		const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
-		const finalKey = isAttribute ? `@${pascalKey}` : pascalKey;
+		const isAttribute = attrs.includes(key);
+		const finalKey = isAttribute
+			? preserve.includes(key)
+				? `@${key}`
+				: `@${pascalKey}`
+			: pascalKey;
 		validationEntries[finalKey] = inputSchema.entries[key];
 	}
 
 	return v.object(validationEntries as TEntries);
 }
+
+export { camelToPascalKeys, toWireBody };

@@ -4,6 +4,14 @@ import {
 	createApiValidationSchema,
 	createResponseSchema,
 } from "../utils/schema-transform.js";
+import {
+	accountPoliciesWire,
+	dynamicFieldsWire,
+	financialDetailWire,
+	idDocumentDetailWire,
+	masterRecordWire,
+	supplierRefMasterRecordsWire,
+} from "../utils/wire-shapes.js";
 
 const paymentTypeSchema = v.union([
 	v.literal("CASH"),
@@ -31,6 +39,7 @@ const FinancialDetailInputSchema = v.object({
  */
 export const FinancialDetailSchema = createApiSchema(
 	FinancialDetailInputSchema,
+	financialDetailWire,
 );
 
 /**
@@ -38,6 +47,7 @@ export const FinancialDetailSchema = createApiSchema(
  */
 export const FinancialDetailApiValidationSchema = createApiValidationSchema(
 	FinancialDetailInputSchema,
+	financialDetailWire,
 );
 
 const IdDocumentDetailInputSchema = v.object({
@@ -54,6 +64,7 @@ const IdDocumentDetailInputSchema = v.object({
  */
 export const IdDocumentDetailSchema = createApiSchema(
 	IdDocumentDetailInputSchema,
+	idDocumentDetailWire,
 );
 
 /**
@@ -61,6 +72,7 @@ export const IdDocumentDetailSchema = createApiSchema(
  */
 export const IdDocumentDetailApiValidationSchema = createApiValidationSchema(
 	IdDocumentDetailInputSchema,
+	idDocumentDetailWire,
 );
 
 const DynamicFieldsInputSchema = v.object({
@@ -73,6 +85,7 @@ const DynamicFieldsInputSchema = v.object({
  */
 export const DynamicFieldsSchema = createApiSchema(
 	v.array(DynamicFieldsInputSchema),
+	dynamicFieldsWire,
 );
 
 /**
@@ -80,6 +93,7 @@ export const DynamicFieldsSchema = createApiSchema(
  */
 export const DynamicFieldsApiValidationSchema = createApiValidationSchema(
 	DynamicFieldsInputSchema,
+	dynamicFieldsWire,
 );
 
 const CarrierTypeSchema = v.union([
@@ -118,13 +132,17 @@ const SupplierRefMasterRecordsInputSchema = v.object({
  */
 export const SupplierRefMasterRecordsSchema = createApiSchema(
 	SupplierRefMasterRecordsInputSchema,
+	supplierRefMasterRecordsWire,
 );
 
 /**
  * SupplierRefMasterRecords validation schema (already transformed PascalCase)
  */
 export const SupplierRefMasterRecordsApiValidationSchema =
-	createApiValidationSchema(SupplierRefMasterRecordsInputSchema);
+	createApiValidationSchema(
+		SupplierRefMasterRecordsInputSchema,
+		supplierRefMasterRecordsWire,
+	);
 
 const flagSchema = v.union([v.literal(0), v.literal(1)]);
 
@@ -159,6 +177,7 @@ const AccountPoliciesInputSchema = v.object({
  */
 export const AccountPoliciesSchema = createApiSchema(
 	AccountPoliciesInputSchema,
+	accountPoliciesWire,
 );
 
 /**
@@ -166,6 +185,7 @@ export const AccountPoliciesSchema = createApiSchema(
  */
 export const AccountPoliciesApiValidationSchema = createApiValidationSchema(
 	AccountPoliciesInputSchema,
+	accountPoliciesWire,
 );
 
 /**
@@ -209,6 +229,7 @@ export const MasterRecordDetailSchema = v.object({
  */
 export const MasterRecordDetailApiSchema = createApiSchema(
 	MasterRecordDetailSchema,
+	masterRecordWire,
 );
 
 /**

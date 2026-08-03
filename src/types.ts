@@ -23,9 +23,22 @@ import type {
 	SupplierRefMasterRecordsSchema,
 } from "./schemas/master-record.js";
 import type {
+	AvesSearchSchema,
+	CommitPackageResponseSchema,
+	CommitPackageSchema,
+	PackageDetailRequestSchema,
+	PackageDetailResponseSchema,
+	SearchPackageResponseSchema,
+	SearchServicesResponseSchema,
+} from "./schemas/package-catalog.js";
+import type {
 	SearchMasterRecordResponseSchema,
 	SearchMasterRecordSchema,
 } from "./schemas/search.js";
+import type {
+	SearchBookingFileResponseSchema,
+	SearchBookingFileSchema,
+} from "./schemas/search-booking-file.js";
 import type {
 	ManageMasterRecordRequestSchema,
 	ManageMasterRecordResponseSchema,
@@ -411,6 +424,57 @@ export type BookingFileDetailRS = BookingFileRS;
  */
 export type BookingStatusOnlyRS = InferOutput<
 	typeof BookingStatusOnlyResponseSchema
+>;
+
+// ============================================================================
+// Package / Program catalog
+// ============================================================================
+
+/**
+ * Request body for SearchAvesPackages / SearchTopServices (AvesSearchRQ).
+ */
+export type AvesSearchRQ = InferInput<typeof AvesSearchSchema>;
+
+/**
+ * Response from SearchAvesPackages (SearchPackageRS).
+ */
+export type SearchPackageRS = InferOutput<typeof SearchPackageResponseSchema>;
+
+/**
+ * Response from SearchTopServices (SearchServicesRS).
+ */
+export type SearchServicesRS = InferOutput<typeof SearchServicesResponseSchema>;
+
+/**
+ * Request body for GetPackageDetail (PackageDetailRQ).
+ */
+export type PackageDetailRQ = InferInput<typeof PackageDetailRequestSchema>;
+
+/**
+ * Response from GetPackageDetail (PackageDetailRS).
+ */
+export type PackageDetailRS = InferOutput<typeof PackageDetailResponseSchema>;
+
+/**
+ * Request body for CommitPackage (CommitPackRQ).
+ */
+export type CommitPackageRQ = InferInput<typeof CommitPackageSchema>;
+
+/**
+ * Response from CommitPackage (CommitPackRS).
+ */
+export type CommitPackageRS = InferOutput<typeof CommitPackageResponseSchema>;
+
+/**
+ * Request body for SearchBookingFile (SearchFileRQ).
+ */
+export type SearchBookingFileRQ = InferInput<typeof SearchBookingFileSchema>;
+
+/**
+ * Response from SearchBookingFile (SearchFileRS).
+ */
+export type SearchBookingFileRS = InferOutput<
+	typeof SearchBookingFileResponseSchema
 >;
 
 // ============================================================================

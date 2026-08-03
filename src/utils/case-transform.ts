@@ -1,3 +1,5 @@
+import type { WireShape } from "./wire-shapes.js";
+
 type CamelFromDelimiter<S extends string> = S extends `${infer H}_${infer T}`
 	? `${H}${Capitalize<CamelFromDelimiter<T>>}`
 	: S extends `${infer H}-${infer T}`
@@ -81,9 +83,6 @@ function pascalToCamel(str: string): string {
 	return str.charAt(0).toLowerCase() + str.slice(1);
 }
 
-/**
- * Checks if an object is a special built-in type that should not be transformed
- */
 function isSpecialObject(obj: unknown): boolean {
 	return (
 		obj instanceof Date ||
@@ -94,227 +93,56 @@ function isSpecialObject(obj: unknown): boolean {
 	);
 }
 
-/**
- * Registry of attribute fields per schema context
- * Each schema defines its own attributes, keeping them co-located
- */
-const attributeRegistry: Record<string, readonly string[]> = {
-	// Request/Response headers
-	header: ["hostID", "xtoken", "interface", "userName", "status"],
-
-	// Master record root attributes
-	masterRecord: ["recordCode", "insertCriteria"],
-
-	// Financial detail - all fields are attributes
-	financialDetail: [
-		"currencyCode",
-		"creditLimit",
-		"c_PaymentType",
-		"c_SpecPaymentTypeCode",
-		"s_PaymentType",
-		"s_SpecPaymentTypeCode",
-		"enableElectronicInvoicing",
-		"electronicInvoicingType",
-	],
-
-	// ID document detail - all fields are attributes
-	idDocumentDetail: [
-		"idType",
-		"idCode",
-		"idIssueLocation",
-		"idIssueCounty",
-		"idIssueDate",
-		"idExpireDate",
-	],
-
-	// Account policies - all fields are attributes
-	accountPolicies: [
-		"acceptProfilingPolicies",
-		"acceptPrivacyPolicies",
-		"acceptNewsletterPolicies",
-	],
-
-	// Dynamic fields - key/value are attributes
-	dynamicFields: ["key", "value"],
-
-	// Search parameters
-	search: ["minDate", "maxDate"],
-
-	// Booking file (CreateBookingFile / BookFileRQ)
-	bookingFileStatus: ["value", "expiredDate"],
-	statisticCodes: ["sCode1", "sCode2", "sCode3", "sCode4", "sCode5", "sCode6"],
-	destination: ["code", "iataCode", "nationCode"],
-	customerDetail: ["recordCode"],
-	bookingFileDocument: ["printDoc", "sendDocViaEmail"],
-	financialDeadlineDetail: ["reschedulingCode", "expireDate", "totalAmount"],
-	deadlineDetail: ["deadlineCode", "description", "expireDate"],
-	paymentDetail: [
-		"paymentDate",
-		"paumentNote",
-		"amount",
-		"paymentUser",
-		"paymentType",
-	],
-	filePaymentDetail: [
-		"paymentDate",
-		"paymentNote",
-		"payerMasterCode",
-		"payerName",
-		"amount",
-		"paymentType",
-	],
-	selectedPackageDetail: [
-		"pCode",
-		"startDate",
-		"endDate",
-		"getServicesFromPackage",
-	],
-	selectedServiceDetail: [
-		"sCode",
-		"ssCode",
-		"supplierMasterCode",
-		"supplierName",
-		"supplierMasterSearchField",
-		"supplierFiscalCode",
-	],
-	extraQuoteServiceDetail: [
-		"sCode",
-		"ssCode",
-		"supplierMasterCode",
-		"supplierName",
-		"supplierMasterSearchField",
-		"supplierFiscalCode",
-	],
-	serviceFare: [
-		"currencyCode",
-		"exchangeRate",
-		"cost",
-		"costTax",
-		"costType",
-		"vatCostCurrencyCode",
-		"price",
-		"priceTax",
-		"priceType",
-	],
-	cancellableBookedServiceDetail: [
-		"cancelOperationType",
-		"serviceRefType",
-		"serviceRefValue",
-	],
-	fileStatus: ["value", "expiredDate", "optionedFileExpireDatePolicy"],
-	penalty: ["apply", "specificCode"],
-	noteDetail: ["nType", "title"],
-	passengerDetail: ["rph", "roomRph", "billingHolder"],
-	bookingFinancialInfo: [
-		"customer_PaymentType",
-		"customer_SpecPaymentTypeCode",
-	],
-	reservationFormCustomizablePrintParameters: ["makeDocumentTo"],
-
-	// Supplier reference master records
-	supplierRefMasterRecords: [
-		"supplierRefCode",
-		"companyMainBusinessType",
-		"carrierType",
-	],
-};
-
-/**
- * Flattened Set of all attribute fields for quick lookup
- * Computed once from the registry
- */
-export const ATTRIBUTE_FIELDS = new Set(
-	Object.values(attributeRegistry).flat(),
-);
-
-/**
- * Add attribute fields for a new schema context
- * Allows extending the registry from schema files
- */
-export function registerAttributeFields(
-	context: string,
-	fields: readonly string[],
-) {
-	attributeRegistry[context] = fields;
-	fields.forEach((field) => {
-		if (!ATTRIBUTE_FIELDS.has(field)) {
-			ATTRIBUTE_FIELDS.add(field);
-		}
-	});
-}
-
-export type CamelToPascalOptions = {
-	/** At root level only: do not add @ prefix for these keys (used when same key is element at root but attribute in nested objects) */
-	excludeFromAttributePrefix?: string[];
-	excludeAttributeFromCamelToPascal?: string[];
-};
-
-const formatAttributeField = (
-	field: string,
-	originalField: string,
-	isToExclude = false,
-) => {
-	// Some attributes in AVES XML are explicitly camel-cased in the spec
-	// (e.g. @sCode, @ssCode), so we always preserve their original field name.
-	const mustPreserveCamelCase =
-		originalField === "sCode" ||
-		originalField === "ssCode" ||
-		originalField === "pCode";
-
-	if (isToExclude || mustPreserveCamelCase) {
-		return `@${originalField}`;
-	}
-
-	return `@${field}`;
-};
-
 // Keys that need a custom PascalCase/XML tag name (by source camelCase key)
 const pascalKeyOverrides = new Map<string, string>([
 	["toServiceType", "TOServiceType"],
 	["rph", "RPH"],
 ]);
 
-// Reverse of pascalKeyOverrides for response camelCase mapping
 const camelKeyOverrides = new Map<string, string>([
 	["TOServiceType", "toServiceType"],
 	["RPH", "rph"],
 ]);
 
+function formatAttributeField(
+	pascalKey: string,
+	originalField: string,
+	preserveCamel: boolean,
+) {
+	return preserveCamel ? `@${originalField}` : `@${pascalKey}`;
+}
+
 /**
- * Transforms object keys from camelCase to PascalCase
- * Adds @ prefix to fields in ATTRIBUTE_FIELDS for XML attributes
- * @param options.excludeFromAttributePrefix - keys that must not get @ at this level (not passed to recursion)
+ * camelCase → PascalCase. `@` attrs only for fields listed on the current {@link WireShape}.
+ * Child objects/arrays use `shape.children[key]` (same shape for each array item).
+ * Omit shape only for nested keys with no child entry (all elements at that level).
  */
 export function camelToPascalKeys<T>(
 	input: T,
-	options?: CamelToPascalOptions,
+	shape?: WireShape,
 ): Pascalize<T> {
 	if (!input || typeof input !== "object" || isSpecialObject(input)) {
 		return input as Pascalize<T>;
 	}
 
 	if (Array.isArray(input)) {
-		return input.map((item) => camelToPascalKeys(item)) as Pascalize<T>;
+		return input.map((item) => camelToPascalKeys(item, shape)) as Pascalize<T>;
 	}
 
-	const exclude = options?.excludeFromAttributePrefix;
-	const excludeAttribute = options?.excludeAttributeFromCamelToPascal;
+	const attrs = shape?.attrs;
+	const preserve = shape?.preserveCamel;
 	const result: Record<string, unknown> = {};
 
 	for (const [key, value] of Object.entries(input)) {
-		const pascalKey = pascalKeyOverrides.has(key)
-			? (pascalKeyOverrides.get(key) as string)
-			: camelToPascal(key);
-		const treatAsAttr = ATTRIBUTE_FIELDS.has(key) && !exclude?.includes(key);
-		const formattedAttribute = formatAttributeField(
-			pascalKey,
-			key,
-			excludeAttribute?.includes(key),
-		);
-		const finalKey = treatAsAttr ? formattedAttribute : pascalKey;
+		const pascalKey = pascalKeyOverrides.get(key) ?? camelToPascal(key);
+		const treatAsAttr = Boolean(attrs?.includes(key));
+		const finalKey = treatAsAttr
+			? formatAttributeField(pascalKey, key, Boolean(preserve?.includes(key)))
+			: pascalKey;
 
+		const childShape = shape?.children?.[key];
 		result[finalKey] = transformValue(value, (val) =>
-			camelToPascalKeys(val, undefined),
+			camelToPascalKeys(val, childShape),
 		);
 	}
 
@@ -322,8 +150,7 @@ export function camelToPascalKeys<T>(
 }
 
 /**
- * Transforms object keys from PascalCase to camelCase
- * Strips @ prefix from XML attributes
+ * PascalCase / @attrs → camelCase. Strips `@` only; no shape needed.
  */
 export function pascalToCamelKeys<T>(input: T): Camelize<T> {
 	if (input === null || typeof input !== "object" || isSpecialObject(input)) {
@@ -338,10 +165,8 @@ export function pascalToCamelKeys<T>(input: T): Camelize<T> {
 
 	for (const [key, value] of Object.entries(input)) {
 		const parsedKey = key.startsWith("@") ? key.slice(1) : key;
-		const camelKey = camelKeyOverrides.has(parsedKey)
-			? (camelKeyOverrides.get(parsedKey) as string)
-			: pascalToCamel(parsedKey);
-
+		const camelKey =
+			camelKeyOverrides.get(parsedKey) ?? pascalToCamel(parsedKey);
 		result[camelKey] = transformValue(value, pascalToCamelKeys);
 	}
 

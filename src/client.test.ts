@@ -710,6 +710,172 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
+	describe("searchPackages", () => {
+		it("should search packages and return camelCase package list", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
+
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/SearchAvesPackages",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<SearchPackageRS>
+          <RsStatus Status="OK"/>
+          <PackageList>
+            <PackageDetail pCode="2015F041">
+              <FirstDescription>FANTASIA 4 DAYS</FirstDescription>
+              <CanCommitPack>false</CanCommitPack>
+            </PackageDetail>
+          </PackageList>
+        </SearchPackageRS>`;
+				});
+
+			const result = await client.searchPackages({
+				baseSearch: {
+					customerRecordCode: "138311",
+					languageCode: "01",
+					currencyCode: "EUR",
+					startDate: "2014-12-27T00:00:00",
+					endDate: "2015-01-03T00:00:00",
+					passengerList: [
+						{
+							rph: "001",
+							roomRph: "001",
+							name: "ADULTI 001",
+							categoryCode: "AD",
+							sex: "M",
+						},
+					],
+				},
+				avesSearchType: "PACKAGE",
+				paxQty: "1",
+				paxQtyCriteria: "GREATER_OR_EQUAL",
+				servOrPackCode: "2014MDE0000010",
+			});
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data.rsStatus.status).toBe("OK");
+				expect(result.data.packageList?.packageDetail?.[0]).toMatchObject({
+					pCode: "2015F041",
+					firstDescription: "FANTASIA 4 DAYS",
+				});
+			}
+			expect(capturedBody).toContain("<AvesSearchRQ");
+			expect(capturedBody).toContain(
+				"<StartDate>2014-12-27T00:00:00</StartDate>",
+			);
+			expect(capturedBody).toContain(
+				"<AvesSearchType>PACKAGE</AvesSearchType>",
+			);
+			expect(capturedBody).toContain(
+				"<ServOrPackCode>2014MDE0000010</ServOrPackCode>",
+			);
+		});
+	});
+
+	describe("getPackageDetail", () => {
+		it("should get package detail", async () => {
+			const mockClient = mockAgent.get(baseURL);
+
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/GetPackageDetail",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<PackageDetailRS>
+          <RsStatus Status="OK"/>
+          <PackageDetail pCode="2015F042">
+            <FirstDescription>FANTASIA 4 DAYS/3 NIGHTS</FirstDescription>
+          </PackageDetail>
+        </PackageDetailRS>`,
+				);
+
+			const result = await client.getPackageDetail({
+				customerRecordCode: "001692",
+				packageCode: "2015F042",
+				startDate: "2015-05-02T00:00:00",
+				endDate: "2015-05-05T00:00:00",
+				selectedServiceList: [
+					{ serviceCode: "PFRM04    PAR", packageRow: "01" },
+				],
+			});
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data.packageDetail).toMatchObject({
+					pCode: "2015F042",
+					firstDescription: "FANTASIA 4 DAYS/3 NIGHTS",
+				});
+			}
+		});
+	});
+
+	describe("commitPackage", () => {
+		it("should commit package", async () => {
+			const mockClient = mockAgent.get(baseURL);
+
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/CommitPackage",
+					method: "POST",
+				})
+				.reply(200, `<CommitPackRS><RsStatus Status="OK"/></CommitPackRS>`);
+
+			const result = await client.commitPackage({
+				packageCode: "14/PACKAGE001",
+			});
+
+			expect(result.success).toBe(true);
+			if (result.success) expect(result.data.rsStatus.status).toBe("OK");
+		});
+	});
+
+	describe("searchBookingFiles", () => {
+		it("should search by PACKAGE_CODE", async () => {
+			const mockClient = mockAgent.get(baseURL);
+
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/SearchBookingFile",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<SearchFileRS>
+          <RsStatus Status="OK"/>
+          <BookingFileList>
+            <BookingFileDetail BookingFileCode="14/036654">
+              <CustomerRecordCode>138311</CustomerRecordCode>
+              <PackageCode>2014MDE0000010</PackageCode>
+            </BookingFileDetail>
+          </BookingFileList>
+        </SearchFileRS>`,
+				);
+
+			const result = await client.searchBookingFiles({
+				searchType: "PACKAGE_CODE",
+				customerRecordCode: "138311",
+				packageCode: "2014MDE0000010",
+			});
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(
+					result.data.bookingFileList?.bookingFileDetail?.[0],
+				).toMatchObject({
+					bookingFileCode: "14/036654",
+					packageCode: "2014MDE0000010",
+				});
+			}
+		});
+	});
+
 	describe("AvesError", () => {
 		it("should create error with correct properties", () => {
 			const error = new AvesError("api", "Test error message", "error", 1001);

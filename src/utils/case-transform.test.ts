@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { camelToPascalKeys, pascalToCamelKeys } from "./case-transform.js";
+import {
+	dynamicFieldsWire,
+	headerWire,
+	masterRecordWire,
+	searchMasterWire,
+} from "./wire-shapes.js";
 
 describe("case-transform", () => {
 	describe("pascalToCamelKeys", () => {
@@ -10,8 +16,7 @@ describe("case-transform", () => {
 				Name: "John Doe",
 			};
 
-			const result = pascalToCamelKeys(input);
-			expect(result).toEqual({
+			expect(pascalToCamelKeys(input)).toEqual({
 				searchType: "CODE",
 				recordCode: "508558",
 				name: "John Doe",
@@ -19,14 +24,13 @@ describe("case-transform", () => {
 		});
 
 		it("should strip @ prefix and camelCase the rest", () => {
-			const input = {
-				"@HostID": "025706",
-				"@Xtoken": "TOKEN002756",
-				"@Status": "OK",
-			};
-
-			const result = pascalToCamelKeys(input);
-			expect(result).toEqual({
+			expect(
+				pascalToCamelKeys({
+					"@HostID": "025706",
+					"@Xtoken": "TOKEN002756",
+					"@Status": "OK",
+				}),
+			).toEqual({
 				hostID: "025706",
 				xtoken: "TOKEN002756",
 				status: "OK",
@@ -34,50 +38,33 @@ describe("case-transform", () => {
 		});
 
 		it("should handle nested objects", () => {
-			const input = {
-				RsStatus: {
-					"@Status": "OK",
-					ErrorCode: "123",
-				},
-				MasterRecordList: {
-					MasterRecordDetail: [],
-				},
-			};
-
-			const result = pascalToCamelKeys(input);
-			expect(result).toEqual({
-				rsStatus: {
-					status: "OK",
-					errorCode: "123",
-				},
-				masterRecordList: {
-					masterRecordDetail: [],
-				},
+			expect(
+				pascalToCamelKeys({
+					RsStatus: { "@Status": "OK", ErrorCode: "123" },
+					MasterRecordList: { MasterRecordDetail: [] },
+				}),
+			).toEqual({
+				rsStatus: { status: "OK", errorCode: "123" },
+				masterRecordList: { masterRecordDetail: [] },
 			});
 		});
 
 		it("should handle arrays", () => {
-			const input = {
+			const result = pascalToCamelKeys({
 				items: [
 					{ Name: "Item 1", Value: 10 },
 					{ Name: "Item 2", Value: 20 },
 				],
-			};
-
-			const result = pascalToCamelKeys(input);
-			expect(result.items).toHaveLength(2);
-			expect(result.items[0]).toEqual({ name: "Item 1", value: 10 });
-			expect(result.items[1]).toEqual({ name: "Item 2", value: 20 });
+			});
+			expect(result.items).toEqual([
+				{ name: "Item 1", value: 10 },
+				{ name: "Item 2", value: 20 },
+			]);
 		});
 
 		it("should preserve special objects", () => {
 			const date = new Date("2024-01-01");
-			const input = {
-				CreatedDate: date,
-				Name: "Test",
-			};
-
-			const result = pascalToCamelKeys(input);
+			const result = pascalToCamelKeys({ CreatedDate: date, Name: "Test" });
 			expect(result.createdDate).toBe(date);
 			expect(result.name).toBe("Test");
 		});
@@ -90,110 +77,153 @@ describe("case-transform", () => {
 		});
 	});
 
-	describe("camelToPascalKeys", () => {
-		it("should convert camelCase keys to PascalCase and add @ prefix to attribute fields", () => {
-			const input = {
-				searchType: "CODE",
-				recordCode: "508558", // attribute field
-				name: "John Doe",
-			};
-
-			const result = camelToPascalKeys(input);
-			expect(result).toEqual({
+	describe("camelToPascalKeys with WireShape", () => {
+		it("without shape treats all keys as elements", () => {
+			expect(
+				camelToPascalKeys({
+					searchType: "CODE",
+					recordCode: "508558",
+					name: "John Doe",
+				}),
+			).toEqual({
 				SearchType: "CODE",
-				"@RecordCode": "508558", // recordCode is an attribute field
+				RecordCode: "508558",
 				Name: "John Doe",
 			});
 		});
 
-		it("should add @ prefix to attribute fields", () => {
-			const input = {
-				hostID: "025706", // attribute field
-				xtoken: "TOKEN002756", // attribute field
-				status: "OK", // attribute field
-				name: "Test",
-			};
+		it("applies attrs only for the current shape", () => {
+			expect(
+				camelToPascalKeys(
+					{ recordCode: "508558", name: "John Doe", insertCriteria: "T" },
+					masterRecordWire,
+				),
+			).toEqual({
+				"@RecordCode": "508558",
+				Name: "John Doe",
+				"@InsertCriteria": "T",
+			});
+		});
 
-			const result = camelToPascalKeys(input);
-			expect(result).toEqual({
+		it("does not leak attrs across shapes (name stays element)", () => {
+			expect(
+				camelToPascalKeys(
+					{ code: "HTL", name: "Hotel" },
+					{ attrs: ["code", "name"] },
+				),
+			).toEqual({ "@Code": "HTL", "@Name": "Hotel" });
+
+			expect(camelToPascalKeys({ name: "John Doe" }, masterRecordWire)).toEqual(
+				{ Name: "John Doe" },
+			);
+		});
+
+		it("uses child shapes for nested objects", () => {
+			expect(
+				camelToPascalKeys(
+					{
+						recordCode: "508558",
+						financialDetail: { currencyCode: "EUR", creditLimit: "1000" },
+					},
+					masterRecordWire,
+				),
+			).toEqual({
+				"@RecordCode": "508558",
+				FinancialDetail: {
+					"@CurrencyCode": "EUR",
+					"@CreditLimit": "1000",
+				},
+			});
+		});
+
+		it("applies the same child shape to array items", () => {
+			expect(
+				camelToPascalKeys(
+					[
+						{ key: "a", value: "1" },
+						{ key: "b", value: "2" },
+					],
+					dynamicFieldsWire,
+				),
+			).toEqual([
+				{ "@Key": "a", "@Value": "1" },
+				{ "@Key": "b", "@Value": "2" },
+			]);
+		});
+
+		it("preserves camelCase attr names when listed", () => {
+			expect(
+				camelToPascalKeys(
+					{ sCode: "HT1", ssCode: "DL", qty: "1" },
+					{
+						attrs: ["sCode", "ssCode"],
+						preserveCamel: ["sCode", "ssCode"],
+					},
+				),
+			).toEqual({ "@sCode": "HT1", "@ssCode": "DL", Qty: "1" });
+		});
+
+		it("search master keeps recordCode as element", () => {
+			expect(
+				camelToPascalKeys(
+					{
+						searchType: "CODE",
+						recordCode: "508558",
+						lastModificationDate: {
+							minDate: "2024-01-01",
+							maxDate: "2024-12-31",
+						},
+					},
+					searchMasterWire,
+				),
+			).toEqual({
+				SearchType: "CODE",
+				RecordCode: "508558",
+				LastModificationDate: {
+					"@MinDate": "2024-01-01",
+					"@MaxDate": "2024-12-31",
+				},
+			});
+		});
+
+		it("header wire marks auth fields as attrs", () => {
+			expect(
+				camelToPascalKeys(
+					{
+						hostID: "025706",
+						xtoken: "TOKEN",
+						status: "OK",
+						name: "Test",
+					},
+					headerWire,
+				),
+			).toEqual({
 				"@HostID": "025706",
-				"@Xtoken": "TOKEN002756",
+				"@Xtoken": "TOKEN",
 				"@Status": "OK",
 				Name: "Test",
 			});
 		});
-
-		it("should handle nested objects and add @ prefix to nested attribute fields", () => {
-			const input = {
-				rsStatus: {
-					status: "OK", // attribute field
-					errorCode: "123",
-				},
-				masterRecordList: {
-					masterRecordDetail: [],
-				},
-			};
-
-			const result = camelToPascalKeys(input);
-			expect(result).toEqual({
-				RsStatus: {
-					"@Status": "OK", // status is an attribute field
-					ErrorCode: "123",
-				},
-				MasterRecordList: {
-					MasterRecordDetail: [],
-				},
-			});
-		});
-
-		it("should handle arrays", () => {
-			const input = {
-				items: [
-					{ name: "Item 1", value: 10 }, // value is an attribute field
-					{ name: "Item 2", value: 20 },
-				],
-			};
-
-			const result = camelToPascalKeys(input);
-			expect(result.Items).toHaveLength(2);
-			expect(result.Items[0]).toEqual({ Name: "Item 1", "@Value": 10 }); // value is an attribute field
-			expect(result.Items[1]).toEqual({ Name: "Item 2", "@Value": 20 });
-		});
-
-		it("should preserve special objects", () => {
-			const date = new Date("2024-01-01");
-			const input = {
-				createdDate: date,
-				name: "Test",
-			};
-
-			const result = camelToPascalKeys(input);
-			expect(result.CreatedDate).toBe(date);
-			expect(result.Name).toBe("Test");
-		});
 	});
 
-	describe("round-trip conversion", () => {
-		it("should convert PascalCase to camelCase and back", () => {
-			const original = {
-				SearchType: "CODE",
-				"@RecordCode": "508558", // API format has @ prefix for attributes
+	describe("round-trip", () => {
+		it("round-trips with masterRecordWire", () => {
+			const wire = {
+				"@RecordCode": "508558",
 				"@HostID": "025706",
+				Name: "John",
 			};
-
-			const camel = pascalToCamelKeys(original);
+			const camel = pascalToCamelKeys(wire);
 			expect(camel).toEqual({
-				searchType: "CODE",
-				recordCode: "508558", // @ prefix stripped
-				hostID: "025706", // @ prefix stripped
+				recordCode: "508558",
+				hostID: "025706",
+				name: "John",
 			});
-
-			const pascal = camelToPascalKeys(camel);
-			expect(pascal).toEqual({
-				SearchType: "CODE",
-				"@RecordCode": "508558", // @ prefix added back for attribute fields
-				"@HostID": "025706", // @ prefix added back for attribute fields
-			});
+			expect(
+				camelToPascalKeys(camel, {
+					attrs: ["recordCode", "hostID"],
+				}),
+			).toEqual(wire);
 		});
 	});
 });
