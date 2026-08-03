@@ -11,11 +11,18 @@ export const ManageMasterRecordRequestSchema = v.object({
 	MasterRecordDetail: MasterRecordDetailApiValidationSchema,
 });
 /**
- * Upsert master record response schema (transforms to camelCase)
+ * Upsert master record response schema (transforms to camelCase).
+ * Spreads `MasterRecordDetail` into the root so callers use `data.recordCode` etc.
  */
-export const ManageMasterRecordResponseSchema = createResponseSchema(
-	v.object({
-		RsStatus: RsStatusSchema,
-		MasterRecordDetail: v.optional(MasterRecordDetailApiValidationSchema),
-	}),
+export const ManageMasterRecordResponseSchema = v.pipe(
+	createResponseSchema(
+		v.object({
+			RsStatus: RsStatusSchema,
+			MasterRecordDetail: v.optional(MasterRecordDetailApiValidationSchema),
+		}),
+	),
+	v.transform(({ rsStatus, masterRecordDetail }) => ({
+		rsStatus,
+		...masterRecordDetail,
+	})),
 );

@@ -132,8 +132,8 @@ describe("ManageMasterRecordResponseSchema", () => {
 		const result = parse(ManageMasterRecordResponseSchema, apiResponse);
 		expect(result).toHaveProperty("rsStatus");
 		expect(result.rsStatus).toHaveProperty("status", "OK");
-		expect(result).toHaveProperty("masterRecordDetail");
-		expect(result.masterRecordDetail).toHaveProperty("recordCode", "508558");
+		expect(result).toHaveProperty("recordCode", "508558");
+		expect(result).toHaveProperty("name", "John Doe");
 	});
 });
 
@@ -623,14 +623,10 @@ describe("ManageMasterRecordResponseSchema with nested objects", () => {
 
 		const result = parse(ManageMasterRecordResponseSchema, apiResponse);
 
-		expect(result.masterRecordDetail).toBeDefined();
-		expect(result.masterRecordDetail?.financialDetail).toBeDefined();
-		expect(result.masterRecordDetail?.financialDetail?.currencyCode).toBe(
-			"EUR",
-		);
-		expect(result.masterRecordDetail?.financialDetail?.creditLimit).toBe(
-			"10000",
-		);
+		expect(result).toBeDefined();
+		expect(result.financialDetail).toBeDefined();
+		expect(result.financialDetail?.currencyCode).toBe("EUR");
+		expect(result.financialDetail?.creditLimit).toBe("10000");
 	});
 
 	it("should transform API response with accountPolicies to camelCase", () => {
@@ -648,13 +644,9 @@ describe("ManageMasterRecordResponseSchema with nested objects", () => {
 
 		const result = parse(ManageMasterRecordResponseSchema, apiResponse);
 
-		expect(result.masterRecordDetail?.accountPolicies).toBeDefined();
-		expect(
-			result.masterRecordDetail?.accountPolicies?.acceptPrivacyPolicies,
-		).toBe(1);
-		expect(
-			result.masterRecordDetail?.accountPolicies?.acceptNewsletterPolicies,
-		).toBe(0);
+		expect(result.accountPolicies).toBeDefined();
+		expect(result.accountPolicies?.acceptPrivacyPolicies).toBe(1);
+		expect(result.accountPolicies?.acceptNewsletterPolicies).toBe(0);
 	});
 
 	it("should transform API response with idDocumentDetail to camelCase", () => {
@@ -673,13 +665,9 @@ describe("ManageMasterRecordResponseSchema with nested objects", () => {
 
 		const result = parse(ManageMasterRecordResponseSchema, apiResponse);
 
-		expect(result.masterRecordDetail?.idDocumentDetail).toBeDefined();
-		expect(result.masterRecordDetail?.idDocumentDetail?.idType).toBe(
-			"PASSPORT",
-		);
-		expect(result.masterRecordDetail?.idDocumentDetail?.idCode).toBe(
-			"AB1234567",
-		);
+		expect(result.idDocumentDetail).toBeDefined();
+		expect(result.idDocumentDetail?.idType).toBe("PASSPORT");
+		expect(result.idDocumentDetail?.idCode).toBe("AB1234567");
 	});
 
 	it("should transform API response with supplierRefMasterRecords to camelCase", () => {
@@ -698,17 +686,12 @@ describe("ManageMasterRecordResponseSchema with nested objects", () => {
 
 		const result = parse(ManageMasterRecordResponseSchema, apiResponse);
 
-		expect(result.masterRecordDetail?.supplierRefMasterRecords).toBeDefined();
-		expect(
-			result.masterRecordDetail?.supplierRefMasterRecords?.supplierRefCode,
-		).toBe("SUP123");
-		expect(
-			result.masterRecordDetail?.supplierRefMasterRecords
-				?.companyMainBusinessType,
-		).toBe("HOTEL");
-		expect(
-			result.masterRecordDetail?.supplierRefMasterRecords?.carrierType,
-		).toBe("FLIGHT");
+		expect(result.supplierRefMasterRecords).toBeDefined();
+		expect(result.supplierRefMasterRecords?.supplierRefCode).toBe("SUP123");
+		expect(result.supplierRefMasterRecords?.companyMainBusinessType).toBe(
+			"HOTEL",
+		);
+		expect(result.supplierRefMasterRecords?.carrierType).toBe("FLIGHT");
 	});
 
 	it("should transform API response with all nested objects (excluding dynamicFields array)", () => {
@@ -739,14 +722,10 @@ describe("ManageMasterRecordResponseSchema with nested objects", () => {
 		const result = parse(ManageMasterRecordResponseSchema, apiResponse);
 
 		expect(result.rsStatus.status).toBe("OK");
-		expect(result.masterRecordDetail?.recordCode).toBe("508558");
-		expect(result.masterRecordDetail?.financialDetail?.currencyCode).toBe(
-			"USD",
-		);
-		expect(result.masterRecordDetail?.idDocumentDetail?.idType).toBe("ID_CARD");
-		expect(
-			result.masterRecordDetail?.accountPolicies?.acceptProfilingPolicies,
-		).toBe(1);
+		expect(result.recordCode).toBe("508558");
+		expect(result.financialDetail?.currencyCode).toBe("USD");
+		expect(result.idDocumentDetail?.idType).toBe("ID_CARD");
+		expect(result.accountPolicies?.acceptProfilingPolicies).toBe(1);
 	});
 
 	it("should transform API response with single dynamicField", () => {
@@ -761,14 +740,11 @@ describe("ManageMasterRecordResponseSchema with nested objects", () => {
 
 		const result = parse(ManageMasterRecordResponseSchema, apiResponse);
 
-		expect(result.masterRecordDetail?.dynamicFields).toBeDefined();
-		expect(result.masterRecordDetail?.dynamicFields).toHaveProperty(
-			"key",
-			"key",
-		);
-		expect(result.masterRecordDetail?.dynamicFields).toBeInstanceOf(Object);
-		expect(result.masterRecordDetail?.dynamicFields?.key).toBe("key");
-		expect(result.masterRecordDetail?.dynamicFields?.value).toBe("value");
+		expect(result.dynamicFields).toBeDefined();
+		expect(result.dynamicFields).toHaveProperty("key", "key");
+		expect(result.dynamicFields).toBeInstanceOf(Object);
+		expect(result.dynamicFields?.key).toBe("key");
+		expect(result.dynamicFields?.value).toBe("value");
 	});
 
 	it("should transform API response with multiple dynamicFields", () => {
@@ -781,8 +757,8 @@ describe("ManageMasterRecordResponseSchema with nested objects", () => {
 			},
 		};
 		const result = parse(ManageMasterRecordResponseSchema, apiResponse);
-		expect(result.masterRecordDetail?.dynamicFields).toBeDefined();
-		expect(result.masterRecordDetail?.dynamicFields?.key).toBe("field1");
-		expect(result.masterRecordDetail?.dynamicFields?.value).toBe("value1");
+		expect(result.dynamicFields).toBeDefined();
+		expect(result.dynamicFields?.key).toBe("field1");
+		expect(result.dynamicFields?.value).toBe("value1");
 	});
 });

@@ -305,9 +305,9 @@ export type ManageMasterRecordRequest = InferInput<
 /**
  * Response from an insert/update operation.
  *
+ * `MasterRecordDetail` fields are spread onto `data` (e.g. `data.recordCode`).
+ *
  * @property rsStatus - Operation status (check for 'OK' to confirm success)
- * @property masterRecordDetail - The created/updated record with server-assigned values
- *   (e.g., `recordCode` for new records)
  *
  * @example
  * ```typescript
@@ -318,8 +318,7 @@ export type ManageMasterRecordRequest = InferInput<
  * });
  *
  * if (result.success) {
- *   const newCode = result.data.masterRecordDetail?.recordCode;
- *   console.log(`Created record with code: ${newCode}`);
+ *   console.log(`Created record with code: ${result.data.recordCode}`);
  * }
  * ```
  */

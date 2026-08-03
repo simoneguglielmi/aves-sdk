@@ -143,7 +143,7 @@ const result = await client.upsertRecord({
 });
 
 if (result.success) {
-  console.log(result.data.masterRecordDetail?.recordCode);
+  console.log(result.data.recordCode);
 }
 ```
 

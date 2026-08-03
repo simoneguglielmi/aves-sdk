@@ -202,11 +202,7 @@ describeHttp("AvesClient", () => {
 			if (result.success) {
 				expect(result.data).toHaveProperty("rsStatus");
 				expect(result.data.rsStatus).toHaveProperty("status", "OK");
-				expect(result.data).toHaveProperty("masterRecordDetail");
-				expect(result.data.masterRecordDetail).toHaveProperty(
-					"recordCode",
-					"508558",
-				);
+				expect(result.data).toHaveProperty("recordCode", "508558");
 			}
 		});
 
