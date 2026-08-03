@@ -20,21 +20,25 @@ export type ListWrapOptions = {
  * Flatten SDK `*List: Detail[]` → AVES List/Detail wrappers.
  * Returns a new object (list values change shape; not the input type).
  */
-export function wrapListDetails(
-	input: Record<string, unknown>,
+export function wrapListDetails<T extends object>(
+	input: T,
 	{ listKeys, arrayOfOne }: ListWrapOptions,
-): Record<string, unknown> {
-	const out: Record<string, unknown> = { ...input };
+): T {
+	const wrapped = { ...input };
 	const one = arrayOfOne ?? new Set<string>();
 	for (const listKey of listKeys) {
-		const value = out[listKey];
+		const value = Reflect.get(wrapped, listKey);
 		if (!Array.isArray(value)) continue;
 		const detailKey = detailKeyFor(listKey);
-		out[listKey] = one.has(listKey)
-			? value.map((item) => ({ [detailKey]: item }))
-			: { [detailKey]: value };
+		Reflect.set(
+			wrapped,
+			listKey,
+			one.has(listKey)
+				? value.map((item) => ({ [detailKey]: item }))
+				: { [detailKey]: value },
+		);
 	}
-	return out;
+	return wrapped;
 }
 
 export const CREATE_BOOKING_LIST_KEYS = [
@@ -68,7 +72,8 @@ export const MOD_HEADER_LIST_KEYS = [
 export const FILE_PAYMENT_LIST_KEYS = ["filePaymentList"] as const;
 
 /**
- * Empty paxAssociated [] → "" so XML emits `<PaxAssociated/>` instead of omitting the tag.
+ * Empty paxAssociated [] → "" so XML emits `<PaxAssociated/>`.
+ * SDK accepts `string[]` and maps to `{ pax }[]` for the wire.
  */
 export function normalizeEmptyPaxAssociated<T>(input: T): T {
 	const walk = (node: unknown): unknown => {
@@ -76,9 +81,15 @@ export function normalizeEmptyPaxAssociated<T>(input: T): T {
 		if (Array.isArray(node)) return node.map(walk);
 		const result: Record<string, unknown> = {};
 		for (const [key, val] of Object.entries(node)) {
-			if (key === "paxAssociated" && Array.isArray(val) && !val.length) {
-				result[key] = "";
-				continue;
+			if (key === "paxAssociated" && Array.isArray(val)) {
+				if (!val.length) {
+					result[key] = "";
+					continue;
+				}
+				if (val.every((item) => typeof item === "string")) {
+					result[key] = val.map((pax) => ({ pax }));
+					continue;
+				}
 			}
 			result[key] = walk(val);
 		}
@@ -90,8 +101,8 @@ export function normalizeEmptyPaxAssociated<T>(input: T): T {
 /**
  * camelCase body → optional list wrap → PascalCase / @attrs via required wire shape.
  */
-export function toWireBody(
-	input: Record<string, unknown>,
+export function toWireBody<T extends object>(
+	input: T,
 	shape: WireShape,
 	wrap?: ListWrapOptions,
 ) {

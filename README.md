@@ -168,8 +168,8 @@ if (result.success) {
 
 ```typescript
 const created = await client.booking.createBooking({
-  customerDetail: { recordCode: '138311' },
-  bookingFileStatus: { value: 'QUOTATION' },
+  customerRecordCode: '138311', // or customerDetail: { recordCode: '138311' }
+  bookingFileStatus: 'QUOTATION', // or { value: 'QUOTATION', expiredDate? }
   startDate: '2015-01-22T00:00:00',
   endDate: '2015-01-25T00:00:00',
   selectedServiceList: [
@@ -182,7 +182,7 @@ const created = await client.booking.createBooking({
       endDate: '2015-01-25T00:00:00',
       qty: '1',
       pax: '2',
-      paxAssociated: [],
+      paxAssociated: [], // or string[] like ['001','002']
       avesSession: '1',
     },
   ],
@@ -198,7 +198,8 @@ const created = await client.booking.createBooking({
 });
 
 if (created.success) {
-  console.log(created.data.bookingFileDetail?.bookingFileCode);
+  console.log(created.data.bookingFileCode);
+  console.log(created.data.bookedServiceList?.[0]?.serviceStatus);
 }
 ```
 
@@ -273,7 +274,7 @@ await client.booking.modBookingHeader({
 await client.booking.setBookingStatus({
   customerRecordCode: '000170',
   bookingFileCode: '14/000081',
-  fileStatus: { value: 'CANCELED' },
+  fileStatus: 'CANCELED', // or { value: 'CANCELED' }
 });
 
 await client.booking.setBookingServiceStatus({
@@ -340,6 +341,9 @@ const detail = await client.packages.getPackageDetail({
 });
 
 await client.packages.commitPackage({ packageCode: '14/PACKAGE001' });
+
+if (packages.success) console.log(packages.data.packageList?.[0]?.pCode);
+if (detail.success) console.log(detail.data.pCode, detail.data.serviceList?.[0]);
 ```
 
 ---
@@ -375,8 +379,10 @@ You do not handle XML attribute prefixes yourself. Attr vs element is decided by
 One outbound path for all ops:
 
 1. Valibot validates camelCase input  
-2. `createApiSchema(schema, shape, wrap?)` → `toWireBody` (optional list wrap + empty `paxAssociated` normalize + `camelToPascalKeys`)  
+2. `createApiSchema(schema, shape, wrap?)` → `toWireBody` (optional list wrap + `paxAssociated` string[]/empty normalize + `camelToPascalKeys`)  
 3. `AvesTransport.invokeOp` adds `RqHeader`, optional `bodyKey` nest, POSTs XML  
+
+Inbound: `createResponseSchema` / `createFlattenedResponseSchema` / `createListResponseSchema` → camelCase + optional detail spread or typed list RS; `listDetailApiSchema` unwraps wire `*List`/`*Detail` to flat arrays; `coalesceWireAliases` normalizes dialect attrs. Input aliases: `valueFieldSchema`, `coalesceCustomerRecordCode`, `coalesceListHead`. Shared primitives: `LanguageCodeSchema`, `StringishSchema`, `DateRangeSchema`, `StatusOnlyResponseSchema`.
 
 Element-only roots use `elementOnlyWire` (`{}`). Master upsert nests under `bodyKey: "MasterRecordDetail"`; master search and booking spread fields at the RQ root.
 

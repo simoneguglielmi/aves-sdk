@@ -9,7 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Breaking:** `upsertRecord` / `ManageMasterRecordRS` spreads `masterRecordDetail` into `data` — use `result.data.recordCode` (not `result.data.masterRecordDetail?.recordCode`)
+- **Breaking:** `upsertRecord` spreads `masterRecordDetail` into `data` — `result.data.recordCode`
+- **Breaking:** booking create/mod/status spreads `bookingFileDetail` into `data` — `result.data.bookingFileCode`
+- **Breaking:** `getPackageDetail` spreads `packageDetail` into `data` — `result.data.pCode`
+- **Breaking:** response `*List` fields are flat Detail arrays (no inner `*Detail` wrapper) — e.g. `data.packageList?.[0]`, `data.masterRecordList`, `data.bookingFileList`, `data.bookedServiceList`
+- **Breaking:** nested booking/catalog lists unwrapped the same way (`passengerList`, `serviceList`, `paxPriceList`, …)
+- Input aliases: `customerRecordCode` ↔ `customerDetail`; `bookingFileStatus` / `fileStatus` as string or `{ value }`; `paxAssociated: string[]`; mod `selectedPackageList` ↔ `selectedPackageDetail`
+
+### Added
+
+- Response helpers: `listDetailApiSchema`, `flattenResponseDetail`, `createFlattenedResponseSchema`, `createListResponseSchema`
+- Request helpers: `createApiSchema`, `valueFieldSchema`, `coalesceCustomerRecordCode`, `coalesceListHead`, `coalesceWireAliases`
+- Shared primitives: `LanguageCodeSchema`, `StringishSchema`, `DateRangeSchema`, `StatusOnlyResponseSchema`, `createWireSchemaPair`
+- `yarn typecheck` script (`tsc --noEmit`)
 
 ---
 

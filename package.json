@@ -50,7 +50,8 @@
     "prepare": "yarn build",
     "test": "vitest run",
     "publish": "npm publish",
-    "check": "biome check --write src"
+    "check": "biome check --write src",
+    "typecheck": "tsc --noEmit"
   },
   "packageManager": "yarn@1.22.22",
   "dependencies": {

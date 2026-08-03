@@ -3,6 +3,7 @@ import {
 	createApiSchema,
 	createApiValidationSchema,
 	createResponseSchema,
+	createWireSchemaPair,
 } from "../utils/schema-transform.js";
 import {
 	accountPoliciesWire,
@@ -13,6 +14,7 @@ import {
 	supplierRefMasterRecordsWire,
 } from "../utils/wire-shapes.js";
 import { BoolishSchema } from "./booking-shared.js";
+import { LanguageCodeSchema } from "./common.js";
 import {
 	CarrierTypeSchema,
 	GenderSchema,
@@ -37,23 +39,14 @@ const FinancialDetailInputSchema = v.object({
 	electronicInvoicingType: v.optional(v.string()),
 });
 
-/**
- * Financial detail schema for API requests (transforms to PascalCase)
- */
-export const FinancialDetailSchema = createApiSchema(
+const financialPair = createWireSchemaPair(
 	FinancialDetailInputSchema,
 	financialDetailWire,
 );
+export const FinancialDetailSchema = financialPair.api;
+export const FinancialDetailApiValidationSchema = financialPair.validation;
 
-/**
- * Financial detail validation schema (already transformed PascalCase with @ attributes)
- */
-export const FinancialDetailApiValidationSchema = createApiValidationSchema(
-	FinancialDetailInputSchema,
-	financialDetailWire,
-);
-
-const IdDocumentDetailInputSchema = v.object({
+export const IdDocumentDetailInputSchema = v.object({
 	idType: v.optional(v.string()),
 	idCode: v.optional(v.string()),
 	idIssueLocation: v.optional(v.string()),
@@ -62,21 +55,12 @@ const IdDocumentDetailInputSchema = v.object({
 	idExpireDate: v.optional(v.string()),
 });
 
-/**
- * ID document detail schema for API requests (transforms to PascalCase)
- */
-export const IdDocumentDetailSchema = createApiSchema(
+const idDocumentPair = createWireSchemaPair(
 	IdDocumentDetailInputSchema,
 	idDocumentDetailWire,
 );
-
-/**
- * ID document detail validation schema (already transformed PascalCase with @ attributes)
- */
-export const IdDocumentDetailApiValidationSchema = createApiValidationSchema(
-	IdDocumentDetailInputSchema,
-	idDocumentDetailWire,
-);
+export const IdDocumentDetailSchema = idDocumentPair.api;
+export const IdDocumentDetailApiValidationSchema = idDocumentPair.validation;
 
 const DynamicFieldsInputSchema = v.object({
 	key: v.string(),
@@ -111,22 +95,13 @@ const SupplierRefMasterRecordsInputSchema = v.object({
 	carrierType: v.optional(CarrierTypeSchema),
 });
 
-/**
- * SupplierRefMasterRecords schema for API requests (transforms to PascalCase)
- */
-export const SupplierRefMasterRecordsSchema = createApiSchema(
+const supplierRefPair = createWireSchemaPair(
 	SupplierRefMasterRecordsInputSchema,
 	supplierRefMasterRecordsWire,
 );
-
-/**
- * SupplierRefMasterRecords validation schema (already transformed PascalCase)
- */
+export const SupplierRefMasterRecordsSchema = supplierRefPair.api;
 export const SupplierRefMasterRecordsApiValidationSchema =
-	createApiValidationSchema(
-		SupplierRefMasterRecordsInputSchema,
-		supplierRefMasterRecordsWire,
-	);
+	supplierRefPair.validation;
 
 const flagSchema = v.union([v.literal(0), v.literal(1)]);
 
@@ -140,21 +115,13 @@ const AccountPoliciesInputSchema = v.object({
 	acceptNewsletterPolicies: v.optional(flagSchema),
 });
 
-/**
- * Account policies schema for API requests (transforms to PascalCase with @ attributes)
- */
-export const AccountPoliciesSchema = createApiSchema(
+const accountPoliciesPair = createWireSchemaPair(
 	AccountPoliciesInputSchema,
 	accountPoliciesWire,
 );
-
-/**
- * Account policies validation schema (already transformed PascalCase with @ attributes)
- */
-export const AccountPoliciesApiValidationSchema = createApiValidationSchema(
-	AccountPoliciesInputSchema,
-	accountPoliciesWire,
-);
+export const AccountPoliciesSchema = accountPoliciesPair.api;
+export const AccountPoliciesApiValidationSchema =
+	accountPoliciesPair.validation;
 
 /**
  * Master record detail input schema (camelCase)
@@ -168,7 +135,7 @@ export const MasterRecordDetailSchema = v.object({
 	moniker: v.optional(v.string()),
 	name: v.optional(v.string()),
 	extraInfo: v.optional(v.string()),
-	languageCode: v.pipe(v.string(), v.minLength(2), v.maxLength(2)),
+	languageCode: LanguageCodeSchema,
 	address: v.optional(v.string()),
 	zipCode: v.optional(v.string()),
 	cityName: v.optional(v.string()),

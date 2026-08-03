@@ -1,21 +1,20 @@
 import * as v from "valibot";
 import {
 	createApiSchema,
-	createResponseSchema,
+	listDetailApiSchema,
 } from "../utils/schema-transform.js";
 import { searchMasterWire } from "../utils/wire-shapes.js";
-import { RqHeaderSchema, RsStatusSchema } from "./common.js";
+import {
+	createListResponseSchema,
+	DateRangeSchema,
+	OptionalLanguageCodeSchema,
+	RqHeaderSchema,
+} from "./common.js";
 import { SearchMasterType } from "./enums.js";
 import { MasterRecordDetailApiValidationSchema } from "./master-record.js";
 
-const LastModificationDateInputSchema = v.object({
-	minDate: v.string(),
-	maxDate: v.string(),
-});
-
-const languageCodeField = v.optional(
-	v.pipe(v.string(), v.minLength(2), v.maxLength(2)),
-);
+const LastModificationDateInputSchema = DateRangeSchema;
+const languageCodeField = OptionalLanguageCodeSchema;
 
 /**
  * Search by CODE - requires recordCode
@@ -146,27 +145,15 @@ export const SearchMasterRecordRequestSchema = v.pipe(
 	}),
 );
 
-const MasterRecordListApiSchema = v.object({
-	MasterRecordDetail: v.optional(
-		v.pipe(
-			v.union([
-				v.array(MasterRecordDetailApiValidationSchema),
-				MasterRecordDetailApiValidationSchema,
-			]),
-			v.transform((input) => {
-				if (!input) return undefined;
-				return Array.isArray(input) ? input : [input];
-			}),
-		),
-	),
-});
+const MasterRecordListApiSchema = listDetailApiSchema(
+	"MasterRecordDetail",
+	MasterRecordDetailApiValidationSchema,
+);
 
 /**
  * Search master record response schema (transforms to camelCase)
  */
-export const SearchMasterRecordResponseSchema = createResponseSchema(
-	v.object({
-		RsStatus: RsStatusSchema,
-		MasterRecordList: v.optional(MasterRecordListApiSchema),
-	}),
+export const SearchMasterRecordResponseSchema = createListResponseSchema(
+	"MasterRecordList",
+	MasterRecordListApiSchema,
 );

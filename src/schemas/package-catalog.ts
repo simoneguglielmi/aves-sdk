@@ -2,8 +2,8 @@ import * as v from "valibot";
 import { wrapListDetails } from "../utils/booking-transform.js";
 import {
 	createApiSchema,
-	createResponseSchema,
-	oneOrMany,
+	createFlattenedResponseSchema,
+	listDetailApiSchema,
 	toWireBody,
 } from "../utils/schema-transform.js";
 import {
@@ -17,7 +17,14 @@ import {
 	StatisticCodesInputSchema,
 } from "./booking-file.js";
 import { BoolishSchema } from "./booking-shared.js";
-import { RsStatusSchema } from "./common.js";
+import {
+	createListResponseSchema,
+	OptionalLanguageCodeSchema,
+	RsStatusSchema,
+	StatusOnlyResponseSchema,
+	StringishBoolSchema,
+	StringishSchema,
+} from "./common.js";
 import {
 	AvesSearchTypeSchema,
 	DestinationTypeSchema,
@@ -26,8 +33,6 @@ import {
 } from "./enums.js";
 
 export { PaxQtyCriteria, PaxQtyCriteriaSchema } from "./enums.js";
-
-const stringish = v.union([v.string(), v.number(), v.boolean()]);
 
 // ---------------------------------------------------------------------------
 // Shared catalog fragments (response)
@@ -40,9 +45,10 @@ export const FeatureDetailApiSchema = v.object({
 	ValueName: v.optional(v.string()),
 });
 
-export const FeatureListApiSchema = v.object({
-	FeatureDetail: v.optional(oneOrMany(FeatureDetailApiSchema)),
-});
+export const FeatureListApiSchema = listDetailApiSchema(
+	"FeatureDetail",
+	FeatureDetailApiSchema,
+);
 
 export const RefPackageInfoApiSchema = v.object({
 	"@PackageCode": v.optional(v.string()),
@@ -56,14 +62,15 @@ export const CatalogSubServiceDetailApiSchema = v.object({
 	"@ssCode": v.optional(v.string()),
 	FirstDescription: v.optional(v.string()),
 	SubServiceType: v.optional(v.string()),
-	SubServiceLevel: v.optional(stringish),
+	SubServiceLevel: v.optional(StringishBoolSchema),
 	StartDate: v.optional(v.string()),
 	EndDate: v.optional(v.string()),
 });
 
-export const CatalogSubServiceListApiSchema = v.object({
-	SubServiceDetail: v.optional(oneOrMany(CatalogSubServiceDetailApiSchema)),
-});
+export const CatalogSubServiceListApiSchema = listDetailApiSchema(
+	"SubServiceDetail",
+	CatalogSubServiceDetailApiSchema,
+);
 
 /** Lean catalog Service inside a Package */
 export const CatalogServiceDetailApiSchema = v.object({
@@ -78,9 +85,10 @@ export const CatalogServiceDetailApiSchema = v.object({
 	SubServiceList: v.optional(CatalogSubServiceListApiSchema),
 });
 
-export const CatalogServiceListApiSchema = v.object({
-	ServiceDetail: v.optional(oneOrMany(CatalogServiceDetailApiSchema)),
-});
+export const CatalogServiceListApiSchema = listDetailApiSchema(
+	"ServiceDetail",
+	CatalogServiceDetailApiSchema,
+);
 
 /** Package / Program detail (SearchPackageRS + GetPackageDetail) */
 export const PackageDetailApiSchema = v.object({
@@ -93,16 +101,17 @@ export const PackageDetailApiSchema = v.object({
 	EndValidation: v.optional(v.string()),
 	StartDate: v.optional(v.string()),
 	EndDate: v.optional(v.string()),
-	BasePrice: v.optional(stringish),
-	BasePax: v.optional(stringish),
-	CanCommitPack: v.optional(stringish),
+	BasePrice: v.optional(StringishBoolSchema),
+	BasePax: v.optional(StringishBoolSchema),
+	CanCommitPack: v.optional(StringishBoolSchema),
 	FeatureList: v.optional(FeatureListApiSchema),
 	ServiceList: v.optional(CatalogServiceListApiSchema),
 });
 
-export const PackageListApiSchema = v.object({
-	PackageDetail: v.optional(oneOrMany(PackageDetailApiSchema)),
-});
+export const PackageListApiSchema = listDetailApiSchema(
+	"PackageDetail",
+	PackageDetailApiSchema,
+);
 
 // ---------------------------------------------------------------------------
 // SearchAvesPackages / SearchTopServices — AvesSearchRQ
@@ -123,16 +132,14 @@ const PackageParamsInputSchema = v.object({
 	getFlightPlan: v.optional(BoolishSchema),
 	getAllAccomodation: v.optional(BoolishSchema),
 	getRealAvailability: v.optional(BoolishSchema),
-	minStay: v.optional(v.union([v.string(), v.number()])),
-	maxStay: v.optional(v.union([v.string(), v.number()])),
+	minStay: v.optional(StringishSchema),
+	maxStay: v.optional(StringishSchema),
 });
 
 const TopServiceParamsInputSchema = v.object({
 	compatibleAccomodation: v.optional(BoolishSchema),
 	alternativeAccomodation: v.optional(BoolishSchema),
 });
-
-const languageCodeField = v.pipe(v.string(), v.minLength(2), v.maxLength(2));
 
 /**
  * Flat AvesSearchRQ body (camelCase) — shared by SearchAvesPackages / SearchTopServices.
@@ -143,7 +150,7 @@ const languageCodeField = v.pipe(v.string(), v.minLength(2), v.maxLength(2));
  */
 export const AvesSearchSchema = v.object({
 	customerRecordCode: v.string(),
-	languageCode: v.optional(languageCodeField),
+	languageCode: OptionalLanguageCodeSchema,
 	currencyCode: v.optional(v.string()),
 	startDate: v.string(),
 	endDate: v.string(),
@@ -153,7 +160,7 @@ export const AvesSearchSchema = v.object({
 		v.minLength(1),
 	),
 	avesSearchType: v.optional(AvesSearchTypeSchema),
-	paxQty: v.optional(v.union([v.string(), v.number()])),
+	paxQty: v.optional(StringishSchema),
 	paxQtyCriteria: v.optional(PaxQtyCriteriaSchema),
 	discartNotAvailables: v.optional(BoolishSchema),
 	discartNotAvailablesMinSales: v.optional(BoolishSchema),
@@ -234,18 +241,14 @@ export const AvesSearchApiSchema = v.pipe(
 	v.transform(toAvesSearchApiBody),
 );
 
-export const SearchPackageResponseSchema = createResponseSchema(
-	v.object({
-		RsStatus: RsStatusSchema,
-		PackageList: v.optional(PackageListApiSchema),
-	}),
+export const SearchPackageResponseSchema = createListResponseSchema(
+	"PackageList",
+	PackageListApiSchema,
 );
 
-export const SearchServicesResponseSchema = createResponseSchema(
-	v.object({
-		RsStatus: RsStatusSchema,
-		ServiceList: v.optional(CatalogServiceListApiSchema),
-	}),
+export const SearchServicesResponseSchema = createListResponseSchema(
+	"ServiceList",
+	CatalogServiceListApiSchema,
 );
 
 // ---------------------------------------------------------------------------
@@ -264,7 +267,7 @@ export const PackagePrgServiceDetailInputSchema = v.object({
  */
 export const PackageDetailRequestSchema = v.object({
 	customerRecordCode: v.string(),
-	languageCode: v.optional(v.string()),
+	languageCode: OptionalLanguageCodeSchema,
 	currencyCode: v.optional(v.string()),
 	packageCode: v.string(),
 	startDate: v.string(),
@@ -286,20 +289,18 @@ const PACKAGE_DETAIL_LIST_KEYS = [
 ] as const;
 
 /** Map packagePrg fields → attrs; list wrap + element dates at root. */
-export const PackageDetailRequestApiSchema = v.pipe(
+export const PackageDetailRequestApiSchema = createApiSchema(
 	PackageDetailRequestSchema,
-	v.transform((input) =>
-		toWireBody(input as Record<string, unknown>, packageDetailRequestWire, {
-			listKeys: PACKAGE_DETAIL_LIST_KEYS,
-		}),
-	),
+	packageDetailRequestWire,
+	{ listKeys: PACKAGE_DETAIL_LIST_KEYS },
 );
 
-export const PackageDetailResponseSchema = createResponseSchema(
+export const PackageDetailResponseSchema = createFlattenedResponseSchema(
 	v.object({
 		RsStatus: RsStatusSchema,
 		PackageDetail: v.optional(PackageDetailApiSchema),
 	}),
+	"packageDetail",
 );
 
 // ---------------------------------------------------------------------------
@@ -315,6 +316,4 @@ export const CommitPackageApiSchema = createApiSchema(
 	elementOnlyWire,
 );
 
-export const CommitPackageResponseSchema = createResponseSchema(
-	v.object({ RsStatus: RsStatusSchema }),
-);
+export const CommitPackageResponseSchema = StatusOnlyResponseSchema;

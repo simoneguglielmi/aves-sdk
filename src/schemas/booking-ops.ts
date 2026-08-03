@@ -5,8 +5,9 @@ import {
 	MOD_SERVICES_LIST_KEYS,
 } from "../utils/booking-transform.js";
 import {
+	coalesceListHead,
 	createApiSchema,
-	createResponseSchema,
+	valueFieldSchema,
 } from "../utils/schema-transform.js";
 import {
 	bookingFileWire,
@@ -32,15 +33,19 @@ import {
 	ServiceRefTypeSchema,
 	SetFileStatusValueSchema,
 } from "./booking-shared.js";
-import { RsStatusSchema } from "./common.js";
+import { StatusOnlyResponseSchema } from "./common.js";
 
 /** Response with RsStatus only (Cancel / ModHeader) */
-export const BookingStatusOnlyResponseSchema = createResponseSchema(
-	v.object({ RsStatus: RsStatusSchema }),
-);
+export const BookingStatusOnlyResponseSchema = StatusOnlyResponseSchema;
+
+/** Shared booking file identity fields */
+export const bookingFileRefEntries = {
+	customerRecordCode: v.string(),
+	bookingFileCode: v.string(),
+} as const;
 
 /**
- * Shared with CreateBookingFile — typed BookingFileDetail (+ optional cancel extras).
+ * Shared with CreateBookingFile — typed BookingFileDetail fields on the root (+ optional cancel extras).
  * Create / ModServices / SetStatus / SetStatusService all use this shape.
  */
 export const BookingFileDetailResponseSchema = BookingFileResponseSchema;
@@ -64,22 +69,28 @@ export const CancellableBookedServiceDetailInputSchema = v.object({
 /**
  * ModFileServicesRQ body (camelCase).
  * `*List` fields are flat Detail arrays; wire wrap happens in ModFileServicesApiSchema.
+ * `selectedPackageList` (len 1) is an alias for `selectedPackageDetail`.
  */
-export const ModFileServicesSchema = v.object({
-	customerRecordCode: v.string(),
-	bookingFileCode: v.string(),
-	currencyCode: v.optional(v.string()),
-	deadlineList: v.optional(v.array(ModDeadlineDetailInputSchema)),
-	selectedPackageDetail: v.optional(SelectedPackageDetailInputSchema),
-	selectedServiceList: v.pipe(
-		v.array(SelectedServiceDetailInputSchema),
-		v.minLength(1),
-	),
-	cancellableBookedServiceList: v.optional(
-		v.array(CancellableBookedServiceDetailInputSchema),
-	),
-	passengerList: v.optional(v.array(PassengerDetailPatchInputSchema)),
-});
+export const ModFileServicesSchema = v.pipe(
+	v.object({
+		...bookingFileRefEntries,
+		currencyCode: v.optional(v.string()),
+		deadlineList: v.optional(v.array(ModDeadlineDetailInputSchema)),
+		selectedPackageDetail: v.optional(SelectedPackageDetailInputSchema),
+		selectedPackageList: v.optional(
+			v.pipe(v.array(SelectedPackageDetailInputSchema), v.maxLength(1)),
+		),
+		selectedServiceList: v.pipe(
+			v.array(SelectedServiceDetailInputSchema),
+			v.minLength(1),
+		),
+		cancellableBookedServiceList: v.optional(
+			v.array(CancellableBookedServiceDetailInputSchema),
+		),
+		passengerList: v.optional(v.array(PassengerDetailPatchInputSchema)),
+	}),
+	v.transform(coalesceListHead("selectedPackageList", "selectedPackageDetail")),
+);
 
 export const ModFileServicesApiSchema = createApiSchema(
 	ModFileServicesSchema,
@@ -96,9 +107,8 @@ export const ModFileServicesApiSchema = createApiSchema(
  * Modify header only — no package/costs.
  */
 export const ModFileHeaderSchema = v.object({
-	bookingFileCode: v.string(),
+	...bookingFileRefEntries,
 	bookingFileStartDate: v.string(),
-	customerRecordCode: v.string(),
 	newCustomerRecordCode: v.optional(v.string()),
 	bookingFileReferenceName: v.optional(v.string()),
 	travelAgentCode: v.optional(v.string()),
@@ -133,8 +143,7 @@ export const ModFileHeaderApiSchema = createApiSchema(
 // ---------------------------------------------------------------------------
 
 export const CancelFileSchema = v.object({
-	bookingFileCode: v.string(),
-	customerRecordCode: v.string(),
+	...bookingFileRefEntries,
 });
 
 export const CancelFileApiSchema = createApiSchema(
@@ -151,12 +160,11 @@ const optionedExpirePolicySchema = OptionedExpirePolicySchema;
 /**
  * SetStatusRQ body (camelCase).
  * Change booking file status (incl. CANCELED / NULLIFIED).
+ * `fileStatus` accepts a status string or `{ value, expiredDate?, ... }`.
  */
 export const SetFileStatusSchema = v.object({
-	customerRecordCode: v.string(),
-	bookingFileCode: v.string(),
-	fileStatus: v.object({
-		value: SetFileStatusValueSchema,
+	...bookingFileRefEntries,
+	fileStatus: valueFieldSchema(SetFileStatusValueSchema, {
 		expiredDate: v.optional(v.string()),
 		optionedFileExpireDatePolicy: v.optional(optionedExpirePolicySchema),
 	}),
@@ -181,8 +189,7 @@ export const SetFileStatusApiSchema = createApiSchema(
 // ---------------------------------------------------------------------------
 
 export const SetFileServiceStatusSchema = v.object({
-	customerRecordCode: v.string(),
-	bookingFileCode: v.string(),
+	...bookingFileRefEntries,
 	bookingServiceRef: v.string(),
 	bookingFileServiceStatus: v.literal("NULLIFIED"),
 	bookingFileServiceStatusDate: v.optional(v.string()),

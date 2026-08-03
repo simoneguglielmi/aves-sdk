@@ -269,14 +269,13 @@ export type SearchMasterRecord = InferInput<typeof SearchMasterRecordSchema>;
  * Response from a master record search operation.
  *
  * @property rsStatus - Operation status (check for 'OK' before accessing results)
- * @property masterRecordList - Object containing array of matching records
- * @property masterRecordList.masterRecordDetail - Array of {@link MasterRecordDetailResponse} objects
+ * @property masterRecordList - Matching records as a flat array
  *
  * @example
  * ```typescript
  * const result = await client.search({ searchType: 'CODE', recordCode: '508558' });
  * if (result.success && result.data.rsStatus.status === 'OK') {
- *   const records = result.data.masterRecordList?.masterRecordDetail ?? [];
+ *   const records = result.data.masterRecordList ?? [];
  *   records.forEach(record => console.log(record.name));
  * }
  * ```
@@ -376,8 +375,9 @@ export type BookingFileRQ = InferInput<typeof BookingFileSchema>;
 /**
  * Response from CreateBookingFile (BookingFileRS).
  *
+ * `BookingFileDetail` fields are spread onto `data` (e.g. `data.bookingFileCode`).
+ *
  * @property rsStatus - Operation status (check for 'OK' before using result)
- * @property bookingFileDetail - Created booking file detail (camelCase); see Common Structures "BOOKEDFILE"
  */
 export type BookingFileRS = InferOutput<typeof BookingFileResponseSchema>;
 

@@ -173,14 +173,8 @@ describe("BookingFileResponseSchema", () => {
 			},
 		});
 		expect(result.rsStatus.status).toBe("OK");
-		expect(result.bookingFileDetail).toHaveProperty(
-			"bookingFileCode",
-			"14/036657",
-		);
-		expect(result.bookingFileDetail).toHaveProperty(
-			"customerRecordCode",
-			"138311",
-		);
+		expect(result).toHaveProperty("bookingFileCode", "14/036657");
+		expect(result).toHaveProperty("customerRecordCode", "138311");
 	});
 
 	it("should parse ERROR response", () => {
@@ -193,7 +187,7 @@ describe("BookingFileResponseSchema", () => {
 		});
 		expect(result.rsStatus.status).toBe("ERROR");
 		expect(result.rsStatus.errorCode).toBe(2001);
-		expect(result.bookingFileDetail).toBeUndefined();
+		expect(result).not.toHaveProperty("bookingFileCode");
 	});
 
 	it("should accept response without BookingFileDetail", () => {
@@ -201,7 +195,7 @@ describe("BookingFileResponseSchema", () => {
 			RsStatus: { "@Status": "OK" },
 		});
 		expect(result.rsStatus.status).toBe("OK");
-		expect(result.bookingFileDetail).toBeUndefined();
+		expect(result).not.toHaveProperty("bookingFileCode");
 	});
 });
 

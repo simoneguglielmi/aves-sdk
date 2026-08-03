@@ -349,11 +349,7 @@ describeHttp("AvesClient", () => {
 			if (result.success) {
 				expect(result.data).toHaveProperty("rsStatus");
 				expect(result.data.rsStatus).toHaveProperty("status", "OK");
-				expect(result.data).toHaveProperty("bookingFileDetail");
-				expect(result.data.bookingFileDetail).toHaveProperty(
-					"bookingFileCode",
-					"14/036657",
-				);
+				expect(result.data).toHaveProperty("bookingFileCode", "14/036657");
 			}
 		});
 
@@ -466,7 +462,7 @@ describeHttp("AvesClient", () => {
 			},
 		};
 
-		it("should modify services and return typed bookingFileDetail", async () => {
+		it("should modify services and return typed booking file fields", async () => {
 			const mockClient = mockAgent.get(baseURL);
 			mockClient
 				.intercept({
@@ -488,12 +484,8 @@ describeHttp("AvesClient", () => {
 			const result = await client.modBookingServices(modParams);
 			expect(result.success).toBe(true);
 			if (result.success) {
-				expect(result.data.bookingFileDetail?.bookingFileCode).toBe(
-					"14/036654",
-				);
-				expect(result.data.bookingFileDetail?.packageCode).toBe(
-					"2014MDE0000010",
-				);
+				expect(result.data.bookingFileCode).toBe("14/036654");
+				expect(result.data.packageCode).toBe("2014MDE0000010");
 			}
 		});
 
@@ -564,9 +556,7 @@ describeHttp("AvesClient", () => {
 			});
 			expect(result.success).toBe(true);
 			if (result.success) {
-				expect(result.data.bookingFileDetail?.bookingFileStatus?.value).toBe(
-					"CANCELED",
-				);
+				expect(result.data.bookingFileStatus?.value).toBe("CANCELED");
 			}
 		});
 
@@ -600,10 +590,9 @@ describeHttp("AvesClient", () => {
 			});
 			expect(result.success).toBe(true);
 			if (result.success) {
-				expect(
-					result.data.bookingFileDetail?.bookedServiceList
-						?.bookedServiceDetail?.[0].serviceStatus,
-				).toBe("NULLIFIED");
+				expect(result.data.bookedServiceList?.[0].serviceStatus).toBe(
+					"NULLIFIED",
+				);
 			}
 		});
 
@@ -750,7 +739,7 @@ describeHttp("AvesClient", () => {
 			expect(result.success).toBe(true);
 			if (result.success) {
 				expect(result.data.rsStatus.status).toBe("OK");
-				expect(result.data.packageList?.packageDetail?.[0]).toMatchObject({
+				expect(result.data.packageList?.[0]).toMatchObject({
 					pCode: "2015F041",
 					firstDescription: "FANTASIA 4 DAYS",
 				});
@@ -845,7 +834,7 @@ describeHttp("AvesClient", () => {
 
 			expect(result.success).toBe(true);
 			if (result.success) {
-				expect(result.data.packageDetail).toMatchObject({
+				expect(result.data).toMatchObject({
 					pCode: "2015F042",
 					firstDescription: "FANTASIA 4 DAYS/3 NIGHTS",
 				});
@@ -903,9 +892,7 @@ describeHttp("AvesClient", () => {
 
 			expect(result.success).toBe(true);
 			if (result.success) {
-				expect(
-					result.data.bookingFileList?.bookingFileDetail?.[0],
-				).toMatchObject({
+				expect(result.data.bookingFileList?.[0]).toMatchObject({
 					bookingFileCode: "14/036654",
 					packageCode: "2014MDE0000010",
 				});

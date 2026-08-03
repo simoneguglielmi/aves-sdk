@@ -184,13 +184,11 @@ describe("SearchPackageResponseSchema", () => {
 		});
 
 		expect(result.rsStatus.status).toBe("OK");
-		expect(result.packageList?.packageDetail?.[0]).toMatchObject({
+		expect(result.packageList?.[0]).toMatchObject({
 			pCode: "2015F041",
 			firstDescription: "FANTASIA 4 DAYS",
 		});
-		expect(
-			result.packageList?.packageDetail?.[0]?.serviceList?.serviceDetail?.[0],
-		).toMatchObject({
+		expect(result.packageList?.[0]?.serviceList?.[0]).toMatchObject({
 			sCode: "QFRM04",
 			refPackageInfo: {
 				packageReference: "02",

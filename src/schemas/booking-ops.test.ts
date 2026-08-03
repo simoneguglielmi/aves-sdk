@@ -216,13 +216,10 @@ describe("BookingFileDetailApiSchema (typed response)", () => {
 		});
 
 		expect(parsed["@BookingFileCode"]).toBe("14/036657");
-		expect(parsed.BookedServiceList?.BookedServiceDetail).toHaveLength(1);
-		expect(parsed.BookedServiceList?.BookedServiceDetail?.[0]["@RPH"]).toBe(
-			"001",
-		);
+		expect(parsed.BookedServiceList).toHaveLength(1);
+		expect(parsed.BookedServiceList?.[0]["@RPH"]).toBe("001");
 		expect(
-			parsed.BookedServiceList?.BookedServiceDetail?.[0]
-				.ServiceTotalAmountDetail?.PaxPriceList?.PricePerPaxDetail,
+			parsed.BookedServiceList?.[0].ServiceTotalAmountDetail?.PaxPriceList,
 		).toHaveLength(1);
 	});
 
@@ -247,17 +244,10 @@ describe("BookingFileDetailApiSchema (typed response)", () => {
 		});
 
 		expect(result.rsStatus.status).toBe("OK");
-		expect(result.bookingFileDetail?.bookingFileCode).toBe("14/036657");
-		expect(result.bookingFileDetail?.bookingFileStatus?.value).toBe(
-			"CONFIRMED",
-		);
-		expect(
-			result.bookingFileDetail?.bookedServiceList?.bookedServiceDetail?.[0].rph,
-		).toBe("001");
-		expect(
-			result.bookingFileDetail?.bookedServiceList?.bookedServiceDetail?.[0]
-				.fromExternalProvider,
-		).toBe("false");
+		expect(result.bookingFileCode).toBe("14/036657");
+		expect(result.bookingFileStatus?.value).toBe("CONFIRMED");
+		expect(result.bookedServiceList?.[0].rph).toBe("001");
+		expect(result.bookedServiceList?.[0].fromExternalProvider).toBe("false");
 	});
 });
 

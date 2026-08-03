@@ -4,8 +4,10 @@ import {
 	CREATE_BOOKING_LIST_KEYS,
 } from "../utils/booking-transform.js";
 import {
+	coalesceCustomerRecordCode,
 	createApiSchema,
-	createResponseSchema,
+	createFlattenedResponseSchema,
+	valueFieldSchema,
 } from "../utils/schema-transform.js";
 import { bookingFileWire } from "../utils/wire-shapes.js";
 import {
@@ -29,13 +31,13 @@ import {
 	TypeDownloadFileSchema,
 } from "./booking-shared.js";
 import { RsStatusSchema } from "./common.js";
+import { IdDocumentDetailInputSchema } from "./master-record.js";
 
 // ---------------------------------------------------------------------------
 // BookingFileStatus
 // ---------------------------------------------------------------------------
 
-const BookingFileStatusInputSchema = v.object({
-	value: BookingFileStatusSchema,
+const BookingFileStatusInputSchema = valueFieldSchema(BookingFileStatusSchema, {
 	expiredDate: v.optional(v.string()),
 });
 
@@ -159,8 +161,6 @@ export const AvesServiceInfoInputSchema = v.object({
 	serviceFare: v.optional(ServiceFareInputSchema),
 });
 
-const paxAssociatedSchema = v.object({ pax: v.string() });
-
 export const SelectedServiceDetailInputSchema = v.object({
 	sCode: v.string(),
 	ssCode: v.optional(v.string()),
@@ -171,7 +171,9 @@ export const SelectedServiceDetailInputSchema = v.object({
 	endDate: v.string(),
 	qty: v.string(),
 	pax: v.string(),
-	paxAssociated: v.optional(v.array(paxAssociatedSchema)),
+	paxAssociated: v.optional(
+		v.union([v.array(v.string()), v.array(v.object({ pax: v.string() }))]),
+	),
 	avesSession: v.string(),
 	avesServiceInfo: v.optional(AvesServiceInfoInputSchema),
 	serviceFare: v.optional(ServiceFareInputSchema),
@@ -230,16 +232,7 @@ const passengerDetailBase = {
 	notes: v.optional(v.array(NoteDetailInputSchema)),
 	flagStatus: v.optional(v.string()),
 	offerCode: v.optional(v.string()),
-	idDocInfo: v.optional(
-		v.object({
-			idType: v.optional(v.string()),
-			idCode: v.optional(v.string()),
-			idIssueLocation: v.optional(v.string()),
-			idIssueCounty: v.optional(v.string()),
-			idIssueDate: v.optional(v.string()),
-			idExpireDate: v.optional(v.string()),
-		}),
-	),
+	idDocInfo: v.optional(IdDocumentDetailInputSchema),
 };
 
 /** Passenger on CreateBookingFile — categoryCode required per AVES */
@@ -278,47 +271,58 @@ const typeDownloadFileSchema = TypeDownloadFileSchema;
  * Booking file request body schema (camelCase input).
  * Maps to BookFileRQ in AVES XML 1.8.0 CreateBookingFile.
  * `*List` fields are flat Detail arrays; wire wrap happens in BookingFileApiSchema.
+ * Accepts `customerRecordCode` as a shorthand for `customerDetail: { recordCode }`.
  */
-export const BookingFileSchema = v.object({
-	createDate: v.optional(v.string()),
-	bookingFileRefCode: v.optional(v.string()),
-	travelAgentCode: v.optional(v.string()),
-	clerkName: v.optional(v.string()),
-	customerDetail: CustomerDetailInputSchema,
-	currencyCode: v.optional(v.string()),
-	markupCode: v.optional(v.string()),
-	bookingFileStatus: BookingFileStatusInputSchema,
-	statisticCodes: v.optional(StatisticCodesInputSchema),
-	destination: v.optional(DestinationInputSchema),
-	bookingFileDescription: v.optional(v.string()),
-	startDate: v.string(),
-	endDate: v.string(),
-	earlyBookingDate: v.optional(v.string()),
-	cupCode: v.optional(v.string()),
-	cigCode: v.optional(v.string()),
-	customerPromoterCode: v.optional(v.string()),
-	billingReferenceCode: v.optional(v.string()),
-	paymentReferenceCode: v.optional(v.string()),
-	bookingFileDocument: v.optional(BookingFileDocumentInputSchema),
-	financialDeadlineList: v.optional(
-		v.array(FinancialDeadlineDetailInputSchema),
+export const BookingFileSchema = v.pipe(
+	v.object({
+		createDate: v.optional(v.string()),
+		bookingFileRefCode: v.optional(v.string()),
+		travelAgentCode: v.optional(v.string()),
+		clerkName: v.optional(v.string()),
+		customerDetail: v.optional(CustomerDetailInputSchema),
+		customerRecordCode: v.optional(v.string()),
+		currencyCode: v.optional(v.string()),
+		markupCode: v.optional(v.string()),
+		bookingFileStatus: BookingFileStatusInputSchema,
+		statisticCodes: v.optional(StatisticCodesInputSchema),
+		destination: v.optional(DestinationInputSchema),
+		bookingFileDescription: v.optional(v.string()),
+		startDate: v.string(),
+		endDate: v.string(),
+		earlyBookingDate: v.optional(v.string()),
+		cupCode: v.optional(v.string()),
+		cigCode: v.optional(v.string()),
+		customerPromoterCode: v.optional(v.string()),
+		billingReferenceCode: v.optional(v.string()),
+		paymentReferenceCode: v.optional(v.string()),
+		bookingFileDocument: v.optional(BookingFileDocumentInputSchema),
+		financialDeadlineList: v.optional(
+			v.array(FinancialDeadlineDetailInputSchema),
+		),
+		deadlineList: v.optional(v.array(DeadlineDetailInputSchema)),
+		paymentList: v.optional(v.array(PaymentDetailInputSchema)),
+		selectedPackageList: v.optional(v.array(SelectedPackageDetailInputSchema)),
+		selectedServiceList: v.array(SelectedServiceDetailInputSchema),
+		extraQuotaRefCode: v.optional(v.string()),
+		extraQuoteServiceList: v.optional(
+			v.array(SelectedServiceDetailInputSchema),
+		),
+		getExtraQuoteFromSystem: v.optional(BoolishSchema),
+		passengerList: v.array(PassengerDetailCreateInputSchema),
+		noteList: v.optional(v.array(NoteDetailInputSchema)),
+		bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
+		bookingFileCode: v.optional(v.string()),
+		groupingPaxPolicy: v.optional(groupingPaxPolicySchema),
+		groupBookingFile: v.optional(BoolishSchema),
+		typeDownloadFile: v.optional(typeDownloadFileSchema),
+		setBookingFileCodeFromStartDate: v.optional(BoolishSchema),
+	}),
+	v.check(
+		(input) => !!(input.customerDetail || input.customerRecordCode),
+		"customerDetail or customerRecordCode is required",
 	),
-	deadlineList: v.optional(v.array(DeadlineDetailInputSchema)),
-	paymentList: v.optional(v.array(PaymentDetailInputSchema)),
-	selectedPackageList: v.optional(v.array(SelectedPackageDetailInputSchema)),
-	selectedServiceList: v.array(SelectedServiceDetailInputSchema),
-	extraQuotaRefCode: v.optional(v.string()),
-	extraQuoteServiceList: v.optional(v.array(SelectedServiceDetailInputSchema)),
-	getExtraQuoteFromSystem: v.optional(BoolishSchema),
-	passengerList: v.array(PassengerDetailCreateInputSchema),
-	noteList: v.optional(v.array(NoteDetailInputSchema)),
-	bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
-	bookingFileCode: v.optional(v.string()),
-	groupingPaxPolicy: v.optional(groupingPaxPolicySchema),
-	groupBookingFile: v.optional(BoolishSchema),
-	typeDownloadFile: v.optional(typeDownloadFileSchema),
-	setBookingFileCodeFromStartDate: v.optional(BoolishSchema),
-});
+	v.transform(coalesceCustomerRecordCode),
+);
 
 /**
  * Booking file schema for API requests (list wrap + PascalCase for BookFileRQ).
@@ -334,9 +338,9 @@ export const BookingFileApiSchema = createApiSchema(
 
 /**
  * Shared booking response (Create / ModServices / SetStatus / SetStatusService).
- * Extra cancel fields are optional and only present on some ops.
+ * Spreads `BookingFileDetail` onto the root; cancel extras stay sibling fields.
  */
-export const BookingFileResponseSchema = createResponseSchema(
+export const BookingFileResponseSchema = createFlattenedResponseSchema(
 	v.object({
 		RsStatus: RsStatusSchema,
 		BookingFileDetail: v.optional(BookingFileDetailApiSchema),
@@ -344,4 +348,5 @@ export const BookingFileResponseSchema = createResponseSchema(
 		TotalAmountDetailAfterCancellation: v.optional(TotalAmountDetailApiSchema),
 		Base64DocContent: v.optional(v.string()),
 	}),
+	"bookingFileDetail",
 );
