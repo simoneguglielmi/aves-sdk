@@ -5,6 +5,7 @@ import {
 } from "../utils/schema-transform.js";
 import { searchMasterWire } from "../utils/wire-shapes.js";
 import { RqHeaderSchema, RsStatusSchema } from "./common.js";
+import { SearchMasterType } from "./enums.js";
 import { MasterRecordDetailApiValidationSchema } from "./master-record.js";
 
 const LastModificationDateInputSchema = v.object({
@@ -20,7 +21,7 @@ const languageCodeField = v.optional(
  * Search by CODE - requires recordCode
  */
 const CodeSearchSchema = v.object({
-	searchType: v.literal("CODE"),
+	searchType: v.literal(SearchMasterType.CODE),
 	recordCode: v.pipe(v.string(), v.minLength(5), v.maxLength(6)),
 	languageCode: languageCodeField,
 });
@@ -29,7 +30,7 @@ const CodeSearchSchema = v.object({
  * Search by NAME - requires name, optionally city
  */
 const NameSearchSchema = v.object({
-	searchType: v.literal("NAME"),
+	searchType: v.literal(SearchMasterType.NAME),
 	name: v.string(),
 	city: v.optional(v.string()),
 	languageCode: languageCodeField,
@@ -39,7 +40,7 @@ const NameSearchSchema = v.object({
  * Search by VATCODE - requires vatCode, optionally phoneNumber
  */
 const VatCodeSearchSchema = v.object({
-	searchType: v.literal("VATCODE"),
+	searchType: v.literal(SearchMasterType.VATCODE),
 	vatCode: v.string(),
 	phoneNumber: v.optional(v.string()),
 	languageCode: languageCodeField,
@@ -49,7 +50,7 @@ const VatCodeSearchSchema = v.object({
  * Search by ZONE - requires zipCode and countyCode, optionally city
  */
 const ZoneSearchSchema = v.object({
-	searchType: v.literal("ZONE"),
+	searchType: v.literal(SearchMasterType.ZONE),
 	zipCode: v.string(),
 	countyCode: v.string(),
 	city: v.optional(v.string()),
@@ -60,7 +61,7 @@ const ZoneSearchSchema = v.object({
  * Search by CATEGORY - requires categoryCode
  */
 const CategorySearchSchema = v.object({
-	searchType: v.literal("CATEGORY"),
+	searchType: v.literal(SearchMasterType.CATEGORY),
 	categoryCode: v.string(),
 	languageCode: languageCodeField,
 });
@@ -69,7 +70,7 @@ const CategorySearchSchema = v.object({
  * Search by EMAIL - requires email
  */
 const EmailSearchSchema = v.object({
-	searchType: v.literal("EMAIL"),
+	searchType: v.literal(SearchMasterType.EMAIL),
 	email: v.string(),
 	languageCode: languageCodeField,
 });
@@ -78,7 +79,7 @@ const EmailSearchSchema = v.object({
  * Search by LASTMODDATE - requires lastModificationDate
  */
 const LastModDateSearchSchema = v.object({
-	searchType: v.literal("LASTMODDATE"),
+	searchType: v.literal(SearchMasterType.LASTMODDATE),
 	lastModificationDate: LastModificationDateInputSchema,
 	languageCode: languageCodeField,
 });
@@ -87,7 +88,7 @@ const LastModDateSearchSchema = v.object({
  * Search by SEARCH FIELD - requires searchFieldValue
  */
 const SearchFieldSearchSchema = v.object({
-	searchType: v.literal("SEARCH_FIELD"),
+	searchType: v.literal(SearchMasterType.SEARCH_FIELD),
 	searchFieldValue: v.string(),
 	languageCode: languageCodeField,
 });
@@ -96,7 +97,7 @@ const SearchFieldSearchSchema = v.object({
  * Search by EXTERNAL_REF_CODE - requires searchFieldValue
  */
 const ExternalRefCodeSearchSchema = v.object({
-	searchType: v.literal("EXTERNAL_REF_CODE"),
+	searchType: v.literal(SearchMasterType.EXTERNAL_REF_CODE),
 	searchFieldValue: v.string(),
 	languageCode: languageCodeField,
 });

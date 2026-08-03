@@ -303,32 +303,29 @@ There is **no** Create Package API in AVES XML 1.8.0. Search, detail, and commit
 
 | Method | Purpose |
 | ------ | ------- |
-| `searchPackages` | Search programs (`avesSearchType`: `PACKAGE` / `PROGRAM`) |
-| `searchTopServices` | Search TOP services (`avesSearchType`: `SERVICE`) |
+| `searchPackages` | Search programs (defaults `avesSearchType: 'PACKAGE'`) |
+| `searchTopServices` | Search TOP services (defaults `avesSearchType: 'SERVICE'`) |
 | `getPackageDetail` | Package base info + service list |
 | `commitPackage` | Publish existing package (`packageCode` only) |
 
+`paxQty` defaults to `passengerList.length`; `paxQtyCriteria` defaults to `GREATER_OR_EQUAL`. `languageCode` can be omitted when set on `AvesClient` options.
+
 ```typescript
 const packages = await client.packages.searchPackages({
-  baseSearch: {
-    customerRecordCode: '138311',
-    languageCode: '01',
-    currencyCode: 'EUR',
-    startDate: '2014-12-27T00:00:00',
-    endDate: '2015-01-03T00:00:00',
-    passengerList: [
-      {
-        rph: '001',
-        roomRph: '001',
-        name: 'ADULTI 001',
-        categoryCode: 'AD',
-        sex: 'M',
-      },
-    ],
-  },
-  avesSearchType: 'PACKAGE',
-  paxQty: '1',
-  paxQtyCriteria: 'GREATER_OR_EQUAL',
+  customerRecordCode: '138311',
+  languageCode: '01',
+  currencyCode: 'EUR',
+  startDate: '2014-12-27T00:00:00',
+  endDate: '2015-01-03T00:00:00',
+  passengerList: [
+    {
+      rph: '001',
+      roomRph: '001',
+      name: 'ADULTI 001',
+      categoryCode: 'AD',
+      sex: 'M',
+    },
+  ],
   servOrPackCode: '2014MDE0000010',
 });
 
@@ -426,28 +423,9 @@ Outbound path: validate → `createApiSchema` / `toWireBody` → `invokeOp` → 
 import type {
   AvesClientOptions,
   AvesClientDeps,
-  SearchMasterRecord,
-  SearchMasterRecordRS,
-  MasterRecordDetail,
-  ManageMasterRecordRS,
-  BookingFileRQ,
-  BookingFileRS,
-  ModFileServicesRQ,
-  ModFileHeaderRQ,
-  CancelFileRQ,
-  SetFileStatusRQ,
-  SetFileServiceStatusRQ,
-  FilePaymentListRQ,
-  BookingStatusOnlyRS,
-  SearchBookingFileRQ,
-  SearchBookingFileRS,
   AvesSearchRQ,
-  SearchPackageRS,
-  SearchServicesRS,
-  PackageDetailRQ,
-  PackageDetailRS,
-  CommitPackageRQ,
-  CommitPackageRS,
+  BookingFileRQ,
+  SearchMasterRecord,
 } from 'aves-sdk';
 
 import {
@@ -457,7 +435,20 @@ import {
   BookingClient,
   PackageCatalogClient,
   AvesError,
+  // object enums
+  AvesSearchType,
+  BookingFileStatus,
+  InsertCriteria,
+  PassengerCategory,
+  PaxQtyCriteria,
+  PaymentType,
+  SearchMasterType,
 } from 'aves-sdk';
+
+PaxQtyCriteria.GREATER_OR_EQUAL
+AvesSearchType.PACKAGE
+PaymentType.B
+InsertCriteria.T
 ```
 
 ## License

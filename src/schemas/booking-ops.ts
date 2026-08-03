@@ -25,7 +25,11 @@ import {
 } from "./booking-file.js";
 import {
 	BoolishSchema,
+	CancelOperationTypeSchema,
+	FilePaymentOperationTypeSchema,
+	OptionedExpirePolicySchema,
 	PaymentTypeSchema,
+	ServiceRefTypeSchema,
 	SetFileStatusValueSchema,
 } from "./booking-shared.js";
 import { RsStatusSchema } from "./common.js";
@@ -52,8 +56,8 @@ const ModDeadlineDetailInputSchema = v.object({
 });
 
 export const CancellableBookedServiceDetailInputSchema = v.object({
-	cancelOperationType: v.union([v.literal("NULLIFY"), v.literal("DELETE")]),
-	serviceRefType: v.union([v.literal("RPH"), v.literal("FILE")]),
+	cancelOperationType: CancelOperationTypeSchema,
+	serviceRefType: ServiceRefTypeSchema,
 	serviceRefValue: v.string(),
 });
 
@@ -142,11 +146,7 @@ export const CancelFileApiSchema = createApiSchema(
 // SetBookingFileStatus — SetStatusRQ
 // ---------------------------------------------------------------------------
 
-const optionedExpirePolicySchema = v.union([
-	v.literal("NOT_SET"),
-	v.literal("CONSIDER_HOLIDAY"),
-	v.literal("CONSIDER_HOLIDAY_AND_SATURDAY"),
-]);
+const optionedExpirePolicySchema = OptionedExpirePolicySchema;
 
 /**
  * SetStatusRQ body (camelCase).
@@ -197,11 +197,7 @@ export const SetFileServiceStatusApiSchema = createApiSchema(
 // InsertFilePaymentList — FilePaymentListRQ
 // ---------------------------------------------------------------------------
 
-const filePaymentOperationTypeSchema = v.union([
-	v.literal("AbsoluteAmountsInsertion"),
-	v.literal("FinalAmountToAchieve"),
-	v.literal("FinalAmountToAchieveWithoutControls"),
-]);
+const filePaymentOperationTypeSchema = FilePaymentOperationTypeSchema;
 
 export const FilePaymentDetailInputSchema = v.object({
 	paymentDate: v.string(),

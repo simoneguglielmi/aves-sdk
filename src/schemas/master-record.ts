@@ -12,14 +12,19 @@ import {
 	masterRecordWire,
 	supplierRefMasterRecordsWire,
 } from "../utils/wire-shapes.js";
+import { BoolishSchema } from "./booking-shared.js";
+import {
+	CarrierTypeSchema,
+	GenderSchema,
+	InsertCriteriaSchema,
+	MasterPaymentTypeSchema,
+	RecordStatus,
+	RecordStatusSchema,
+	RecordType,
+	RecordTypeSchema,
+} from "./enums.js";
 
-const paymentTypeSchema = v.union([
-	v.literal("CASH"),
-	v.literal("BANK"),
-	v.literal("RID"),
-	v.literal("RIBA"),
-	v.literal("SPECIFIC_CODE"),
-]);
+const paymentTypeSchema = MasterPaymentTypeSchema;
 
 const FinancialDetailInputSchema = v.object({
 	currencyCode: v.optional(v.string()),
@@ -28,9 +33,7 @@ const FinancialDetailInputSchema = v.object({
 	c_SpecPaymentTypeCode: v.optional(v.string()),
 	s_PaymentType: v.optional(paymentTypeSchema),
 	s_SpecPaymentTypeCode: v.optional(v.string()),
-	enableElectronicInvoicing: v.optional(
-		v.union([v.literal("true"), v.literal("false"), v.boolean()]),
-	),
+	enableElectronicInvoicing: v.optional(BoolishSchema),
 	electronicInvoicingType: v.optional(v.string()),
 });
 
@@ -96,25 +99,6 @@ export const DynamicFieldsApiValidationSchema = createApiValidationSchema(
 	dynamicFieldsWire,
 );
 
-const CarrierTypeSchema = v.union([
-	v.literal("NOT_SET"),
-	v.literal("FLIGHT"),
-	v.literal("SHIP"),
-	v.literal("TRAIN"),
-	v.literal("RENTCAR"),
-	v.literal("BUS"),
-	v.literal("DP_HOTEL"),
-	v.literal("TO_HOTEL"),
-	v.literal("TO_TOUR"),
-	v.literal("TO_HOTEL_AND_TOUR"),
-	v.literal("DP_AUTO"),
-	v.literal("DP_GDS_NAVI"),
-	v.literal("DP_GDS_VOLI"),
-	v.literal("TOUR_OPERATOR"),
-	v.literal("TICKETING_EV"),
-	v.literal("OTHER"),
-]);
-
 /*
  * Supplier reference master records schema for API requests (transforms to PascalCase)
  * @property supplierRefCode - Supplier reference code
@@ -146,25 +130,9 @@ export const SupplierRefMasterRecordsApiValidationSchema =
 
 const flagSchema = v.union([v.literal(0), v.literal(1)]);
 
-const recordStatusSchema = v.union([
-	v.literal("ENABLED"),
-	v.literal("DISABLED"),
-	v.literal("WARNING"),
-	v.literal("BLACKLISTED"),
-]);
-
-const recordTypeSchema = v.union([
-	v.literal("CUSTOMER"),
-	v.literal("SUPPLIER"),
-	v.literal("GENERAL"),
-]);
-
-const insertCriteriaSchema = v.union([
-	v.literal("S"),
-	v.literal("N"),
-	v.literal("T"),
-	v.literal("M"),
-]);
+const recordStatusSchema = RecordStatusSchema;
+const recordTypeSchema = RecordTypeSchema;
+const insertCriteriaSchema = InsertCriteriaSchema;
 
 const AccountPoliciesInputSchema = v.object({
 	acceptProfilingPolicies: v.optional(flagSchema),
@@ -195,8 +163,8 @@ export const MasterRecordDetailSchema = v.object({
 	recordCode: v.optional(v.pipe(v.string(), v.minLength(6), v.maxLength(6))),
 	insertCriteria: v.optional(insertCriteriaSchema),
 	createdDate: v.optional(v.string()),
-	recordType: v.optional(v.union([recordTypeSchema], "CUSTOMER")),
-	recordStatus: v.optional(v.union([recordStatusSchema], "ENABLED")),
+	recordType: v.optional(v.union([recordTypeSchema], RecordType.CUSTOMER)),
+	recordStatus: v.optional(v.union([recordStatusSchema], RecordStatus.ENABLED)),
 	moniker: v.optional(v.string()),
 	name: v.optional(v.string()),
 	extraInfo: v.optional(v.string()),
@@ -210,7 +178,7 @@ export const MasterRecordDetailSchema = v.object({
 	firstPhoneNumber: v.optional(v.string()),
 	mobilePhoneNumber: v.optional(v.string()),
 	email: v.optional(v.string()),
-	gender: v.optional(v.union([v.literal("M"), v.literal("F")])),
+	gender: v.optional(GenderSchema),
 	birthDate: v.optional(v.string()),
 	birthCity: v.optional(v.string()),
 	birthCounty: v.optional(v.string()),
@@ -249,13 +217,7 @@ export const MasterRecordDetailApiValidationSchema = v.object({
 	"@InsertCriteria": v.optional(insertCriteriaSchema),
 	CreatedDate: v.optional(v.string()),
 	ModifiedDate: v.optional(v.string()),
-	RecordType: v.optional(
-		v.union([
-			v.literal("CUSTOMER"),
-			v.literal("SUPPLIER"),
-			v.literal("GENERAL"),
-		]),
-	),
+	RecordType: v.optional(recordTypeSchema),
 	LoginType: v.optional(v.string()),
 	RecordStatus: v.optional(recordStatusSchema),
 	Moniker: v.optional(v.string()),
@@ -272,20 +234,16 @@ export const MasterRecordDetailApiValidationSchema = v.object({
 	FirstPhoneNumber: v.optional(v.string()),
 	MobilePhoneNumber: v.optional(v.string()),
 	Email: v.optional(v.string()),
-	Gender: v.optional(v.union([v.literal("M"), v.literal("F")])),
+	Gender: v.optional(GenderSchema),
 	BirthDate: v.optional(v.string()),
 	BirthCity: v.optional(v.string()),
 	BirthCounty: v.optional(v.string()),
-	EncryptedPassword: v.optional(
-		v.union([v.literal("true"), v.literal("false"), v.boolean()]),
-	),
+	EncryptedPassword: v.optional(BoolishSchema),
 	FiscalCode: v.optional(v.string()),
 	VatCode: v.optional(v.string()),
 	ThirdPartRecordCode: v.optional(v.string()),
 	IdDocumentDetail: v.optional(IdDocumentDetailApiValidationSchema),
-	NewsletterDisabled: v.optional(
-		v.union([v.literal("true"), v.literal("false"), v.boolean()]),
-	),
+	NewsletterDisabled: v.optional(BoolishSchema),
 	SupplierRefMasterRecords: v.optional(
 		SupplierRefMasterRecordsApiValidationSchema,
 	),

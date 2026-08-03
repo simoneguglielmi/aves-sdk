@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import { RsStatusValueSchema } from "./enums.js";
 
 /**
  * Request header schema with authentication credentials
@@ -25,12 +26,7 @@ const warningsSchema = v.optional(
  */
 export const RsStatusSchema = v.pipe(
 	v.object({
-		"@Status": v.union([
-			v.literal("OK"),
-			v.literal("ERROR"),
-			v.literal("WARNING"),
-			v.literal("TIMEOUT"),
-		]),
+		"@Status": RsStatusValueSchema,
 		ErrorCode: v.optional(
 			v.pipe(
 				v.union([v.string(), v.number()]),

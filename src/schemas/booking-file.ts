@@ -15,10 +15,18 @@ import {
 } from "./booking-response.js";
 import {
 	AvesServiceTypeSchema,
-	BookingFileStatusRequestSchema,
+	BookingFileStatusSchema,
 	BoolishSchema,
+	CostPriceTypeSchema,
+	CustomerPaymentTypeSchema,
+	DocumentTypeSchema,
+	GenderSchema,
+	GroupingPaxPolicySchema,
+	MakeDocumentToSchema,
+	PassengerCategorySchema,
 	PaymentTypeSchema,
 	ToServiceTypeSchema,
+	TypeDownloadFileSchema,
 } from "./booking-shared.js";
 import { RsStatusSchema } from "./common.js";
 
@@ -27,7 +35,7 @@ import { RsStatusSchema } from "./common.js";
 // ---------------------------------------------------------------------------
 
 const BookingFileStatusInputSchema = v.object({
-	value: BookingFileStatusRequestSchema,
+	value: BookingFileStatusSchema,
 	expiredDate: v.optional(v.string()),
 });
 
@@ -67,27 +75,10 @@ const CustomerDetailInputSchema = v.object({
 // BookingFileDocument
 // ---------------------------------------------------------------------------
 
-const documentTypeSchema = v.union([
-	v.literal("VISA_REQUEST"),
-	v.literal("TRAVEL_INFORMATION"),
-	v.literal("VOUCHER"),
-	v.literal("BOOKING_CONTRACT"),
-	v.literal("BOOKING_CONFIRMATION"),
-	v.literal("SUPPLIER_SERVICE_LIST"),
-	v.literal("INVOICE"),
-	v.literal("PROFORMA_INVOICE"),
-	v.literal("ADEGUAMENTO"),
-	v.literal("RESERVATION_FORM"),
-	v.literal("OPEN_XML"),
-	v.literal("SALES_INVOICE"),
-	v.literal("TICKETING_TMASTER"),
-	v.literal("SUMMARY_FORM"),
-]);
+const documentTypeSchema = DocumentTypeSchema;
 
 const ReservationFormCustomizablePrintParametersInputSchema = v.object({
-	makeDocumentTo: v.optional(
-		v.union([v.literal("BOOKING_CUSTOMER"), v.literal("FIRST_PASSENGER")]),
-	),
+	makeDocumentTo: v.optional(MakeDocumentToSchema),
 });
 
 const TravelInformationCustomizablePrintParametersInputSchema = v.object({
@@ -140,24 +131,7 @@ const PaymentDetailInputSchema = v.object({
 // SelectedPackageList / SelectedServiceList / ExtraQuoteServiceList
 // ---------------------------------------------------------------------------
 
-const costPriceTypeSchema = v.union([
-	v.literal("PAX_QTY_DAY"),
-	v.literal("PAX_QTY_NIGHT"),
-	v.literal("PAX_QTY_WEEK"),
-	v.literal("PAX_QTY"),
-	v.literal("PAX_DAY"),
-	v.literal("PAX_NIGHT"),
-	v.literal("PAX_WEEK"),
-	v.literal("PAX"),
-	v.literal("QTY_DAY"),
-	v.literal("QTY_NIGHT"),
-	v.literal("QTY_WEE"),
-	v.literal("QTY"),
-	v.literal("DAY"),
-	v.literal("NIGHT"),
-	v.literal("WEEK"),
-	v.literal("FORFAIT"),
-]);
+const costPriceTypeSchema = CostPriceTypeSchema;
 
 /** ServiceFare — cost/price of a selected or booked service */
 export const ServiceFareInputSchema = v.object({
@@ -237,12 +211,7 @@ const NoteDetailInputSchema = v.object({
 // PassengerList (PassengerDetail - see Common Structures "Passenger" DETAIL)
 // ---------------------------------------------------------------------------
 
-const passengerCategoryCodeSchema = v.union([
-	v.literal("AD"),
-	v.literal("CH"),
-	v.literal("IN"),
-	v.literal("OV"),
-]);
+const passengerCategoryCodeSchema = PassengerCategorySchema;
 
 const passengerDetailBase = {
 	rph: v.string(),
@@ -250,7 +219,7 @@ const passengerDetailBase = {
 	billingHolder: v.optional(BoolishSchema),
 	masterRecordCode: v.optional(v.string()),
 	name: v.string(),
-	sex: v.union([v.literal("M"), v.literal("F")]),
+	sex: GenderSchema,
 	birthDate: v.optional(v.string()),
 	birthPlace: v.optional(v.string()),
 	nationCode: v.optional(v.string()),
@@ -289,17 +258,8 @@ export const PassengerDetailPatchInputSchema = v.object({
 // BookingFinancialInfo
 // ---------------------------------------------------------------------------
 
-const customerPaymentTypeSchema = v.union([
-	v.literal("CASH"),
-	v.literal("BANK"),
-	v.literal("RID"),
-	v.literal("RIBA"),
-	v.literal("SPECIFIC_CODE"),
-	v.literal("NOT_SET"),
-]);
-
 export const BookingFinancialInfoInputSchema = v.object({
-	customer_PaymentType: v.optional(customerPaymentTypeSchema),
+	customer_PaymentType: v.optional(CustomerPaymentTypeSchema),
 	customer_SpecPaymentTypeCode: v.optional(v.string()),
 });
 
@@ -307,17 +267,8 @@ export const BookingFinancialInfoInputSchema = v.object({
 // GroupingPaxPolicy / TypeDownloadFile
 // ---------------------------------------------------------------------------
 
-const groupingPaxPolicySchema = v.union([
-	v.literal("GROUPED_PAX"),
-	v.literal("NOT_GROUPED_PAX"),
-	v.literal("ONE_PAX_ONLY"),
-]);
-
-const typeDownloadFileSchema = v.union([
-	v.literal("AVES2AVES"),
-	v.literal("AVES2AVESVIA"),
-	v.literal("AVES2AVESITA"),
-]);
+const groupingPaxPolicySchema = GroupingPaxPolicySchema;
+const typeDownloadFileSchema = TypeDownloadFileSchema;
 
 // ---------------------------------------------------------------------------
 // BookingFileRQ (root body - camelCase input)

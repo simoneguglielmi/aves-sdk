@@ -27,6 +27,10 @@ import { createRootElement, type XMLRootElementValues } from "../xml/root.js";
 export class AvesTransport {
 	constructor(private readonly options: AvesClientOptions) {}
 
+	get languageCode() {
+		return this.options.languageCode;
+	}
+
 	createRqHeader() {
 		return {
 			"@HostID": this.options.hostID,

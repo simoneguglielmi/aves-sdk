@@ -1,4 +1,5 @@
 import type { AvesError } from "../error.js";
+import { AvesSearchType } from "../schemas/enums.js";
 import {
 	AvesSearchApiSchema,
 	CommitPackageApiSchema,
@@ -25,13 +26,27 @@ import type { AvesTransport } from "./transport.js";
 export class PackageCatalogClient {
 	constructor(private readonly transport: AvesTransport) {}
 
-	/** Search packages / programs. Prefer `avesSearchType: "PACKAGE"` | `"PROGRAM"`. */
+	/** Merge client languageCode + method default avesSearchType (params win). */
+	private prepareSearch(
+		params: AvesSearchRQ,
+		defaultType: (typeof AvesSearchType)[keyof typeof AvesSearchType],
+	): AvesSearchRQ {
+		return {
+			...(this.transport.languageCode && {
+				languageCode: this.transport.languageCode,
+			}),
+			avesSearchType: defaultType,
+			...params,
+		};
+	}
+
+	/** Search packages / programs. Defaults `avesSearchType` to `PACKAGE`. */
 	searchPackages(
 		params: AvesSearchRQ,
 	): Promise<Result<SearchPackageRS, AvesError>> {
 		return this.transport.invokeOp({
 			op: "searchPackages",
-			params,
+			params: this.prepareSearch(params, AvesSearchType.PACKAGE),
 			apiSchema: AvesSearchApiSchema,
 			endpoint: AVES_ENDPOINTS.searchAvesPackages,
 			requestRoot: XML_ROOT_ELEMENTS.AVES_SEARCH_REQUEST,
@@ -40,13 +55,13 @@ export class PackageCatalogClient {
 		});
 	}
 
-	/** Search TOP services. Prefer `avesSearchType: "SERVICE"`. */
+	/** Search TOP services. Defaults `avesSearchType` to `SERVICE`. */
 	searchTopServices(
 		params: AvesSearchRQ,
 	): Promise<Result<SearchServicesRS, AvesError>> {
 		return this.transport.invokeOp({
 			op: "searchTopServices",
-			params,
+			params: this.prepareSearch(params, AvesSearchType.SERVICE),
 			apiSchema: AvesSearchApiSchema,
 			endpoint: AVES_ENDPOINTS.searchTopServices,
 			requestRoot: XML_ROOT_ELEMENTS.AVES_SEARCH_REQUEST,

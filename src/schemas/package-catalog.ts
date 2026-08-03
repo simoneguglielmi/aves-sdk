@@ -18,6 +18,14 @@ import {
 } from "./booking-file.js";
 import { BoolishSchema } from "./booking-shared.js";
 import { RsStatusSchema } from "./common.js";
+import {
+	AvesSearchTypeSchema,
+	DestinationTypeSchema,
+	PaxQtyCriteria,
+	PaxQtyCriteriaSchema,
+} from "./enums.js";
+
+export { PaxQtyCriteria, PaxQtyCriteriaSchema } from "./enums.js";
 
 const stringish = v.union([v.string(), v.number(), v.boolean()]);
 
@@ -100,41 +108,9 @@ export const PackageListApiSchema = v.object({
 // SearchAvesPackages / SearchTopServices — AvesSearchRQ
 // ---------------------------------------------------------------------------
 
-const paxQtyCriteriaSchema = v.union([
-	v.literal("GREATER_THAN"),
-	v.literal("GREATER_OR_EQUAL"),
-	v.literal("EQUAL_TO"),
-	v.literal("LESS_OR_EQUAL"),
-	v.literal("LESS_THAN"),
-]);
-
-const avesSearchTypeSchema = v.union([
-	v.literal("SERVICE"),
-	v.literal("PROGRAM"),
-	v.literal("PACKAGE"),
-]);
-
 const SearchDestinationInputSchema = v.object({
 	code: v.optional(v.string()),
-	type: v.optional(
-		v.union([
-			v.literal("CODE"),
-			v.literal("SUB_LOCALITY"),
-			v.literal("LOCALITY"),
-			v.literal("SUB_SUB_ISLAND"),
-			v.literal("SUB_ISLAND"),
-			v.literal("ISLAND_COUNTY"),
-			v.literal("SUB_ARCHIPELAGO"),
-			v.literal("ARCHIPELAGO"),
-			v.literal("REGION_STATE"),
-			v.literal("SUB_SUB_NATION"),
-			v.literal("SUB_NATION"),
-			v.literal("NATION"),
-			v.literal("SUB_SUB_CONTINENT"),
-			v.literal("SUB_CONTINENT"),
-			v.literal("CONTINENT"),
-		]),
-	),
+	type: v.optional(DestinationTypeSchema),
 });
 
 const FeatureDetailInputSchema = v.object({
@@ -156,9 +132,18 @@ const TopServiceParamsInputSchema = v.object({
 	alternativeAccomodation: v.optional(BoolishSchema),
 });
 
-const BaseSearchInputSchema = v.object({
+const languageCodeField = v.pipe(v.string(), v.minLength(2), v.maxLength(2));
+
+/**
+ * Flat AvesSearchRQ body (camelCase) — shared by SearchAvesPackages / SearchTopServices.
+ * BaseSearch fields live at the root; wire transform nests them under `BaseSearch`.
+ * `searchPackages` / `searchTopServices` default `avesSearchType`; `paxQty` defaults to
+ * `passengerList.length`; `paxQtyCriteria` defaults to `GREATER_OR_EQUAL`.
+ * `languageCode` may come from `AvesClient` options when omitted.
+ */
+export const AvesSearchSchema = v.object({
 	customerRecordCode: v.string(),
-	languageCode: v.string(),
+	languageCode: v.optional(languageCodeField),
 	currencyCode: v.optional(v.string()),
 	startDate: v.string(),
 	endDate: v.string(),
@@ -167,17 +152,9 @@ const BaseSearchInputSchema = v.object({
 		v.array(PassengerDetailCreateInputSchema),
 		v.minLength(1),
 	),
-});
-
-/**
- * AvesSearchRQ body (camelCase) — shared by SearchAvesPackages / SearchTopServices.
- * `avesSearchType` selects PROGRAM|PACKAGE vs SERVICE; client picks the endpoint.
- */
-export const AvesSearchSchema = v.object({
-	baseSearch: BaseSearchInputSchema,
-	avesSearchType: avesSearchTypeSchema,
-	paxQty: v.union([v.string(), v.number()]),
-	paxQtyCriteria: paxQtyCriteriaSchema,
+	avesSearchType: v.optional(AvesSearchTypeSchema),
+	paxQty: v.optional(v.union([v.string(), v.number()])),
+	paxQtyCriteria: v.optional(PaxQtyCriteriaSchema),
 	discartNotAvailables: v.optional(BoolishSchema),
 	discartNotAvailablesMinSales: v.optional(BoolishSchema),
 	discartNotAvailablesDaysInOut: v.optional(BoolishSchema),
@@ -199,14 +176,39 @@ export const AvesSearchSchema = v.object({
 	getDocumentation: v.optional(BoolishSchema),
 });
 
-/** Nest BaseSearch under AvesSearchRQ; dates stay elements via baseSearchWire. */
-function toAvesSearchApiBody(input: v.InferOutput<typeof AvesSearchSchema>) {
-	const { baseSearch, ...rest } = input;
-	const { passengerList, ...baseWithoutList } = baseSearch;
+/** After client defaults: languageCode + avesSearchType must be present. */
+const AvesSearchResolvedSchema = v.required(AvesSearchSchema, [
+	"languageCode",
+	"avesSearchType",
+]);
+
+/** Nest BaseSearch under AvesSearchRQ; apply paxQty / paxQtyCriteria defaults. */
+function toAvesSearchApiBody(
+	input: v.InferOutput<typeof AvesSearchResolvedSchema>,
+) {
+	const {
+		customerRecordCode,
+		languageCode,
+		currencyCode,
+		startDate,
+		endDate,
+		earlyBookingDate,
+		passengerList,
+		paxQty,
+		paxQtyCriteria,
+		avesSearchType,
+		...rest
+	} = input;
+
 	return {
 		BaseSearch: toWireBody(
 			{
-				...baseWithoutList,
+				customerRecordCode,
+				languageCode,
+				currencyCode,
+				startDate,
+				endDate,
+				earlyBookingDate,
 				passengerList: wrapListDetails(
 					{ passengerList },
 					{ listKeys: ["passengerList"] },
@@ -214,14 +216,21 @@ function toAvesSearchApiBody(input: v.InferOutput<typeof AvesSearchSchema>) {
 			},
 			baseSearchWire,
 		),
-		...toWireBody(rest as Record<string, unknown>, avesSearchWire, {
-			listKeys: ["featureList"],
-		}),
+		...toWireBody(
+			{
+				...rest,
+				avesSearchType,
+				paxQty: paxQty ?? passengerList.length,
+				paxQtyCriteria: paxQtyCriteria ?? PaxQtyCriteria.GREATER_OR_EQUAL,
+			},
+			avesSearchWire,
+			{ listKeys: ["featureList"] },
+		),
 	};
 }
 
 export const AvesSearchApiSchema = v.pipe(
-	AvesSearchSchema,
+	AvesSearchResolvedSchema,
 	v.transform(toAvesSearchApiBody),
 );
 

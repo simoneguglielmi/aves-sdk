@@ -33,19 +33,15 @@ const passengers = [
 ];
 
 describe("AvesSearchSchema", () => {
-	it("should transform program search with element dates in BaseSearch", () => {
+	it("should transform flat search with element dates in BaseSearch", () => {
 		const api = parse(AvesSearchApiSchema, {
-			baseSearch: {
-				customerRecordCode: "138311",
-				languageCode: "01",
-				currencyCode: "EUR",
-				startDate: "2014-12-27T00:00:00",
-				endDate: "2015-01-03T00:00:00",
-				passengerList: passengers,
-			},
+			customerRecordCode: "138311",
+			languageCode: "01",
+			currencyCode: "EUR",
+			startDate: "2014-12-27T00:00:00",
+			endDate: "2015-01-03T00:00:00",
+			passengerList: passengers,
 			avesSearchType: "PACKAGE",
-			paxQty: "1",
-			paxQtyCriteria: "GREATER_OR_EQUAL",
 			discartNotAvailables: false,
 			objectTypeCode: "VIAGGIO",
 			servOrPackCode: "2014MDE0000010",
@@ -68,6 +64,8 @@ describe("AvesSearchSchema", () => {
 		});
 		expect(api.BaseSearch).not.toHaveProperty("@StartDate");
 		expect(api.AvesSearchType).toBe("PACKAGE");
+		expect(api.PaxQty).toBe(2);
+		expect(api.PaxQtyCriteria).toBe("GREATER_OR_EQUAL");
 		expect(api.ServOrPackCode).toBe("2014MDE0000010");
 		expect(api.PackageParams).toMatchObject({
 			"@GetAllDeptDate": true,
@@ -89,16 +87,23 @@ describe("AvesSearchSchema", () => {
 
 	it("should reject missing passengers", () => {
 		const result = safeParse(AvesSearchSchema, {
-			baseSearch: {
-				customerRecordCode: "138311",
-				languageCode: "01",
-				startDate: "2015-01-01",
-				endDate: "2015-01-05",
-				passengerList: [],
-			},
+			customerRecordCode: "138311",
+			languageCode: "01",
+			startDate: "2015-01-01",
+			endDate: "2015-01-05",
+			passengerList: [],
 			avesSearchType: "PACKAGE",
-			paxQty: 1,
-			paxQtyCriteria: "EQUAL_TO",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("should reject missing languageCode", () => {
+		const result = safeParse(AvesSearchApiSchema, {
+			customerRecordCode: "138311",
+			startDate: "2015-01-01",
+			endDate: "2015-01-05",
+			passengerList: passengers,
+			avesSearchType: "PACKAGE",
 		});
 		expect(result.success).toBe(false);
 	});

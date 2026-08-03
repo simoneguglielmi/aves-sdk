@@ -734,25 +734,20 @@ describeHttp("AvesClient", () => {
 				});
 
 			const result = await client.searchPackages({
-				baseSearch: {
-					customerRecordCode: "138311",
-					languageCode: "01",
-					currencyCode: "EUR",
-					startDate: "2014-12-27T00:00:00",
-					endDate: "2015-01-03T00:00:00",
-					passengerList: [
-						{
-							rph: "001",
-							roomRph: "001",
-							name: "ADULTI 001",
-							categoryCode: "AD",
-							sex: "M",
-						},
-					],
-				},
-				avesSearchType: "PACKAGE",
-				paxQty: "1",
-				paxQtyCriteria: "GREATER_OR_EQUAL",
+				customerRecordCode: "138311",
+				languageCode: "01",
+				currencyCode: "EUR",
+				startDate: "2014-12-27T00:00:00",
+				endDate: "2015-01-03T00:00:00",
+				passengerList: [
+					{
+						rph: "001",
+						roomRph: "001",
+						name: "ADULTI 001",
+						categoryCode: "AD",
+						sex: "M",
+					},
+				],
 				servOrPackCode: "2014MDE0000010",
 			});
 
@@ -773,6 +768,52 @@ describeHttp("AvesClient", () => {
 			);
 			expect(capturedBody).toContain(
 				"<ServOrPackCode>2014MDE0000010</ServOrPackCode>",
+			);
+			expect(capturedBody).toContain("<PaxQty>1</PaxQty>");
+			expect(capturedBody).toContain(
+				"<PaxQtyCriteria>GREATER_OR_EQUAL</PaxQtyCriteria>",
+			);
+		});
+
+		it("should use client languageCode when omitted on search", async () => {
+			const localized = new AvesClient({
+				baseURL,
+				hostID,
+				xtoken,
+				languageCode: "02",
+			});
+			const mockClient = mockAgent.get(baseURL);
+			let capturedBody = "";
+
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/SearchAvesPackages",
+					method: "POST",
+				})
+				.reply(200, (opts) => {
+					capturedBody = opts.body as string;
+					return `<SearchPackageRS><RsStatus Status="OK"/></SearchPackageRS>`;
+				});
+
+			const result = await localized.searchPackages({
+				customerRecordCode: "138311",
+				startDate: "2014-12-27T00:00:00",
+				endDate: "2015-01-03T00:00:00",
+				passengerList: [
+					{
+						rph: "001",
+						roomRph: "001",
+						name: "ADULTI 001",
+						categoryCode: "AD",
+						sex: "M",
+					},
+				],
+			});
+
+			expect(result.success).toBe(true);
+			expect(capturedBody).toContain("<LanguageCode>02</LanguageCode>");
+			expect(capturedBody).toContain(
+				"<AvesSearchType>PACKAGE</AvesSearchType>",
 			);
 		});
 	});

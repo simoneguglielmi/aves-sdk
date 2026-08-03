@@ -11,6 +11,7 @@ import {
 	BoolishSchema,
 } from "./booking-shared.js";
 import { RsStatusSchema } from "./common.js";
+import { SearchBookingFileType } from "./enums.js";
 
 const dateRangeSchema = v.object({
 	minDate: v.string(),
@@ -37,25 +38,25 @@ const searchFileBase = {
 
 const FileCodeSearchSchema = v.object({
 	...searchFileBase,
-	searchType: v.literal("FILE_CODE"),
+	searchType: v.literal(SearchBookingFileType.FILE_CODE),
 	bookingFileCode: v.string(),
 });
 
 const PaxNameSearchSchema = v.object({
 	...searchFileBase,
-	searchType: v.literal("PAX_NAME"),
+	searchType: v.literal(SearchBookingFileType.PAX_NAME),
 	firstPaxName: v.string(),
 });
 
 const PackageCodeSearchSchema = v.object({
 	...searchFileBase,
-	searchType: v.literal("PACKAGE_CODE"),
+	searchType: v.literal(SearchBookingFileType.PACKAGE_CODE),
 	packageCode: v.string(),
 });
 
 const OtherSearchSchema = v.object({
 	...searchFileBase,
-	searchType: v.literal("OTHER"),
+	searchType: v.literal(SearchBookingFileType.OTHER),
 	fileStatus: v.optional(searchFileStatusSchema),
 	startDate: v.optional(dateRangeSchema),
 	createdDate: v.optional(dateRangeSchema),
