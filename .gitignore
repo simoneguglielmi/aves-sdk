@@ -5,10 +5,16 @@ dist
 .env.development.local
 .env.test.local
 .env.production.local
-.cursor
 *.pdf
 .DS_Store
 *.tgz
 src/test/*
 docs/
-.claude
+
+# Harness-local config; keep shared skills symlinks trackable
+.cursor/*
+!.cursor/skills
+.claude/*
+!.claude/skills
+.codex/*
+!.codex/skills
