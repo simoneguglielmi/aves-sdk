@@ -1,20 +1,34 @@
 /**
- * Result type for functional error handling
+ * Result type for functional error handling.
  */
-export type Result<T, E = Error> =
-	| { success: true; data: T }
-	| { success: false; error: E };
-
-/**
- * Creates a successful result
- */
-export function ok<T>(data: T): Result<T, never> {
-	return { success: true, data };
+interface Success<T> {
+  success: true;
+  data: T;
 }
 
 /**
- * Creates an error result
+ * Result type for functional error handling.
  */
-export function err<E>(error: E): Result<never, E> {
-	return { success: false, error };
+interface Failure<E extends Error> {
+  success: false;
+  error: E;
+}
+
+/**
+ * Result type for functional error handling.
+ */
+export type Result<T, E extends Error = Error> = Success<T> | Failure<E>;
+
+/**
+ * Creates a successful result.
+ */
+export function ok<T>(data: T): Success<T> {
+  return { success: true, data };
+}
+
+/**
+ * Creates an error result.
+ */
+export function err<E extends Error>(error: E): Failure<E> {
+  return { success: false, error };
 }
