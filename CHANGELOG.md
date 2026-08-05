@@ -5,12 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.1] - 2026-08-05
 
 ### Changed
 
-- Publish footprint: omit source maps from the build and restrict `files` to
-  `dist/index.mjs` + `dist/index.d.mts` (maps were ~170KB of tarball noise).
+- Omit source maps from the published package; `files` now ships only
+  `dist/index.mjs` and `dist/index.d.mts`.
 
 ## [2.0.0] - 2026-08-05
 
