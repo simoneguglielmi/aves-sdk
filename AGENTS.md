@@ -25,7 +25,7 @@ Verify after substantive edits: `yarn typecheck && yarn test`.
 
 | Layer      | Path                                                                           | Role                                                |
 | ---------- | ------------------------------------------------------------------------------ | --------------------------------------------------- |
-| Facade     | `src/client.ts`                                                                | `AvesClient` + flat aliases via `attachFlatAliases` |
+| Facade     | `src/client.ts`                                                                | `AvesClient` + namespaced domain clients            |
 | Domains    | `src/client/{booking,master-records,packages}.ts`                              | Op methods                                          |
 | Transport  | `src/client/transport.ts`                                                      | HTTP + XML + `invokeOp` (`bodyKey?`)                |
 | Endpoints  | `src/client/endpoints.ts`                                                      | URL map                                             |
@@ -42,11 +42,9 @@ Verify after substantive edits: `yarn typecheck && yarn test`.
 - Domains take `AvesTransport` only (no direct `undici`)
 - Inject mocks via `deps` in tests
 
-### Flat aliases
+### Domain namespaces
 
-Canonical: `client.booking.*` / `client.master.*` / `client.packages.*`.
-
-`attachFlatAliases` binds domain prototype methods onto the facade. Add the method once on the domain — do not hand-write flat wrappers.
+Use `client.booking.*` / `client.master.*` / `client.packages.*`. Domain methods are only exposed through their namespace.
 
 ### Ownership
 
@@ -156,20 +154,20 @@ Rules: request uses `parse`; response uses `safeParse`; map errors via `toAvesEr
 ### Outbound path
 
 1. Valibot validates camelCase input
-2. `createApiSchema(schema, shape, wrap?)` → `toWireBody` (list wrap + `paxAssociated` normalize + `camelToPascalKeys`)
+2. `createApiSchema(schema, shape)` → `toWireBody` (shape-driven list wrap + `paxAssociated` normalize + `camelToPascalKeys`)
 3. `invokeOp` adds `RqHeader`, optional `bodyKey`, POSTs XML
 
 Prefer `createWireSchemaPair(inputSchema, shape)` for both `api` + PascalCase `validation` schemas.
 
 ### List wrap (request)
 
-SDK: flat `*List: Detail[]`. Wire via `wrapListDetails`:
+SDK: flat `*List: Item[]`. Wire via `listWrap` on the **item** shape in `wire-shapes.ts`:
 
-- Default: `{ detailKey: items }`
-- Create-only `arrayOfOne`: `[{ detailKey: item }, …]`
-- Override: `financialDeadlineList` → `deadlineDetail`
+- `"many"` → `{ detailKey: items }`
+- `"one"` → `[{ detailKey: item }, …]` (CreateBooking selectedService/passenger lists)
+- `detailKey` override when inference fails (e.g. `financialDeadlineList` → `deadlineDetail`)
 
-Reuse `CREATE_BOOKING_LIST_KEYS` / `CREATE_ARRAY_OF_ONE`, `MOD_SERVICES_LIST_KEYS`, `MOD_HEADER_LIST_KEYS`, `FILE_PAYMENT_LIST_KEYS` from `booking-transform.ts`.
+Attrs/children on a list shape describe each **item** — `WireShapeFor` stays honest; encode synthesizes the Detail wrapper.
 
 `paxAssociated`: SDK `string[]` → wire `{ pax }[]`; empty `[]` → `""`.
 
@@ -178,7 +176,8 @@ Reuse `CREATE_BOOKING_LIST_KEYS` / `CREATE_ARRAY_OF_ONE`, `MOD_SERVICES_LIST_KEY
 | Shape                                   | Ops                                       |
 | --------------------------------------- | ----------------------------------------- |
 | `masterRecordWire` / `searchMasterWire` | Upsert / Search master                    |
-| `bookingFileWire`                       | Create / Mod services / Mod header        |
+| `bookingFileWire`                       | CreateBooking                             |
+| `modBookingFileWire`                    | Mod services / Mod header                 |
 | `filePaymentListRequestWire`            | InsertFilePaymentList                     |
 | `searchFileWire`                        | SearchBookingFiles                        |
 | `setFileStatusWire`                     | SetBookingFileStatus                      |
@@ -186,7 +185,9 @@ Reuse `CREATE_BOOKING_LIST_KEYS` / `CREATE_ARRAY_OF_ONE`, `MOD_SERVICES_LIST_KEY
 | `baseSearchWire` + `avesSearchWire`     | Package / top-service search              |
 | `elementOnlyWire`                       | Cancel / SetServiceStatus / CommitPackage |
 
-Anti-patterns: global attr sets; ad-hoc PascalCase mappers beside `createApiSchema`; sharing attr lists across unrelated RQs.
+Anti-patterns: global attr sets; ad-hoc PascalCase mappers beside `createApiSchema`; sharing attr lists across unrelated RQs; `| WireShape` escape hatches on `WireShapeFor`.
+
+Define shapes with `wire` / `attrsWire` / `camelAttrsWire` / `attrsCamelWire` / `childrenWire` / `nestWire` / `listWire` / `listAttrsWire` / `listWireModes` — never hand-write `as const satisfies WireShape`.
 
 ---
 
@@ -216,7 +217,7 @@ createListResponseSchema('PackageList', PackageListApiSchema);
 ### Request helpers & aliases
 
 ```ts
-createApiSchema(FooInputSchema, fooWire, { listKeys: FOO_LIST_KEYS });
+createApiSchema(FooInputSchema, fooWire);
 createWireSchemaPair(MasterRecordDetailSchema, masterRecordWire);
 valueFieldSchema(BookingFileStatusSchema, {
   expiredDate: v.optional(v.string()),
@@ -287,7 +288,7 @@ Canonical skills directory: **`.agents/skills/`**
 | Skill | Topic |
 | ----- | ----- |
 | `aves-sdk` | Index |
-| `aves-sdk-architecture` | Layers / DI / flat aliases |
+| `aves-sdk-architecture` | Layers / DI / domain namespaces |
 | `aves-sdk-wire` | WireShape / outbound XML |
 | `aves-sdk-schemas` | Valibot helpers / flatten DX |
 | `aves-sdk-validation` | Result / AvesError |

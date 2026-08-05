@@ -1,9 +1,5 @@
 import * as v from "valibot";
 import {
-	CREATE_ARRAY_OF_ONE,
-	CREATE_BOOKING_LIST_KEYS,
-} from "../utils/booking-transform.js";
-import {
 	coalesceCustomerRecordCode,
 	createApiSchema,
 	createFlattenedResponseSchema,
@@ -31,6 +27,7 @@ import {
 	TypeDownloadFileSchema,
 } from "./booking-shared.js";
 import { RsStatusSchema } from "./common.js";
+import { DestinationTypeSchema } from "./enums.js";
 import { IdDocumentDetailInputSchema } from "./master-record.js";
 
 // ---------------------------------------------------------------------------
@@ -58,10 +55,11 @@ export const StatisticCodesInputSchema = v.object({
 // Destination
 // ---------------------------------------------------------------------------
 
-const DestinationInputSchema = v.object({
+export const DestinationInputSchema = v.object({
 	code: v.optional(v.string()),
 	iataCode: v.optional(v.string()),
 	nationCode: v.optional(v.string()),
+	type: v.optional(DestinationTypeSchema),
 });
 
 // ---------------------------------------------------------------------------
@@ -77,8 +75,6 @@ const CustomerDetailInputSchema = v.object({
 // BookingFileDocument
 // ---------------------------------------------------------------------------
 
-const documentTypeSchema = DocumentTypeSchema;
-
 const ReservationFormCustomizablePrintParametersInputSchema = v.object({
 	makeDocumentTo: v.optional(MakeDocumentToSchema),
 });
@@ -93,7 +89,7 @@ const DocumentCustomizablePrintParametersInputSchema = v.union([
 ]);
 
 const InfoDocumentToPrintInputSchema = v.object({
-	documentType: documentTypeSchema,
+	documentType: DocumentTypeSchema,
 	documentCustomizablePrintParameters: v.optional(
 		DocumentCustomizablePrintParametersInputSchema,
 	),
@@ -123,7 +119,7 @@ const DeadlineDetailInputSchema = v.object({
 
 const PaymentDetailInputSchema = v.object({
 	paymentDate: v.optional(v.string()),
-	paumentNote: v.optional(v.string()),
+	paymentNote: v.optional(v.string()),
 	amount: v.optional(v.string()),
 	paymentUser: v.optional(v.string()),
 	paymentType: v.optional(PaymentTypeSchema),
@@ -133,7 +129,11 @@ const PaymentDetailInputSchema = v.object({
 // SelectedPackageList / SelectedServiceList / ExtraQuoteServiceList
 // ---------------------------------------------------------------------------
 
-const costPriceTypeSchema = CostPriceTypeSchema;
+const NoteDetailInputSchema = v.object({
+	nType: v.optional(v.string()),
+	title: v.optional(v.string()),
+	text: v.optional(v.string()),
+});
 
 /** ServiceFare — cost/price of a selected or booked service */
 export const ServiceFareInputSchema = v.object({
@@ -141,11 +141,11 @@ export const ServiceFareInputSchema = v.object({
 	exchangeRate: v.optional(v.string()),
 	cost: v.optional(v.string()),
 	costTax: v.optional(v.string()),
-	costType: v.optional(costPriceTypeSchema),
+	costType: v.optional(CostPriceTypeSchema),
 	vatCostCurrencyCode: v.optional(v.string()),
 	price: v.optional(v.string()),
 	priceTax: v.optional(v.string()),
-	priceType: v.optional(costPriceTypeSchema),
+	priceType: v.optional(CostPriceTypeSchema),
 });
 
 export const AvesServiceInfoInputSchema = v.object({
@@ -180,13 +180,15 @@ export const SelectedServiceDetailInputSchema = v.object({
 	bookedServiceRef: v.optional(v.string()),
 	supplierMasterCode: v.optional(v.string()),
 	voucherMasterCode: v.optional(v.string()),
+	// Known gaps: AVES service-info variants remain unmodeled raw strings.
 	hotelServiceInfo: v.optional(v.string()),
 	carRentalServiceInfo: v.optional(v.string()),
 	flightServiceInfo: v.optional(v.string()),
 	shipServiceInfo: v.optional(v.string()),
 	ticketServiceInfo: v.optional(v.string()),
 	commission: v.optional(v.string()),
-	noteList: v.optional(v.string()),
+	noteList: v.optional(v.array(NoteDetailInputSchema)),
+	// Known gap: AVES voucher info remains an unmodeled raw string.
 	voucherInfo: v.optional(v.string()),
 	firstDescription: v.optional(v.string()),
 	secondDescription: v.optional(v.string()),
@@ -200,20 +202,8 @@ export const SelectedPackageDetailInputSchema = v.object({
 });
 
 // ---------------------------------------------------------------------------
-// NoteList
-// ---------------------------------------------------------------------------
-
-const NoteDetailInputSchema = v.object({
-	nType: v.optional(v.string()),
-	title: v.optional(v.string()),
-	text: v.optional(v.string()),
-});
-
-// ---------------------------------------------------------------------------
 // PassengerList (PassengerDetail - see Common Structures "Passenger" DETAIL)
 // ---------------------------------------------------------------------------
-
-const passengerCategoryCodeSchema = PassengerCategorySchema;
 
 const passengerDetailBase = {
 	rph: v.string(),
@@ -238,13 +228,13 @@ const passengerDetailBase = {
 /** Passenger on CreateBookingFile — categoryCode required per AVES */
 export const PassengerDetailCreateInputSchema = v.object({
 	...passengerDetailBase,
-	categoryCode: passengerCategoryCodeSchema,
+	categoryCode: PassengerCategorySchema,
 });
 
 /** Passenger on ModBookingFileHeader / ModServices — categoryCode optional */
 export const PassengerDetailPatchInputSchema = v.object({
 	...passengerDetailBase,
-	categoryCode: v.optional(passengerCategoryCodeSchema),
+	categoryCode: v.optional(PassengerCategorySchema),
 });
 
 // ---------------------------------------------------------------------------
@@ -255,13 +245,6 @@ export const BookingFinancialInfoInputSchema = v.object({
 	customer_PaymentType: v.optional(CustomerPaymentTypeSchema),
 	customer_SpecPaymentTypeCode: v.optional(v.string()),
 });
-
-// ---------------------------------------------------------------------------
-// GroupingPaxPolicy / TypeDownloadFile
-// ---------------------------------------------------------------------------
-
-const groupingPaxPolicySchema = GroupingPaxPolicySchema;
-const typeDownloadFileSchema = TypeDownloadFileSchema;
 
 // ---------------------------------------------------------------------------
 // BookingFileRQ (root body - camelCase input)
@@ -312,9 +295,9 @@ export const BookingFileSchema = v.pipe(
 		noteList: v.optional(v.array(NoteDetailInputSchema)),
 		bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
 		bookingFileCode: v.optional(v.string()),
-		groupingPaxPolicy: v.optional(groupingPaxPolicySchema),
+		groupingPaxPolicy: v.optional(GroupingPaxPolicySchema),
 		groupBookingFile: v.optional(BoolishSchema),
-		typeDownloadFile: v.optional(typeDownloadFileSchema),
+		typeDownloadFile: v.optional(TypeDownloadFileSchema),
 		setBookingFileCodeFromStartDate: v.optional(BoolishSchema),
 	}),
 	v.check(
@@ -330,10 +313,6 @@ export const BookingFileSchema = v.pipe(
 export const BookingFileApiSchema = createApiSchema(
 	BookingFileSchema,
 	bookingFileWire,
-	{
-		listKeys: CREATE_BOOKING_LIST_KEYS,
-		arrayOfOne: CREATE_ARRAY_OF_ONE,
-	},
 );
 
 /**

@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-08-05
+
+### Changed
+
+- **Breaking:** flat operation aliases were removed; use namespaced domain clients only.
+- **Breaking:** enum-typed fields now reject arbitrary strings at compile time.
+- **Breaking:** `AvesError.status` retains AVES casing and `AvesError.code` is `number | undefined`.
+- **Breaking:** master-record responses reflect the actual API payload, including server-only fields; `dynamicFields` is an array.
+- Fixed AVES language codes (`01` Italian, `02` English), raw warning text preservation, and the `PaymentDetail` `@PaumentNote` wire spelling.
+
+### Migration
+
+| Change | Symptom on upgrade | Fix |
+| ------ | ------------------ | --- |
+| Flat aliases removed | Runtime `TypeError` | Insert the domain namespace: `client.search` → `client.master.search` |
+| Enum types narrowed | Compile errors for enum fields receiving `string` | Use exported enum objects or unions |
+| `AvesError.status` casing | `err.status === "error"` no longer matches | Compare with `RsStatusValue` (`"OK"`, `"ERROR"`, `"WARNING"`, `"TIMEOUT"`) |
+| `AvesError.code` | Absent codes are `undefined`, not `0` | Check for `undefined` |
+| `MasterRecordDetailResponse` corrected | Type gains server-only fields | Remove local re-declarations |
+| `dynamicFields` is an array | Single-object assignment fails | Wrap the field in an array |
+
+---
+
 ## [1.9.0] - 2026-08-03
 
 ### Changed

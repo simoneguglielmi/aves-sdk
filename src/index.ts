@@ -7,7 +7,6 @@ export { AvesTransport } from "./client/transport.js";
 export {
 	AvesClient,
 	type AvesClientDeps,
-	type AvesClientFlat,
 } from "./client.js";
 export { AvesError } from "./error.js";
 

@@ -26,14 +26,12 @@ import {
 	RecordTypeSchema,
 } from "./enums.js";
 
-const paymentTypeSchema = MasterPaymentTypeSchema;
-
 const FinancialDetailInputSchema = v.object({
 	currencyCode: v.optional(v.string()),
 	creditLimit: v.optional(v.string()),
-	c_PaymentType: v.optional(paymentTypeSchema),
+	c_PaymentType: v.optional(MasterPaymentTypeSchema),
 	c_SpecPaymentTypeCode: v.optional(v.string()),
-	s_PaymentType: v.optional(paymentTypeSchema),
+	s_PaymentType: v.optional(MasterPaymentTypeSchema),
 	s_SpecPaymentTypeCode: v.optional(v.string()),
 	enableElectronicInvoicing: v.optional(BoolishSchema),
 	electronicInvoicingType: v.optional(v.string()),
@@ -62,18 +60,10 @@ const idDocumentPair = createWireSchemaPair(
 export const IdDocumentDetailSchema = idDocumentPair.api;
 export const IdDocumentDetailApiValidationSchema = idDocumentPair.validation;
 
-const DynamicFieldsInputSchema = v.object({
+export const DynamicFieldsInputSchema = v.object({
 	key: v.string(),
 	value: v.string(),
 });
-
-/**
- * Dynamic fields schema for API requests (transforms to PascalCase)
- */
-export const DynamicFieldsSchema = createApiSchema(
-	v.array(DynamicFieldsInputSchema),
-	dynamicFieldsWire,
-);
 
 /**
  * Dynamic fields validation schema (already transformed PascalCase with @ attributes)
@@ -105,10 +95,6 @@ export const SupplierRefMasterRecordsApiValidationSchema =
 
 const flagSchema = v.union([v.literal(0), v.literal(1)]);
 
-const recordStatusSchema = RecordStatusSchema;
-const recordTypeSchema = RecordTypeSchema;
-const insertCriteriaSchema = InsertCriteriaSchema;
-
 const AccountPoliciesInputSchema = v.object({
 	acceptProfilingPolicies: v.optional(flagSchema),
 	acceptPrivacyPolicies: v.optional(flagSchema),
@@ -128,10 +114,10 @@ export const AccountPoliciesApiValidationSchema =
  */
 export const MasterRecordDetailSchema = v.object({
 	recordCode: v.optional(v.pipe(v.string(), v.minLength(6), v.maxLength(6))),
-	insertCriteria: v.optional(insertCriteriaSchema),
+	insertCriteria: v.optional(InsertCriteriaSchema),
 	createdDate: v.optional(v.string()),
-	recordType: v.optional(v.union([recordTypeSchema], RecordType.CUSTOMER)),
-	recordStatus: v.optional(v.union([recordStatusSchema], RecordStatus.ENABLED)),
+	recordType: v.optional(RecordTypeSchema, RecordType.CUSTOMER),
+	recordStatus: v.optional(RecordStatusSchema, RecordStatus.ENABLED),
 	moniker: v.optional(v.string()),
 	name: v.optional(v.string()),
 	extraInfo: v.optional(v.string()),
@@ -155,7 +141,7 @@ export const MasterRecordDetailSchema = v.object({
 	idDocumentDetail: v.optional(IdDocumentDetailInputSchema),
 	accountPolicies: v.optional(AccountPoliciesInputSchema),
 	financialDetail: v.optional(FinancialDetailInputSchema),
-	dynamicFields: v.optional(DynamicFieldsInputSchema),
+	dynamicFields: v.optional(v.array(DynamicFieldsInputSchema)),
 	supplierRefMasterRecords: v.optional(SupplierRefMasterRecordsInputSchema),
 });
 
@@ -168,53 +154,22 @@ export const MasterRecordDetailApiSchema = createApiSchema(
 );
 
 /**
- * Master record detail response schema (transforms to camelCase)
+ * Master record detail API validation schema (PascalCase with @ attributes).
+ * Nested structure is generated from `masterRecordWire`; overrides are server-only fields.
  */
-export const MasterRecordDetailResponseSchema = createResponseSchema(
-	MasterRecordDetailApiSchema,
+export const MasterRecordDetailApiValidationSchema = v.partial(
+	createApiValidationSchema(MasterRecordDetailSchema, masterRecordWire, {
+		ModifiedDate: v.optional(v.string()),
+		LoginType: v.optional(v.string()),
+		PromoterCode: v.optional(v.string()),
+		EncryptedPassword: v.optional(BoolishSchema),
+		NewsletterDisabled: v.optional(BoolishSchema),
+	}),
 );
 
 /**
- * Master record detail API validation schema (PascalCase with @ attributes)
- * Used for both search responses and upsert requests
- * All fields are optional as responses may not contain all fields
+ * Master record detail response schema (transforms to camelCase)
  */
-export const MasterRecordDetailApiValidationSchema = v.object({
-	"@RecordCode": v.optional(v.pipe(v.string(), v.minLength(6), v.maxLength(6))),
-	"@InsertCriteria": v.optional(insertCriteriaSchema),
-	CreatedDate: v.optional(v.string()),
-	ModifiedDate: v.optional(v.string()),
-	RecordType: v.optional(recordTypeSchema),
-	LoginType: v.optional(v.string()),
-	RecordStatus: v.optional(recordStatusSchema),
-	Moniker: v.optional(v.string()),
-	Name: v.optional(v.string()),
-	ExtraInfo: v.optional(v.string()),
-	LanguageCode: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(2))),
-	Address: v.optional(v.string()),
-	ZipCode: v.optional(v.string()),
-	CityName: v.optional(v.string()),
-	CountyCode: v.optional(v.string()),
-	StateCode: v.optional(v.string()),
-	CategoryCode: v.optional(v.string()),
-	PromoterCode: v.optional(v.string()),
-	FirstPhoneNumber: v.optional(v.string()),
-	MobilePhoneNumber: v.optional(v.string()),
-	Email: v.optional(v.string()),
-	Gender: v.optional(GenderSchema),
-	BirthDate: v.optional(v.string()),
-	BirthCity: v.optional(v.string()),
-	BirthCounty: v.optional(v.string()),
-	EncryptedPassword: v.optional(BoolishSchema),
-	FiscalCode: v.optional(v.string()),
-	VatCode: v.optional(v.string()),
-	ThirdPartRecordCode: v.optional(v.string()),
-	IdDocumentDetail: v.optional(IdDocumentDetailApiValidationSchema),
-	NewsletterDisabled: v.optional(BoolishSchema),
-	SupplierRefMasterRecords: v.optional(
-		SupplierRefMasterRecordsApiValidationSchema,
-	),
-	AccountPolicies: v.optional(AccountPoliciesApiValidationSchema),
-	FinancialDetail: v.optional(FinancialDetailApiValidationSchema),
-	DynamicFields: v.optional(DynamicFieldsApiValidationSchema),
-});
+export const MasterRecordDetailResponseSchema = createResponseSchema(
+	MasterRecordDetailApiValidationSchema,
+);

@@ -1,5 +1,6 @@
 import { parse } from "valibot";
 import { describe, expect, it } from "vitest";
+import { jsonToXml } from "../xml/client.js";
 import { createRootElement, XML_ROOT_ELEMENTS } from "../xml/root.js";
 import {
 	BookingFileApiSchema,
@@ -82,6 +83,20 @@ describe("BookingFileSchema", () => {
 		expect(result.selectedServiceList[0].ssCode).toBe("D02");
 	});
 
+	it("should accept toServiceType: TOUR — real SearchServicesRS wire dialect (Booking.txt:4207), added beyond the documented 13-value table", () => {
+		const result = parse(BookingFileSchema, {
+			customerDetail: { recordCode: "138311" },
+			bookingFileStatus: { value: "QUOTATION" },
+			startDate: "2014-12-27T00:00:00",
+			endDate: "2015-01-03T00:00:00",
+			selectedServiceList: [
+				{ ...serviceDetail, toServiceType: "TOUR" as const },
+			],
+			passengerList: [passengerDetail],
+		});
+		expect(result.selectedServiceList[0].toServiceType).toBe("TOUR");
+	});
+
 	it("should reject invalid booking file status value", () => {
 		expect(() =>
 			parse(BookingFileSchema, {
@@ -157,6 +172,30 @@ describe("BookingFileApiSchema", () => {
 				{ PassengerDetail: { "@RPH": "001", "@RoomRph": "001" } },
 			],
 		});
+	});
+
+	it("should emit nested note content and the legacy payment attribute", () => {
+		const result = parse(BookingFileApiSchema, {
+			customerDetail: { recordCode: "138311" },
+			bookingFileStatus: { value: "QUOTATION" },
+			startDate: "2014-12-27T00:00:00",
+			endDate: "2015-01-03T00:00:00",
+			selectedServiceList: [
+				{
+					...serviceDetail,
+					noteList: [{ nType: "INFO", text: "Bring passport" }],
+				},
+			],
+			passengerList: [passengerDetail],
+			paymentList: [{ paymentNote: "INCASSO" }],
+		});
+		const xml = jsonToXml({ BookFileRQ: result });
+
+		expect(xml).toContain('sCode="VPARTENZUSTUT"');
+		expect(xml).toContain('PaumentNote="INCASSO"');
+		expect(xml).toContain(
+			'<NoteDetail NType="INFO">Bring passport</NoteDetail>',
+		);
 	});
 });
 

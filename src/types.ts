@@ -15,7 +15,7 @@ import type {
 import type { RqHeaderSchema, RsStatusSchema } from "./schemas/common.js";
 import type {
 	AccountPoliciesSchema,
-	DynamicFieldsSchema,
+	DynamicFieldsInputSchema,
 	FinancialDetailSchema,
 	IdDocumentDetailSchema,
 	MasterRecordDetailResponseSchema,
@@ -43,7 +43,6 @@ import type {
 	ManageMasterRecordRequestSchema,
 	ManageMasterRecordResponseSchema,
 } from "./schemas/upsert.js";
-import type { Camelize } from "./utils/case-transform.js";
 
 // ============================================================================
 // Common Types
@@ -56,7 +55,7 @@ import type { Camelize } from "./utils/case-transform.js";
  * @property xtoken - Authentication token for API access
  * @property interface - Interface type, always 'WEB'
  * @property userName - Username for the request, always 'WEB'
- * @property languageCode - Optional 2-character ISO language code (e.g., '02' for Italian)
+ * @property languageCode - Optional 2-digit AVES language code (e.g., '01' for Italian)
  */
 export type RqHeader = InferInput<typeof RqHeaderSchema>;
 
@@ -66,7 +65,7 @@ export type RqHeader = InferInput<typeof RqHeaderSchema>;
  * @property status - Result status: 'OK' (success), 'ERROR' (failure), 'WARNING' (partial success), 'TIMEOUT'
  * @property errorCode - Numeric error code when status is 'ERROR' (e.g., 1001, 1002)
  * @property errorDescription - Human-readable error message
- * @property warnings - Array of warning messages when status is 'WARNING'
+ * @property warnings - Raw warning text when status is 'WARNING'
  *
  * @example
  * ```typescript
@@ -77,7 +76,7 @@ export type RqHeader = InferInput<typeof RqHeaderSchema>;
  * }
  * ```
  */
-export type RsStatus = Camelize<InferOutput<typeof RsStatusSchema>>;
+export type RsStatus = InferOutput<typeof RsStatusSchema>;
 
 // ============================================================================
 // Master Record Types
@@ -132,7 +131,7 @@ export type AccountPolicies = InferInput<typeof AccountPoliciesSchema>;
  * };
  * ```
  */
-export type DynamicFields = InferInput<typeof DynamicFieldsSchema>;
+export type DynamicFields = InferInput<typeof DynamicFieldsInputSchema>;
 
 /**
  * Supplier reference master records for a master record.
@@ -152,17 +151,17 @@ export type SupplierRefMasterRecords = InferInput<
  *
  * @property recordCode - 6-character unique identifier (auto-generated if not provided)
  * @property insertCriteria - Duplicate handling strategy:
- *   - 'S' (Skip): Skip if duplicate exists
- *   - 'N' (New): Always create new record
- *   - 'T' (Throw): Error if duplicate exists
- *   - 'M' (Merge): Merge with existing record
+ *   - 'S': Always insert
+ *   - 'N': Skip if a record exists
+ *   - 'T': Update all fields (default)
+ *   - 'M': Update secondary fields only
  * @property createdDate - Record creation date in ISO format
  * @property recordType - Classification: 'CUSTOMER' | 'SUPPLIER' | 'GENERAL' (defaults to 'CUSTOMER')
  * @property recordStatus - Status: 'ENABLED' | 'DISABLED' | 'WARNING' | 'BLACKLISTED' (defaults to 'ENABLED')
  * @property moniker - Short display name or alias
  * @property name - Full name (person or company)
  * @property extraInfo - Additional information field
- * @property languageCode - Required 2-character ISO language code (e.g., '02' for Italian, '01' for English)
+ * @property languageCode - Required 2-digit AVES language code (e.g., '01' for Italian, '02' for English)
  * @property address - Street address
  * @property zipCode - Postal/ZIP code
  * @property cityName - City name
@@ -187,7 +186,7 @@ export type SupplierRefMasterRecords = InferInput<
  * @example
  * ```typescript
  * const record: MasterRecordDetail = {
- *   languageCode: '02',
+ *   languageCode: '01',
  *   name: 'Mario Rossi',
  *   email: 'mario.rossi@example.com',
  *   recordType: 'CUSTOMER',
@@ -273,7 +272,10 @@ export type SearchMasterRecord = InferInput<typeof SearchMasterRecordSchema>;
  *
  * @example
  * ```typescript
- * const result = await client.search({ searchType: 'CODE', recordCode: '508558' });
+ * const result = await client.master.search({
+ *   searchType: 'CODE',
+ *   recordCode: '508558',
+ * });
  * if (result.success && result.data.rsStatus.status === 'OK') {
  *   const records = result.data.masterRecordList ?? [];
  *   records.forEach(record => console.log(record.name));
@@ -295,7 +297,7 @@ export type SearchMasterRecordRS = InferOutput<
  * @property MasterRecordDetail - Record data to insert or update
  *
  * @internal This type is primarily for internal SDK use. Use {@link MasterRecordDetail}
- * as the input type for `client.upsertRecord()`.
+ * as the input type for `client.master.upsertRecord()`.
  */
 export type ManageMasterRecordRequest = InferInput<
 	typeof ManageMasterRecordRequestSchema
@@ -310,7 +312,7 @@ export type ManageMasterRecordRequest = InferInput<
  *
  * @example
  * ```typescript
- * const result = await client.upsertRecord({
+ * const result = await client.master.upsertRecord({
  *   languageCode: '02',
  *   name: 'New Customer',
  *   insertCriteria: 'N',

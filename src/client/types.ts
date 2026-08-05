@@ -9,20 +9,3 @@ export type AvesClientDeps = {
 	booking?: BookingClient;
 	packages?: PackageCatalogClient;
 };
-
-type MethodKeys<T> = {
-	[K in keyof T]-?: T[K] extends (...args: never[]) => unknown ? K : never;
-}[keyof T];
-
-type PickMethods<T> = Pick<T, MethodKeys<T>>;
-
-/** Flat aliases of domain client methods (compat). Prefer `client.booking.*` etc. */
-export type AvesClientFlat = PickMethods<MasterRecordsClient> &
-	PickMethods<BookingClient> &
-	PickMethods<PackageCatalogClient>;
-
-export type FlatAliasHost = {
-	master: MasterRecordsClient;
-	booking: BookingClient;
-	packages: PackageCatalogClient;
-};

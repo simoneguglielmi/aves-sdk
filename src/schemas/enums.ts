@@ -38,9 +38,12 @@ export const SearchMasterType = {
 export type SearchMasterType = EnumValue<typeof SearchMasterType>;
 export const SearchMasterTypeSchema = enumSchema(SearchMasterType);
 
+/** MasterRecord.txt:214-219 / Booking CPX.txt:1960-1964: CUSTOMER/SUPPLIER/VOUCHER/SUPPLIER_VOUCHER/GENERAL */
 export const RecordType = {
 	CUSTOMER: "CUSTOMER",
 	SUPPLIER: "SUPPLIER",
+	VOUCHER: "VOUCHER",
+	SUPPLIER_VOUCHER: "SUPPLIER_VOUCHER",
 	GENERAL: "GENERAL",
 } as const;
 export type RecordType = EnumValue<typeof RecordType>;
@@ -143,6 +146,10 @@ export const AvesServiceType = {
 export type AvesServiceType = EnumValue<typeof AvesServiceType>;
 export const AvesServiceTypeSchema = enumSchema(AvesServiceType);
 
+/**
+ * Booking.txt:575-589 documents 13 values; RESIDENCE and TOUR are undocumented
+ * wire dialect seen in real SearchServicesRS examples (Booking.txt:3376, :4207).
+ */
 export const ToServiceType = {
 	ACCOMODATION: "ACCOMODATION",
 	TRANSPORT: "TRANSPORT",
@@ -158,6 +165,7 @@ export const ToServiceType = {
 	OTHER: "OTHER",
 	NOT_SET: "NOT_SET",
 	RESIDENCE: "RESIDENCE",
+	TOUR: "TOUR",
 } as const;
 export type ToServiceType = EnumValue<typeof ToServiceType>;
 export const ToServiceTypeSchema = enumSchema(ToServiceType);

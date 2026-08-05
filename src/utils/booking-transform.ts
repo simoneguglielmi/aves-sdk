@@ -1,75 +1,51 @@
-import { camelToPascalKeys } from "./case-transform.js";
+import { camelToPascalKeys, itemShape } from "./case-transform.js";
 import type { WireShape } from "./wire-shapes.js";
 
-/** Only naming exception: financialDeadlineList → deadlineDetail */
+/** Only naming exception when detailKey is omitted on the shape. */
 const DETAIL_KEY_OVERRIDES: Record<string, string> = {
 	financialDeadlineList: "deadlineDetail",
 };
 
-function detailKeyFor(listKey: string) {
-	return DETAIL_KEY_OVERRIDES[listKey] ?? listKey.replace(/List$/, "Detail");
+export function detailKeyFor(listKey: string, shape?: WireShape): string {
+	return (
+		shape?.detailKey ??
+		DETAIL_KEY_OVERRIDES[listKey] ??
+		(listKey.endsWith("List")
+			? `${listKey.slice(0, -4)}Detail`
+			: `${listKey}Detail`)
+	);
 }
 
-export type ListWrapOptions = {
-	listKeys: readonly string[];
-	/** Create-only: wrap each item as `{ detailKey: item }` instead of `{ detailKey: items }` */
-	arrayOfOne?: ReadonlySet<string>;
-};
-
 /**
- * Flatten SDK `*List: Detail[]` → AVES List/Detail wrappers.
- * Returns a new object (list values change shape; not the input type).
+ * Flatten SDK `*List: Item[]` → AVES List/Detail wrappers, driven by `listWrap` on
+ * {@link WireShape} children (and nested item children). No global key-name scan.
  */
 export function wrapListDetails<T extends object>(
 	input: T,
-	{ listKeys, arrayOfOne }: ListWrapOptions,
+	shape?: WireShape,
 ): T {
-	const wrapped = { ...input };
-	const one = arrayOfOne ?? new Set<string>();
-	for (const listKey of listKeys) {
-		const value = Reflect.get(wrapped, listKey);
-		if (!Array.isArray(value)) continue;
-		const detailKey = detailKeyFor(listKey);
-		Reflect.set(
-			wrapped,
-			listKey,
-			one.has(listKey)
-				? value.map((item) => ({ [detailKey]: item }))
-				: { [detailKey]: value },
-		);
-	}
-	return wrapped;
+	const walk = (value: unknown, s?: WireShape): unknown => {
+		if (Array.isArray(value)) return value.map((item) => walk(item, s));
+		if (value === null || typeof value !== "object") return value;
+
+		const out: Record<string, unknown> = {};
+		for (const [key, item] of Object.entries(value)) {
+			const child = s?.children?.[key];
+			if (child?.listWrap && Array.isArray(item)) {
+				const detailKey = detailKeyFor(key, child);
+				const details = item.map((entry) => walk(entry, itemShape(child)));
+				out[key] =
+					child.listWrap === "one"
+						? details.map((detail) => ({ [detailKey]: detail }))
+						: { [detailKey]: details };
+				continue;
+			}
+			out[key] = walk(item, child);
+		}
+		return out;
+	};
+	return walk(input, shape) as T;
 }
-
-export const CREATE_BOOKING_LIST_KEYS = [
-	"selectedServiceList",
-	"passengerList",
-	"selectedPackageList",
-	"extraQuoteServiceList",
-	"deadlineList",
-	"financialDeadlineList",
-	"paymentList",
-	"noteList",
-] as const;
-
-export const CREATE_ARRAY_OF_ONE = new Set([
-	"selectedServiceList",
-	"passengerList",
-]);
-
-export const MOD_SERVICES_LIST_KEYS = [
-	"selectedServiceList",
-	"passengerList",
-	"cancellableBookedServiceList",
-	"deadlineList",
-] as const;
-
-export const MOD_HEADER_LIST_KEYS = [
-	"passengerList",
-	"financialDeadlineList",
-] as const;
-
-export const FILE_PAYMENT_LIST_KEYS = ["filePaymentList"] as const;
 
 /**
  * Empty paxAssociated [] → "" so XML emits `<PaxAssociated/>`.
@@ -99,13 +75,11 @@ export function normalizeEmptyPaxAssociated<T>(input: T): T {
 }
 
 /**
- * camelCase body → optional list wrap → PascalCase / @attrs via required wire shape.
+ * camelCase body → shape-driven list wrap → PascalCase / @attrs.
  */
-export function toWireBody<T extends object>(
-	input: T,
-	shape: WireShape,
-	wrap?: ListWrapOptions,
-) {
-	const body = wrap ? wrapListDetails(input, wrap) : input;
-	return camelToPascalKeys(normalizeEmptyPaxAssociated(body), shape);
+export function toWireBody<T extends object>(input: T, shape: WireShape) {
+	return camelToPascalKeys(
+		normalizeEmptyPaxAssociated(wrapListDetails(input, shape)),
+		shape,
+	);
 }

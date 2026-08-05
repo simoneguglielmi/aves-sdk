@@ -1,6 +1,6 @@
 ---
 name: aves-sdk-wire
-description: AVES XML wire encoding for aves-sdk — WireShape attrs, PascalCase keys, list wrap, bodyKey nesting. Use when editing wire-shapes.ts, toWireBody, camelToPascalKeys, or request XML attributes.
+description: AVES XML wire encoding for aves-sdk — WireShape attrs, PascalCase/@attrs, list wrap, bodyKey nesting. Use when editing wire-shapes.ts, toWireBody, camelToPascalKeys, or request XML attributes.
 ---
 
 # aves-sdk wire
@@ -13,52 +13,55 @@ description: AVES XML wire encoding for aves-sdk — WireShape attrs, PascalCase
 - Element-only roots → `elementOnlyWire` (`{}`)
 - Master upsert nests under `bodyKey: "MasterRecordDetail"`; booking/search usually spread at RQ root
 - Keep shapes isolated per op family (editing CreateBooking must not affect SearchFile)
+- `WireShapeFor<T>` constrains attrs/children to schema keys at pairing sites — no `| WireShape` escape
 
 ## Outbound path
 
 1. Valibot validates camelCase input
-2. `createApiSchema(schema, shape, wrap?)` → `toWireBody` (list wrap + `paxAssociated` normalize + `camelToPascalKeys`)
+2. `createApiSchema(schema, shape)` → `toWireBody` (shape-driven list wrap + `paxAssociated` normalize + `camelToPascalKeys`)
 3. `invokeOp` adds `RqHeader`, optional `bodyKey`, POSTs XML
 
 Prefer `createWireSchemaPair(inputSchema, shape)` when you need both `api` + PascalCase `validation` schemas.
 
 ## List wrap (request)
 
-SDK: flat `*List: Detail[]`. Wire: List/Detail via `wrapListDetails` / `ListWrapOptions`:
+SDK: flat `*List: Item[]`. Put `listWrap` on the **item** shape:
 
-- Default: `{ detailKey: items }`
-- Create-only `arrayOfOne`: `[{ detailKey: item }, …]`
-- Override: `financialDeadlineList` → `deadlineDetail`
+- `"many"` → `{ detailKey: items }`
+- `"one"` → `[{ detailKey: item }, …]`
+- `detailKey` when inference fails (`financialDeadlineList` → `deadlineDetail`)
 
-Reuse constants from `booking-transform.ts`:
-
-| Constant | Op |
-| -------- | -- |
-| `CREATE_BOOKING_LIST_KEYS` + `CREATE_ARRAY_OF_ONE` | CreateBooking |
-| `MOD_SERVICES_LIST_KEYS` | ModFileServices |
-| `MOD_HEADER_LIST_KEYS` | ModFileHeader |
-| `FILE_PAYMENT_LIST_KEYS` | InsertFilePaymentList |
+Attrs/children describe each item; encode synthesizes the Detail wrapper so `WireShapeFor` stays honest.
 
 `paxAssociated`: SDK `string[]` → wire `{ pax }[]`; empty `[]` → `""`.
+
+## Key overrides
+
+- Global `KEY_OVERRIDES` (`rph`/`toServiceType`/`text→#text`) — types + runtime
+- Per-shape `rename` (e.g. `paymentNote` → `PaumentNote`) — `wireKey` + `Pascalize<T, S>`
 
 ## Shape map
 
 | Shape | Ops |
 | ----- | --- |
 | `masterRecordWire` / `searchMasterWire` | Upsert / Search master |
-| `bookingFileWire` | Create / Mod services / Mod header |
+| `bookingFileWire` | CreateBooking |
+| `modBookingFileWire` | ModFileServices / ModFileHeader |
 | `filePaymentListRequestWire` | InsertFilePaymentList |
 | `searchFileWire` | SearchBookingFiles |
 | `setFileStatusWire` | SetBookingFileStatus |
 | `packageDetailRequestWire` | GetPackageDetail |
 | `baseSearchWire` + `avesSearchWire` | Package / top-service search |
-| `elementOnlyWire` | Cancel / SetServiceStatus / CommitPackage |
+| `elementOnlyWire` | Cancel / SetFileServiceStatus / CommitPackage |
 
 ## Anti-patterns
 
 - Global “these fields are always attrs” sets
 - Ad-hoc PascalCase mappers beside `createApiSchema`
 - Sharing attr lists across unrelated RQs
+- Global list-key name scans (`listKeys: string[]`)
+- `| WireShape` on `WireShapeFor.children`
+- Hand-written `as const satisfies WireShape` — use `wire` / `attrsWire` / `camelAttrsWire` / `listWire`
 
 ## Related
 
