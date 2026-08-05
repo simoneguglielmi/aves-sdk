@@ -27,7 +27,7 @@ const client = new AvesClient({
   timeoutMs: 30_000, // optional
 });
 
-const result = await client.search({
+const result = await client.master.search({
   searchType: 'CODE',
   recordCode: '508558',
 });
@@ -41,19 +41,16 @@ if (result.success) {
 
 ## Client shape
 
-`AvesClient` is a facade over domain clients. **Prefer namespaces.** Flat methods are auto-bound from domain prototypes (no hand-maintained forwarders).
+`AvesClient` is a facade over domain clients. Operations are namespaced by domain.
 
 ```typescript
-// canonical
 await client.booking.createBooking(params);
 await client.packages.searchPackages(params);
 await client.master.search({ searchType: 'CODE', recordCode: '508558' });
-
-// flat compat (same implementations)
-await client.createBooking(params);
-await client.searchPackages(params);
-await client.search({ searchType: 'CODE', recordCode: '508558' });
 ```
+
+Migration from 1.x: insert the appropriate domain namespace (for example,
+`client.search` → `client.master.search`). See the [2.0.0 migration notes](./CHANGELOG.md).
 
 | Namespace | Methods |
 | --------- | ------- |
@@ -105,7 +102,7 @@ type Result<T, E> =
 
 ## Master records
 
-### `search(params)` / `client.master.search`
+### `client.master.search(params)`
 
 | `searchType` | Required fields |
 | ------------ | --------------- |
@@ -124,18 +121,18 @@ const byCode = await client.master.search({
   recordCode: '508558',
 });
 
-const byEmail = await client.search({
+const byEmail = await client.master.search({
   searchType: 'EMAIL',
   email: 'user@example.com',
 });
 ```
 
-### `upsertRecord(record)` / `client.master.upsertRecord`
+### `client.master.upsertRecord(record)`
 
 `insertCriteria`: `'S'` always insert · `'N'` skip if exists · `'T'` update all (default) · `'M'` secondary fields only.
 
 ```typescript
-const result = await client.upsertRecord({
+const result = await client.master.upsertRecord({
   name: 'Jane Smith',
   email: 'jane@example.com',
   languageCode: '02',
@@ -353,7 +350,7 @@ if (detail.success) console.log(detail.data.pCode, detail.data.serviceList?.[0])
 ```typescript
 import { AvesClient, AvesError } from 'aves-sdk';
 
-const result = await client.search({
+const result = await client.master.search({
   searchType: 'CODE',
   recordCode: '508558',
 });
@@ -413,17 +410,18 @@ Editing CreateBooking shapes does not affect SearchFile or AvesSearch.
 | `MasterRecordsClient` | search / upsert |
 | `BookingClient` | booking file ops + search practices |
 | `PackageCatalogClient` | package/program catalog |
-| `client/types.ts` | `AvesClientDeps` / `AvesClientFlat` |
-| `client/flat-aliases.ts` | bind flat compat methods from domain prototypes |
+| `client/types.ts` | `AvesClientDeps` |
 | `src/xml/` | XML root helpers + JSON ↔ XML |
-
-Flat aliases (`client.createBooking`, …) are attached in the constructor — add a domain method once and both surfaces work.
 
 Outbound path: validate → `createApiSchema` / `toWireBody` → `invokeOp` → XML POST.
 
 ---
 
 ## Types
+
+Operations are available only through `client.master`, `client.booking`, and
+`client.packages`; flat aliases were removed in 2.0.0. See the
+[migration notes](./CHANGELOG.md) when upgrading.
 
 ```typescript
 import type {

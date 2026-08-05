@@ -2,350 +2,406 @@
  * Per-shape wire rules: which camelCase fields are XML @attrs at this level.
  * Children are keyed by the camelCase property name on the parent object.
  * Always pass an explicit shape at request boundaries — missing shape ⇒ all elements.
+ *
+ * List fields (`*List: Item[]`) carry `listWrap` on the **item** shape. The wrap/encode
+ * path synthesizes the Detail wrapper; `WireShapeFor<Item[]>` therefore matches the
+ * item keys — no post-wrap escape hatch.
  */
 export type WireShape = {
 	attrs?: readonly string[];
 	preserveCamel?: readonly string[];
-	children?: Readonly<Record<string, WireShape>>;
+	/**
+	 * camelCase key → literal wire tag at this level. Beats the global KEY_OVERRIDES table.
+	 * Threaded through `Pascalize<T, S>` so types mirror runtime.
+	 */
+	rename?: Readonly<Partial<Record<string, string>>>;
+	/** camelCase field emitted as XML text content (`#text` for fast-xml-parser). */
+	textContent?: string;
+	/**
+	 * Wrap an SDK `*List: Item[]` into AVES List/Detail form.
+	 * `"many"` → `{ detailKey: items }` · `"one"` → `[{ detailKey: item }, …]`
+	 * Detail key defaults to `*List` → `*Detail` (see `detailKeyFor`).
+	 */
+	listWrap?: "many" | "one";
+	/** Override inferred Detail key (e.g. financialDeadlineList → deadlineDetail). */
+	detailKey?: string;
+	children?: { readonly [key: string]: WireShape | undefined };
 };
 
-export const headerWire = {
-	attrs: [
-		"hostID",
-		"xtoken",
-		"interface",
-		"userName",
-		"status",
-		"languageCode",
-	],
-} as const satisfies WireShape;
+type Item<T> = T extends readonly (infer U)[] ? U : T;
+type ItemKeys<T> = T extends unknown ? keyof NonNullable<Item<T>> : never;
+type ItemValue<T, K> = T extends unknown
+	? K extends keyof NonNullable<Item<T>>
+		? NonNullable<Item<T>>[K]
+		: never
+	: never;
 
-export const financialDetailWire = {
-	attrs: [
-		"currencyCode",
-		"creditLimit",
-		"c_PaymentType",
-		"c_SpecPaymentTypeCode",
-		"s_PaymentType",
-		"s_SpecPaymentTypeCode",
-		"enableElectronicInvoicing",
-		"electronicInvoicingType",
-	],
-} as const satisfies WireShape;
+export type WireShapeFor<T> = {
+	attrs?: readonly (ItemKeys<T> & string)[];
+	preserveCamel?: readonly (ItemKeys<T> & string)[];
+	rename?: Partial<Record<ItemKeys<T> & string, string>>;
+	textContent?: ItemKeys<T> & string;
+	listWrap?: "many" | "one";
+	detailKey?: string;
+	children?: {
+		[K in ItemKeys<T>]?: WireShapeFor<NonNullable<ItemValue<T, K>>>;
+	};
+};
 
-export const idDocumentDetailWire = {
-	attrs: [
-		"idType",
-		"idCode",
-		"idIssueLocation",
-		"idIssueCounty",
-		"idIssueDate",
-		"idExpireDate",
-	],
-} as const satisfies WireShape;
+/** Const-preserving WireShape constructor (replaces `as const satisfies WireShape`). */
+export function wire<const S extends WireShape>(shape: S): S {
+	return shape;
+}
 
-export const accountPoliciesWire = {
-	attrs: [
-		"acceptProfilingPolicies",
-		"acceptPrivacyPolicies",
-		"acceptNewsletterPolicies",
-	],
-} as const satisfies WireShape;
+/** Attrs-only shape. */
+export function attrsWire<const A extends readonly string[]>(...attrs: A) {
+	return wire({ attrs });
+}
 
-export const dynamicFieldsWire = {
-	attrs: ["key", "value"],
-} as const satisfies WireShape;
+/** Attrs that stay camelCase on the wire (`@sCode1`, not `@SCode1`). */
+export function camelAttrsWire<const A extends readonly string[]>(...attrs: A) {
+	return wire({ attrs, preserveCamel: attrs });
+}
 
-export const supplierRefMasterRecordsWire = {
-	attrs: ["supplierRefCode", "companyMainBusinessType", "carrierType"],
-} as const satisfies WireShape;
+/** Attrs + a subset that stay camelCase (e.g. `pCode` among other Pascal attrs). */
+export function attrsCamelWire<
+	const A extends readonly string[],
+	const P extends readonly A[number][],
+>(attrs: A, preserveCamel: P) {
+	return wire({ attrs, preserveCamel });
+}
 
-export const masterRecordWire = {
-	attrs: ["recordCode", "insertCriteria"],
-	children: {
-		financialDetail: financialDetailWire,
-		idDocumentDetail: idDocumentDetailWire,
-		accountPolicies: accountPoliciesWire,
-		dynamicFields: dynamicFieldsWire,
-		supplierRefMasterRecords: supplierRefMasterRecordsWire,
-	},
-} as const satisfies WireShape;
+/** Children-only shape. */
+export function childrenWire<
+	const C extends { readonly [key: string]: WireShape | undefined },
+>(children: C) {
+	return wire({ children });
+}
+
+/** Attrs + children. */
+export function nestWire<
+	const A extends readonly string[],
+	const C extends { readonly [key: string]: WireShape | undefined },
+>(attrs: A, children: C) {
+	return wire({ attrs, children });
+}
+
+/** Item shape + listWrap (and optional detailKey override). */
+export function listWire<
+	const S extends WireShape,
+	const M extends "many" | "one",
+>(item: S, listWrap: M, detailKey?: string) {
+	return !detailKey
+		? wire({ ...item, listWrap })
+		: wire({ ...item, listWrap, detailKey });
+}
+
+/** `listWire(attrsWire(...), mode)` in one call. */
+export function listAttrsWire<
+	const M extends "many" | "one",
+	const A extends readonly string[],
+>(listWrap: M, ...attrs: A) {
+	return listWire(attrsWire(...attrs), listWrap);
+}
+
+/** Both array-of-one and many wraps of the same item shape. */
+export function listWireModes<const S extends WireShape>(item: S) {
+	return {
+		one: listWire(item, "one"),
+		many: listWire(item, "many"),
+	} as const;
+}
+
+// --- leaf / fragment shapes -------------------------------------------------
+
+export const headerWire = attrsWire(
+	"hostID",
+	"xtoken",
+	"interface",
+	"userName",
+	"status",
+	"languageCode",
+);
+
+export const financialDetailWire = attrsWire(
+	"currencyCode",
+	"creditLimit",
+	"c_PaymentType",
+	"c_SpecPaymentTypeCode",
+	"s_PaymentType",
+	"s_SpecPaymentTypeCode",
+	"enableElectronicInvoicing",
+	"electronicInvoicingType",
+);
+
+export const idDocumentDetailWire = attrsWire(
+	"idType",
+	"idCode",
+	"idIssueLocation",
+	"idIssueCounty",
+	"idIssueDate",
+	"idExpireDate",
+);
+
+export const accountPoliciesWire = attrsWire(
+	"acceptProfilingPolicies",
+	"acceptPrivacyPolicies",
+	"acceptNewsletterPolicies",
+);
+
+export const dynamicFieldsWire = attrsWire("key", "value");
+
+export const supplierRefMasterRecordsWire = attrsWire(
+	"supplierRefCode",
+	"companyMainBusinessType",
+	"carrierType",
+);
+
+export const masterRecordWire = nestWire(["recordCode", "insertCriteria"], {
+	financialDetail: financialDetailWire,
+	idDocumentDetail: idDocumentDetailWire,
+	accountPolicies: accountPoliciesWire,
+	dynamicFields: dynamicFieldsWire,
+	supplierRefMasterRecords: supplierRefMasterRecordsWire,
+});
+
+const dateRangeWire = attrsWire("minDate", "maxDate");
 
 /** Search master — recordCode stays element; date range uses attrs. */
-export const searchMasterWire = {
-	children: {
-		lastModificationDate: { attrs: ["minDate", "maxDate"] },
-	},
-} as const satisfies WireShape;
+export const searchMasterWire = childrenWire({
+	lastModificationDate: dateRangeWire,
+});
 
-export const statisticCodesWire = {
-	attrs: ["sCode1", "sCode2", "sCode3", "sCode4", "sCode5", "sCode6"],
-	preserveCamel: ["sCode1", "sCode2", "sCode3", "sCode4", "sCode5", "sCode6"],
-} as const satisfies WireShape;
+export const statisticCodesWire = camelAttrsWire(
+	"sCode1",
+	"sCode2",
+	"sCode3",
+	"sCode4",
+	"sCode5",
+	"sCode6",
+);
 
-export const destinationWire = {
-	attrs: ["code", "iataCode", "nationCode", "type"],
-} as const satisfies WireShape;
+export const destinationWire = attrsWire(
+	"code",
+	"iataCode",
+	"nationCode",
+	"type",
+);
 
-export const noteDetailWire = {
-	attrs: ["nType", "title"],
-} as const satisfies WireShape;
+/** NoteDetail item shape — `text` → `#text` via global KEY_OVERRIDES. */
+export const noteDetailWire = attrsWire("nType", "title");
 
-export const passengerDetailWire = {
-	attrs: ["rph", "roomRph", "billingHolder"],
-	children: {
-		notes: { children: { noteDetail: noteDetailWire } },
+const noteListWire = listWire(noteDetailWire, "many");
+
+export const passengerDetailWire = nestWire(
+	["rph", "roomRph", "billingHolder"],
+	{
+		notes: listWire(noteDetailWire, "many", "noteDetail"),
 		idDocInfo: idDocumentDetailWire,
 	},
-} as const satisfies WireShape;
+);
 
-export const serviceFareWire = {
-	attrs: [
-		"currencyCode",
-		"exchangeRate",
-		"cost",
-		"costTax",
-		"costType",
-		"vatCostCurrencyCode",
-		"price",
-		"priceTax",
-		"priceType",
-	],
-} as const satisfies WireShape;
+export const serviceFareWire = attrsWire(
+	"currencyCode",
+	"exchangeRate",
+	"cost",
+	"costTax",
+	"costType",
+	"vatCostCurrencyCode",
+	"price",
+	"priceTax",
+	"priceType",
+);
 
-export const selectedPackageDetailWire = {
-	attrs: ["pCode", "startDate", "endDate", "getServicesFromPackage"],
-	preserveCamel: ["pCode"],
-} as const satisfies WireShape;
+export const selectedPackageDetailWire = attrsCamelWire(
+	["pCode", "startDate", "endDate", "getServicesFromPackage"],
+	["pCode"],
+);
 
-export const selectedServiceDetailWire = {
-	attrs: [
-		"sCode",
-		"ssCode",
-		"supplierMasterCode",
-		"supplierName",
-		"supplierMasterSearchField",
-		"supplierFiscalCode",
-	],
-	preserveCamel: ["sCode", "ssCode"],
+export const selectedServiceDetailWire = wire({
+	...attrsCamelWire(["sCode", "ssCode"], ["sCode", "ssCode"]),
 	children: {
 		serviceFare: serviceFareWire,
-		avesServiceInfo: {
-			children: { serviceFare: serviceFareWire },
-		},
-		noteList: { children: { noteDetail: noteDetailWire } },
-	},
-} as const satisfies WireShape;
-
-const selectedServiceListWire = {
-	children: { selectedServiceDetail: selectedServiceDetailWire },
-} as const satisfies WireShape;
-
-export const passengerListWire = {
-	children: { passengerDetail: passengerDetailWire },
-} as const satisfies WireShape;
-
-const selectedPackageListWire = {
-	children: { selectedPackageDetail: selectedPackageDetailWire },
-} as const satisfies WireShape;
-
-const deadlineListWire = {
-	children: {
-		deadlineDetail: {
-			attrs: ["deadlineCode", "description", "expireDate", "reschedulingCode"],
-		},
-	},
-} as const satisfies WireShape;
-
-const financialDeadlineListWire = {
-	children: {
-		deadlineDetail: {
-			attrs: ["reschedulingCode", "expireDate", "totalAmount"],
-		},
-	},
-} as const satisfies WireShape;
-
-const paymentListWire = {
-	children: {
-		paymentDetail: {
-			attrs: [
-				"paymentDate",
-				"paumentNote",
-				"amount",
-				"paymentUser",
-				"paymentType",
-			],
-		},
-	},
-} as const satisfies WireShape;
-
-const filePaymentListWire = {
-	children: {
-		filePaymentDetail: {
-			attrs: [
-				"paymentDate",
-				"paymentNote",
-				"payerMasterCode",
-				"payerName",
-				"amount",
-				"paymentType",
-			],
-		},
-	},
-} as const satisfies WireShape;
-
-const cancellableBookedServiceListWire = {
-	children: {
-		cancellableBookedServiceDetail: {
-			attrs: ["cancelOperationType", "serviceRefType", "serviceRefValue"],
-		},
-	},
-} as const satisfies WireShape;
-
-const noteListWire = {
-	children: { noteDetail: noteDetailWire },
-} as const satisfies WireShape;
-
-const bookingFileDocumentWire = {
-	attrs: ["printDoc", "sendDocViaEmail"],
-	children: {
-		infoDocumentsToPrint: {
-			children: {
-				infoDocumentToPrint: {
-					children: {
-						documentCustomizablePrintParameters: {
-							attrs: ["makeDocumentTo", "fillInCode"],
-						},
-					},
-				},
-			},
-		},
-	},
-} as const satisfies WireShape;
-
-const bookingFileStatusWire = {
-	attrs: ["value", "expiredDate"],
-} as const satisfies WireShape;
-
-const customerDetailWire = {
-	attrs: ["recordCode"],
-} as const satisfies WireShape;
-
-const bookingFinancialInfoWire = {
-	attrs: ["customer_PaymentType", "customer_SpecPaymentTypeCode"],
-} as const satisfies WireShape;
-
-const packageParamsWire = {
-	attrs: [
-		"getAllDeptDate",
-		"getFlightPlan",
-		"getAllAccomodation",
-		"getRealAvailability",
-	],
-} as const satisfies WireShape;
-
-const topServiceParamsWire = {
-	attrs: ["compatibleAccomodation", "alternativeAccomodation"],
-} as const satisfies WireShape;
-
-const featureListWire = {
-	children: { featureDetail: { attrs: ["code", "name"] } },
-} as const satisfies WireShape;
-
-const fileStatusWire = {
-	attrs: ["value", "expiredDate", "optionedFileExpireDatePolicy"],
-} as const satisfies WireShape;
-
-const penaltyWire = {
-	attrs: ["apply", "specificCode"],
-} as const satisfies WireShape;
-
-/**
- * CreateBookingFile / ModFileServices / ModFileHeader after list-wrap.
- * Root startDate/endDate stay elements (not in attrs).
- */
-export const bookingFileWire = {
-	children: {
-		customerDetail: customerDetailWire,
-		bookingFileStatus: bookingFileStatusWire,
-		statisticCodes: statisticCodesWire,
-		destination: destinationWire,
-		bookingFileDocument: bookingFileDocumentWire,
-		bookingFinancialInfo: bookingFinancialInfoWire,
-		selectedPackageDetail: selectedPackageDetailWire,
-		selectedPackageList: selectedPackageListWire,
-		selectedServiceList: selectedServiceListWire,
-		extraQuoteServiceList: selectedServiceListWire,
-		passengerList: passengerListWire,
-		deadlineList: deadlineListWire,
-		financialDeadlineList: financialDeadlineListWire,
-		paymentList: paymentListWire,
-		cancellableBookedServiceList: cancellableBookedServiceListWire,
+		avesServiceInfo: childrenWire({ serviceFare: serviceFareWire }),
 		noteList: noteListWire,
 	},
-} as const satisfies WireShape;
+});
 
-/**
- * InsertFilePaymentList — root paymentUser is an @attr; detail fields nested.
- */
-export const filePaymentListRequestWire = {
-	attrs: ["paymentUser"],
-	children: {
-		filePaymentList: filePaymentListWire,
-	},
-} as const satisfies WireShape;
+const selectedServiceLists = listWireModes(selectedServiceDetailWire);
+const passengerLists = listWireModes(passengerDetailWire);
+
+export const passengerListWireOne = passengerLists.one;
+export const passengerListWireMany = passengerLists.many;
+
+const selectedPackageListWire = listWire(selectedPackageDetailWire, "many");
+
+const deadlineListWire = listAttrsWire(
+	"many",
+	"deadlineCode",
+	"description",
+	"expireDate",
+);
+
+/** ModFileServices deadline rows use reschedulingCode, not deadlineCode. */
+const modDeadlineListWire = listAttrsWire(
+	"many",
+	"reschedulingCode",
+	"description",
+	"expireDate",
+);
+
+const financialDeadlineListWire = listWire(
+	attrsWire("reschedulingCode", "expireDate", "totalAmount"),
+	"many",
+	"deadlineDetail",
+);
+
+const paymentListWire = listWire(
+	wire({
+		...attrsWire(
+			"paymentDate",
+			"paymentNote",
+			"amount",
+			"paymentUser",
+			"paymentType",
+		),
+		// AVES misspells this PaymentDetail attribute; SDK field stays `paymentNote`.
+		rename: { paymentNote: "PaumentNote" },
+	}),
+	"many",
+);
+
+const filePaymentListWire = listAttrsWire(
+	"many",
+	"paymentDate",
+	"paymentNote",
+	"payerMasterCode",
+	"payerName",
+	"amount",
+	"paymentType",
+);
+
+const cancellableBookedServiceListWire = listAttrsWire(
+	"many",
+	"cancelOperationType",
+	"serviceRefType",
+	"serviceRefValue",
+);
+
+const bookingFileDocumentWire = nestWire(["printDoc", "sendDocViaEmail"], {
+	infoDocumentsToPrint: childrenWire({
+		documentCustomizablePrintParameters: attrsWire(
+			"makeDocumentTo",
+			"fillInCode",
+		),
+	}),
+});
+
+const bookingFileStatusWire = attrsWire("value", "expiredDate");
+const customerDetailWire = attrsWire("recordCode");
+const bookingFinancialInfoWire = attrsWire(
+	"customer_PaymentType",
+	"customer_SpecPaymentTypeCode",
+);
+
+const packageParamsWire = attrsWire(
+	"getAllDeptDate",
+	"getFlightPlan",
+	"getAllAccomodation",
+	"getRealAvailability",
+);
+
+const topServiceParamsWire = attrsWire(
+	"compatibleAccomodation",
+	"alternativeAccomodation",
+);
+
+const featureListWire = listAttrsWire("many", "code", "name");
+const fileStatusWire = attrsWire(
+	"value",
+	"expiredDate",
+	"optionedFileExpireDatePolicy",
+);
+const penaltyWire = attrsWire("apply", "specificCode");
+
+const bookingFileChildrenBase = {
+	customerDetail: customerDetailWire,
+	bookingFileStatus: bookingFileStatusWire,
+	statisticCodes: statisticCodesWire,
+	destination: destinationWire,
+	bookingFileDocument: bookingFileDocumentWire,
+	bookingFinancialInfo: bookingFinancialInfoWire,
+	selectedPackageDetail: selectedPackageDetailWire,
+	selectedPackageList: selectedPackageListWire,
+	financialDeadlineList: financialDeadlineListWire,
+	paymentList: paymentListWire,
+	cancellableBookedServiceList: cancellableBookedServiceListWire,
+	noteList: noteListWire,
+} as const;
+
+/** CreateBookingFile — array-of-one for selectedService / passenger / extraQuote lists. */
+export const bookingFileWire = childrenWire({
+	...bookingFileChildrenBase,
+	deadlineList: deadlineListWire,
+	selectedServiceList: selectedServiceLists.one,
+	extraQuoteServiceList: selectedServiceLists.one,
+	passengerList: passengerLists.one,
+});
+
+/** ModFileServices / ModFileHeader — many-style list wrap. */
+export const modBookingFileWire = childrenWire({
+	...bookingFileChildrenBase,
+	deadlineList: modDeadlineListWire,
+	selectedServiceList: selectedServiceLists.many,
+	extraQuoteServiceList: selectedServiceLists.many,
+	passengerList: passengerLists.many,
+});
+
+/** InsertFilePaymentList — root paymentUser is an @attr; detail fields nested. */
+export const filePaymentListRequestWire = nestWire(["paymentUser"], {
+	filePaymentList: filePaymentListWire,
+});
 
 /** SearchFileRQ — date ranges / insurance / status use attrs. */
-export const searchFileWire = {
-	children: {
-		fileStatus: { attrs: ["value", "expireDate"] },
-		startDate: { attrs: ["minDate", "maxDate"] },
-		createdDate: { attrs: ["minDate", "maxDate"] },
-		lastModificationDate: { attrs: ["minDate", "maxDate"] },
-		insurance: { attrs: ["code", "number"] },
-	},
-} as const satisfies WireShape;
+export const searchFileWire = childrenWire({
+	fileStatus: attrsWire("value", "expireDate"),
+	startDate: dateRangeWire,
+	createdDate: dateRangeWire,
+	lastModificationDate: dateRangeWire,
+	insurance: attrsWire("code", "number"),
+});
 
 /** GetPackageDetail SelectedServiceDetail (ServiceCode + PackageRow). */
-export const packagePrgServiceDetailWire = {
-	attrs: ["serviceCode", "packageRow"],
-} as const satisfies WireShape;
+export const packagePrgServiceDetailWire = attrsWire(
+	"serviceCode",
+	"packageRow",
+);
 
-export const packageDetailRequestWire = {
-	children: {
-		statisticCodes: statisticCodesWire,
-		selectedServiceList: {
-			children: { selectedServiceDetail: packagePrgServiceDetailWire },
-		},
-		passengerList: passengerListWire,
-	},
-} as const satisfies WireShape;
+export const packageDetailRequestWire = childrenWire({
+	statisticCodes: statisticCodesWire,
+	selectedServiceList: listWire(packagePrgServiceDetailWire, "many"),
+	passengerList: passengerLists.many,
+});
 
 /** BaseSearch fragment inside AvesSearchRQ (dates are elements). */
-export const baseSearchWire = {
-	children: {
-		passengerList: passengerListWire,
-	},
-} as const satisfies WireShape;
+export const baseSearchWire = childrenWire({
+	passengerList: passengerLists.many,
+});
 
-/** AvesSearchRQ body outside BaseSearch (after featureList wrap). */
-export const avesSearchWire = {
-	children: {
-		destination: destinationWire,
-		statisticCodes: statisticCodesWire,
-		packageParams: packageParamsWire,
-		topServiceParams: topServiceParamsWire,
-		featureList: featureListWire,
-	},
-} as const satisfies WireShape;
+/** AvesSearchRQ body outside BaseSearch. */
+export const avesSearchWire = childrenWire({
+	destination: destinationWire,
+	statisticCodes: statisticCodesWire,
+	packageParams: packageParamsWire,
+	topServiceParams: topServiceParamsWire,
+	featureList: featureListWire,
+});
 
-export const setFileStatusWire = {
-	children: {
-		fileStatus: fileStatusWire,
-		penalty: penaltyWire,
-		bookingFileDocument: bookingFileDocumentWire,
-	},
-} as const satisfies WireShape;
+export const setFileStatusWire = childrenWire({
+	fileStatus: fileStatusWire,
+	penalty: penaltyWire,
+	bookingFileDocument: bookingFileDocumentWire,
+});
 
 /** Element-only request roots (CancelFile, SetFileServiceStatus, CommitPackage). */
-export const elementOnlyWire = {} as const satisfies WireShape;
+export const elementOnlyWire = wire({});

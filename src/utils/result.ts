@@ -18,7 +18,3 @@ export function ok<T>(data: T): Result<T, never> {
 export function err<E>(error: E): Result<never, E> {
 	return { success: false, error };
 }
-
-export function isOk(statusCode: number): boolean {
-	return statusCode === 200;
-}

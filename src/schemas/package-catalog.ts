@@ -1,8 +1,8 @@
 import * as v from "valibot";
-import { wrapListDetails } from "../utils/booking-transform.js";
 import {
 	createApiSchema,
 	createFlattenedResponseSchema,
+	createListResponseSchema,
 	listDetailApiSchema,
 	toWireBody,
 } from "../utils/schema-transform.js";
@@ -13,12 +13,12 @@ import {
 	packageDetailRequestWire,
 } from "../utils/wire-shapes.js";
 import {
+	DestinationInputSchema,
 	PassengerDetailCreateInputSchema,
 	StatisticCodesInputSchema,
 } from "./booking-file.js";
 import { BoolishSchema } from "./booking-shared.js";
 import {
-	createListResponseSchema,
 	OptionalLanguageCodeSchema,
 	RsStatusSchema,
 	StatusOnlyResponseSchema,
@@ -27,7 +27,6 @@ import {
 } from "./common.js";
 import {
 	AvesSearchTypeSchema,
-	DestinationTypeSchema,
 	PaxQtyCriteria,
 	PaxQtyCriteriaSchema,
 } from "./enums.js";
@@ -117,11 +116,6 @@ export const PackageListApiSchema = listDetailApiSchema(
 // SearchAvesPackages / SearchTopServices — AvesSearchRQ
 // ---------------------------------------------------------------------------
 
-const SearchDestinationInputSchema = v.object({
-	code: v.optional(v.string()),
-	type: v.optional(DestinationTypeSchema),
-});
-
 const FeatureDetailInputSchema = v.object({
 	code: v.string(),
 	name: v.optional(v.string()),
@@ -167,7 +161,7 @@ export const AvesSearchSchema = v.object({
 	discartNotAvailablesDaysInOut: v.optional(BoolishSchema),
 	discardPriceZero: v.optional(BoolishSchema),
 	discardZeroPriceDays: v.optional(BoolishSchema),
-	destination: v.optional(SearchDestinationInputSchema),
+	destination: v.optional(DestinationInputSchema),
 	objectTypeCode: v.optional(v.string()),
 	featureList: v.optional(v.array(FeatureDetailInputSchema)),
 	servOrPackCode: v.optional(v.string()),
@@ -216,10 +210,7 @@ function toAvesSearchApiBody(
 				startDate,
 				endDate,
 				earlyBookingDate,
-				passengerList: wrapListDetails(
-					{ passengerList },
-					{ listKeys: ["passengerList"] },
-				).passengerList,
+				passengerList,
 			},
 			baseSearchWire,
 		),
@@ -231,7 +222,6 @@ function toAvesSearchApiBody(
 				paxQtyCriteria: paxQtyCriteria ?? PaxQtyCriteria.GREATER_OR_EQUAL,
 			},
 			avesSearchWire,
-			{ listKeys: ["featureList"] },
 		),
 	};
 }
@@ -283,16 +273,10 @@ export const PackageDetailRequestSchema = v.object({
 	passengerList: v.optional(v.array(PassengerDetailCreateInputSchema)),
 });
 
-const PACKAGE_DETAIL_LIST_KEYS = [
-	"selectedServiceList",
-	"passengerList",
-] as const;
-
 /** Map packagePrg fields → attrs; list wrap + element dates at root. */
 export const PackageDetailRequestApiSchema = createApiSchema(
 	PackageDetailRequestSchema,
 	packageDetailRequestWire,
-	{ listKeys: PACKAGE_DETAIL_LIST_KEYS },
 );
 
 export const PackageDetailResponseSchema = createFlattenedResponseSchema(

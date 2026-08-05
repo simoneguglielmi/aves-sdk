@@ -27,7 +27,7 @@ export class PackageCatalogClient {
 	constructor(private readonly transport: AvesTransport) {}
 
 	/** Merge client languageCode + method default avesSearchType (params win). */
-	private prepareSearch(
+	#prepareSearch(
 		params: AvesSearchRQ,
 		defaultType: (typeof AvesSearchType)[keyof typeof AvesSearchType],
 	): AvesSearchRQ {
@@ -46,7 +46,7 @@ export class PackageCatalogClient {
 	): Promise<Result<SearchPackageRS, AvesError>> {
 		return this.transport.invokeOp({
 			op: "searchPackages",
-			params: this.prepareSearch(params, AvesSearchType.PACKAGE),
+			params: this.#prepareSearch(params, AvesSearchType.PACKAGE),
 			apiSchema: AvesSearchApiSchema,
 			endpoint: AVES_ENDPOINTS.searchAvesPackages,
 			requestRoot: XML_ROOT_ELEMENTS.AVES_SEARCH_REQUEST,
@@ -61,7 +61,7 @@ export class PackageCatalogClient {
 	): Promise<Result<SearchServicesRS, AvesError>> {
 		return this.transport.invokeOp({
 			op: "searchTopServices",
-			params: this.prepareSearch(params, AvesSearchType.SERVICE),
+			params: this.#prepareSearch(params, AvesSearchType.SERVICE),
 			apiSchema: AvesSearchApiSchema,
 			endpoint: AVES_ENDPOINTS.searchTopServices,
 			requestRoot: XML_ROOT_ELEMENTS.AVES_SEARCH_REQUEST,

@@ -38,7 +38,7 @@ createListResponseSchema("PackageList", PackageListApiSchema);
 ## Request helpers
 
 ```ts
-createApiSchema(FooInputSchema, fooWire, { listKeys: FOO_LIST_KEYS });
+createApiSchema(FooInputSchema, fooWire);
 
 createWireSchemaPair(MasterRecordDetailSchema, masterRecordWire);
 // → { api, validation }

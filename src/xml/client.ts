@@ -1,6 +1,6 @@
 import XMLBuilder from "fast-xml-builder";
 import { XMLParser } from "fast-xml-parser";
-import { AvesError } from "../error.js";
+import { validationError } from "../error.js";
 
 const parserOptions = {
 	ignoreAttributes: false,
@@ -28,8 +28,7 @@ export function jsonToXml(json: Record<string, unknown>): string {
 	try {
 		return builder.build(json);
 	} catch (error) {
-		throw new AvesError(
-			"validation",
+		throw validationError(
 			`Failed to convert JSON to XML: ${error instanceof Error ? error.message : "Unknown error"}`,
 		);
 	}
@@ -43,8 +42,7 @@ export function xmlToJson(xml: string): Record<string, unknown> {
 	try {
 		return parser.parse(xml);
 	} catch (error) {
-		throw new AvesError(
-			"validation",
+		throw validationError(
 			`Failed to convert XML to JSON: ${error instanceof Error ? error.message : "Unknown error"}`,
 		);
 	}

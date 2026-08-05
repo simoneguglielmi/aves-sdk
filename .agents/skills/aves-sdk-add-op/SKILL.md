@@ -37,7 +37,7 @@ async createBooking(input: BookingFileRQ): Promise<Result<BookingFileRS, AvesErr
 }
 ```
 
-Use `bodyKey` only when the RQ nests the payload (master upsert). Flat facade aliases attach automatically via `attachFlatAliases`.
+Use `bodyKey` only when the RQ nests the payload (master upsert). Use the matching domain namespace from `AvesClient`.
 
 ## Placement
 

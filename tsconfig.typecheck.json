@@ -1,0 +1,11 @@
+{
+	// Program for `yarn test:types` (vitest's typechecker) only.
+	//
+	// tsconfig.json excludes `**/*.test-d.ts` so `yarn typecheck` stays scoped to
+	// shipped source. vitest spawns its own `tsc --noEmit`, and if pointed at a
+	// config that excludes the type-assertion files it reports a green run having
+	// checked nothing. `exclude` is replaced, not merged, through `extends`, so
+	// restating it here without `**/*.test-d.ts` puts those files back in scope.
+	"extends": "./tsconfig.json",
+	"exclude": ["node_modules", "dist"]
+}

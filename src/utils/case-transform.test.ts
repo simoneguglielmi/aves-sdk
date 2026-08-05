@@ -1,10 +1,24 @@
-import { describe, expect, it } from "vitest";
-import { camelToPascalKeys, pascalToCamelKeys } from "./case-transform.js";
+import * as v from "valibot";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import {
+	type Camelize,
+	camelToPascalKeys,
+	type Pascalize,
+	pascalToCamelKeys,
+	wireKey,
+} from "./case-transform.js";
+import {
+	createApiSchema,
+	createApiValidationSchema,
+} from "./schema-transform.js";
+import {
+	attrsWire,
 	dynamicFieldsWire,
+	financialDetailWire,
 	headerWire,
 	masterRecordWire,
 	searchMasterWire,
+	wire,
 } from "./wire-shapes.js";
 
 describe("case-transform", () => {
@@ -225,5 +239,94 @@ describe("case-transform", () => {
 				}),
 			).toEqual(wire);
 		});
+	});
+});
+
+describe("Camelize / Pascalize agree with the runtime (findings #6, #7)", () => {
+	it("Camelize mirrors pascalToCamel's single-char lowercase, not delimiter splitting", () => {
+		// Before the fix, this line fails to compile: the old `ToCamelCase` split on `_`
+		// and produced `cPaymentType`, dropping the underscore the runtime always keeps.
+		const camel: Camelize<{ "@c_PaymentType": string }> = {
+			c_PaymentType: "CASH",
+		};
+		expect(camel.c_PaymentType).toBe("CASH");
+	});
+
+	it("Pascalize applies the RPH override instead of plain Capitalize", () => {
+		// Before the fix, this line fails to compile: `ToPascalCase` produced `Rph`.
+		const pascal: Pascalize<{ rph: string }> = { RPH: "001" };
+		expect(pascal.RPH).toBe("001");
+	});
+});
+
+describe("financialDetailWire c_PaymentType (finding #6, runtime side)", () => {
+	it("round-trips through camelToPascalKeys / pascalToCamelKeys unchanged", () => {
+		// AVES documents this attribute as `@C_PaymentType` (MasterRecord.txt:461, :900).
+		// This phase only fixes the *decode* type (`Camelize<>`); the encode byte output
+		// for this shape is unchanged before/after.
+		const wire = camelToPascalKeys(
+			{ c_PaymentType: "CASH" },
+			financialDetailWire,
+		);
+		expect(wire).toEqual({ "@C_PaymentType": "CASH" });
+		expect(pascalToCamelKeys(wire)).toEqual({ c_PaymentType: "CASH" });
+	});
+});
+
+describe("wireKey", () => {
+	it("rph + attrs → @RPH via the global KEY_OVERRIDES table", () => {
+		expect(wireKey("rph", { attrs: ["rph"] })).toBe("@RPH");
+	});
+
+	it("sCode + attrs + preserveCamel → @sCode (raw camel key, not pascal)", () => {
+		expect(
+			wireKey("sCode", { attrs: ["sCode"], preserveCamel: ["sCode"] }),
+		).toBe("@sCode");
+	});
+
+	it("toServiceType as an element (no attrs) → TOServiceType, no @ prefix", () => {
+		expect(wireKey("toServiceType")).toBe("TOServiceType");
+	});
+
+	it("shape.rename beats the global KEY_OVERRIDES table (D2/D3 PaumentNote)", () => {
+		const shape = wire({
+			attrs: ["paymentNote"],
+			rename: { paymentNote: "PaumentNote" },
+		});
+		expect(wireKey("paymentNote", shape)).toBe("@PaumentNote");
+	});
+
+	it("textContent emits #text (XML node content)", () => {
+		expect(wireKey("text", { textContent: "text" })).toBe("#text");
+	});
+
+	it("KEY_OVERRIDES text → #text without a shape", () => {
+		expect(wireKey("text")).toBe("#text");
+	});
+
+	it("Pascalize<T, S> threads shape.rename into the type", () => {
+		type Renamed = import("./case-transform.js").Pascalize<
+			{ paymentNote: string },
+			{ rename: { paymentNote: "PaumentNote" } }
+		>;
+		expectTypeOf<Renamed>().toEqualTypeOf<{ PaumentNote: string }>();
+	});
+});
+
+describe("createApiSchema / createApiValidationSchema key agreement (finding #8)", () => {
+	it("agree on rph's wire key instead of drifting (@RPH vs @Rph)", () => {
+		const shape = attrsWire("rph");
+		const RphInputSchema = v.object({ rph: v.string() });
+
+		const encoded = v.parse(createApiSchema(RphInputSchema, shape), {
+			rph: "001",
+		});
+		const validationSchema = createApiValidationSchema(RphInputSchema, shape);
+
+		const encodedKeys = Object.keys(encoded as object);
+		const validationKeys = Object.keys(validationSchema.entries);
+
+		expect(validationKeys).toEqual(encodedKeys);
+		expect(encodedKeys).toEqual(["@RPH"]);
 	});
 });

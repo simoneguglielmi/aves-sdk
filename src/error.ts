@@ -1,4 +1,5 @@
 import type { BaseIssue } from "valibot";
+import type { RsStatusValue } from "./schemas/enums.js";
 
 export const ERROR_KINDS = {
 	VALIDATION: "validation",
@@ -13,22 +14,13 @@ export type ErrorKind = (typeof ERROR_KINDS)[keyof typeof ERROR_KINDS];
  */
 export class AvesError extends Error {
 	constructor(
-		public readonly kind: ErrorKind,
-		public readonly message: string,
-		public readonly status?: string,
-		public readonly code?: number | string,
+		readonly kind: ErrorKind,
+		message: string,
+		readonly status?: RsStatusValue,
+		readonly code?: number,
 	) {
 		super(message);
 		this.name = "AvesError";
-		this.status = status?.toLowerCase();
-		this.code = this.parseCode(code);
-	}
-
-	private parseCode(code?: number | string): number {
-		if (typeof code === "string") {
-			return Number.parseInt(code, 10);
-		}
-		return code ?? 0;
 	}
 }
 
@@ -38,8 +30,8 @@ export function validationError(message: string): AvesError {
 
 export function apiError(
 	message: string,
-	status?: string,
-	code?: number | string,
+	status?: RsStatusValue,
+	code?: number,
 ): AvesError {
 	return new AvesError(ERROR_KINDS.API, message, status, code);
 }

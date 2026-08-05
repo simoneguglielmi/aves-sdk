@@ -107,7 +107,7 @@ describe("RsStatusSchema", () => {
 
 		const result = parse(RsStatusSchema, input);
 		expect(result.status).toBe("WARNING");
-		expect(result.warnings).toEqual(["Some warning message"]);
+		expect(result.warnings).toBe("Some warning message");
 	});
 
 	it("should validate TIMEOUT status", () => {

@@ -1,18 +1,13 @@
 import * as v from "valibot";
 import {
-	FILE_PAYMENT_LIST_KEYS,
-	MOD_HEADER_LIST_KEYS,
-	MOD_SERVICES_LIST_KEYS,
-} from "../utils/booking-transform.js";
-import {
 	coalesceListHead,
 	createApiSchema,
 	valueFieldSchema,
 } from "../utils/schema-transform.js";
 import {
-	bookingFileWire,
 	elementOnlyWire,
 	filePaymentListRequestWire,
+	modBookingFileWire,
 	setFileStatusWire,
 } from "../utils/wire-shapes.js";
 import {
@@ -94,8 +89,7 @@ export const ModFileServicesSchema = v.pipe(
 
 export const ModFileServicesApiSchema = createApiSchema(
 	ModFileServicesSchema,
-	bookingFileWire,
-	{ listKeys: MOD_SERVICES_LIST_KEYS },
+	modBookingFileWire,
 );
 
 // ---------------------------------------------------------------------------
@@ -134,8 +128,7 @@ export const ModFileHeaderSchema = v.object({
 
 export const ModFileHeaderApiSchema = createApiSchema(
 	ModFileHeaderSchema,
-	bookingFileWire,
-	{ listKeys: MOD_HEADER_LIST_KEYS },
+	modBookingFileWire,
 );
 
 // ---------------------------------------------------------------------------
@@ -155,8 +148,6 @@ export const CancelFileApiSchema = createApiSchema(
 // SetBookingFileStatus — SetStatusRQ
 // ---------------------------------------------------------------------------
 
-const optionedExpirePolicySchema = OptionedExpirePolicySchema;
-
 /**
  * SetStatusRQ body (camelCase).
  * Change booking file status (incl. CANCELED / NULLIFIED).
@@ -166,7 +157,7 @@ export const SetFileStatusSchema = v.object({
 	...bookingFileRefEntries,
 	fileStatus: valueFieldSchema(SetFileStatusValueSchema, {
 		expiredDate: v.optional(v.string()),
-		optionedFileExpireDatePolicy: v.optional(optionedExpirePolicySchema),
+		optionedFileExpireDatePolicy: v.optional(OptionedExpirePolicySchema),
 	}),
 	backOfficeRequest: v.optional(BoolishSchema),
 	bookingFileDocument: v.optional(BookingFileDocumentInputSchema),
@@ -204,8 +195,6 @@ export const SetFileServiceStatusApiSchema = createApiSchema(
 // InsertFilePaymentList — FilePaymentListRQ
 // ---------------------------------------------------------------------------
 
-const filePaymentOperationTypeSchema = FilePaymentOperationTypeSchema;
-
 export const FilePaymentDetailInputSchema = v.object({
 	paymentDate: v.string(),
 	paymentNote: v.optional(v.string()),
@@ -225,7 +214,7 @@ export const FilePaymentListSchema = v.pipe(
 		bookingFileRefCode: v.optional(v.string()),
 		paymentUser: v.optional(v.string()),
 		enableMultiplePayments: BoolishSchema,
-		operationType: filePaymentOperationTypeSchema,
+		operationType: FilePaymentOperationTypeSchema,
 		filePaymentList: v.pipe(
 			v.array(FilePaymentDetailInputSchema),
 			v.minLength(1),
@@ -240,5 +229,4 @@ export const FilePaymentListSchema = v.pipe(
 export const FilePaymentListApiSchema = createApiSchema(
 	FilePaymentListSchema,
 	filePaymentListRequestWire,
-	{ listKeys: FILE_PAYMENT_LIST_KEYS },
 );

@@ -15,11 +15,13 @@ import {
 	validationError,
 } from "../error.js";
 import type { AvesClientOptions, RsStatus } from "../types.js";
-import { err, isOk, ok, type Result } from "../utils/result.js";
+import { err, ok, type Result } from "../utils/result.js";
 import { createTimeoutSignal } from "../utils/timeout.js";
 import { parseUrl } from "../utils/url.js";
 import { jsonToXml, xmlToJson } from "../xml/client.js";
 import { createRootElement, type XMLRootElementValues } from "../xml/root.js";
+
+const MAX_ERROR_BODY = 4_096;
 
 /**
  * Shared HTTP + XML transport for AVES domain clients.
@@ -55,7 +57,7 @@ export class AvesTransport {
 		output: T,
 	): Result<T, AvesError> {
 		const { rsStatus } = output;
-		if (rsStatus?.status !== "OK")
+		if (rsStatus.status !== "OK")
 			return err(
 				apiError(
 					rsStatus.errorDescription ?? "",
@@ -66,7 +68,7 @@ export class AvesTransport {
 		return ok(output);
 	}
 
-	async request<T extends { rsStatus: RsStatus }>(
+	private async request<T extends { rsStatus: RsStatus }>(
 		endpoint: string,
 		requestBody: Record<string, unknown>,
 		responseRootKey: string,
@@ -85,8 +87,14 @@ export class AvesTransport {
 			});
 
 			const responseText = await response.body.text();
-			if (!isOk(response.statusCode))
-				return err(apiError(responseText, "ERROR", response.statusCode));
+			if (response.statusCode < 200 || response.statusCode > 299)
+				return err(
+					apiError(
+						responseText.slice(0, MAX_ERROR_BODY),
+						"ERROR",
+						response.statusCode,
+					),
+				);
 
 			const rootElement = xmlToJson(responseText)[responseRootKey];
 			if (!rootElement)

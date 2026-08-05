@@ -1,6 +1,6 @@
 ---
 name: aves-sdk-architecture
-description: Maps aves-sdk layers — AvesClient facade, domain clients, transport, schemas, XML. Use when navigating src/client, flat aliases, DI, or deciding where new code belongs.
+description: Maps aves-sdk layers — AvesClient facade, domain clients, transport, schemas, XML. Use when navigating src/client, DI, or deciding where new code belongs.
 ---
 
 # aves-sdk architecture
@@ -9,7 +9,7 @@ description: Maps aves-sdk layers — AvesClient facade, domain clients, transpo
 
 | Layer | Path | Role |
 | ----- | ---- | ---- |
-| Facade | `src/client.ts` | `AvesClient` + flat aliases via `attachFlatAliases` |
+| Facade | `src/client.ts` | `AvesClient` + namespaced domain clients |
 | Domains | `src/client/{booking,master-records,packages}.ts` | Op methods |
 | Transport | `src/client/transport.ts` | HTTP + XML + `invokeOp` (`bodyKey?`) |
 | Endpoints | `src/client/endpoints.ts` | URL map |
@@ -27,13 +27,9 @@ description: Maps aves-sdk layers — AvesClient facade, domain clients, transpo
 - Tests / custom stacks: inject mocks via `deps`
 - Domains take `AvesTransport` only — no direct `undici` in domain files
 
-## Flat aliases
+## Domain namespaces
 
-`attachFlatAliases` binds domain prototype methods onto the facade (`client.createBooking`, …).
-
-- Canonical API: `client.booking.*` / `client.master.*` / `client.packages.*`
-- Add the method once on the domain client — do not hand-write flat wrappers
-- `AvesClientFlat` is the intersection of domain method keys
+Use `client.booking.*` / `client.master.*` / `client.packages.*`. Domain methods are only exposed through their namespace.
 
 ## Request/response ownership
 

@@ -6,7 +6,7 @@ import {
 } from "undici";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AvesClient } from "./client.js";
-import { AvesError } from "./error.js";
+import { AvesError, apiError } from "./error.js";
 
 const isBun = typeof process !== "undefined" && !!process.versions?.bun;
 const describeHttp = isBun ? describe.skip : describe;
@@ -37,6 +37,8 @@ describeHttp("AvesClient", () => {
 	describe("constructor", () => {
 		it("should create client with correct configuration", () => {
 			expect(client).toBeInstanceOf(AvesClient);
+			expect("search" in client).toBe(false);
+			expect("prepareSearch" in client).toBe(false);
 		});
 	});
 
@@ -62,7 +64,7 @@ describeHttp("AvesClient", () => {
         </SearchMasterRecordRS>`,
 				);
 
-			const result = await client.search({
+			const result = await client.master.search({
 				searchType: "CODE",
 				recordCode: "508558",
 			});
@@ -76,7 +78,7 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should validate input parameters", async () => {
-			const result = await client.search({
+			const result = await client.master.search({
 				searchType: "CODE",
 				recordCode: "1234", // Too short
 			});
@@ -104,7 +106,7 @@ describeHttp("AvesClient", () => {
         </SearchMasterRecordRS>`,
 				);
 
-			const result = await client.search({
+			const result = await client.master.search({
 				searchType: "CODE",
 				recordCode: "508558",
 			});
@@ -114,7 +116,7 @@ describeHttp("AvesClient", () => {
 				expect(result.error).toBeInstanceOf(AvesError);
 				expect(result.error.kind).toBe("api");
 				expect(result.error.code).toBe(1001);
-				expect(result.error.status).toBe("error");
+				expect(result.error.status).toBe("ERROR");
 			}
 		});
 
@@ -128,7 +130,7 @@ describeHttp("AvesClient", () => {
 				})
 				.reply(500, "Internal Server Error");
 
-			const result = await client.search({
+			const result = await client.master.search({
 				searchType: "CODE",
 				recordCode: "508558",
 			});
@@ -137,9 +139,47 @@ describeHttp("AvesClient", () => {
 			if (!result.success) {
 				expect(result.error).toBeInstanceOf(AvesError);
 				expect(result.error.kind).toBe("api");
-				expect(result.error.status).toBe("error");
+				expect(result.error.status).toBe("ERROR");
 				expect(result.error.code).toBe(500);
 			}
+		});
+
+		it("should accept all 2xx HTTP responses", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/Search",
+					method: "POST",
+				})
+				.reply(
+					201,
+					`<SearchMasterRecordRS><RsStatus Status="OK"/></SearchMasterRecordRS>`,
+				);
+
+			const result = await client.master.search({
+				searchType: "CODE",
+				recordCode: "508558",
+			});
+
+			expect(result.success).toBe(true);
+		});
+
+		it("should cap HTTP error response bodies", async () => {
+			const mockClient = mockAgent.get(baseURL);
+			mockClient
+				.intercept({
+					path: "/interop/masterRecords/v2/rest/Search",
+					method: "POST",
+				})
+				.reply(500, "x".repeat(5_000));
+
+			const result = await client.master.search({
+				searchType: "CODE",
+				recordCode: "508558",
+			});
+
+			expect(result.success).toBe(false);
+			if (!result.success) expect(result.error.message).toHaveLength(4_096);
 		});
 
 		it("should transform request to PascalCase for API", async () => {
@@ -158,7 +198,7 @@ describeHttp("AvesClient", () => {
           </SearchMasterRecordRS>`;
 				});
 
-			await client.search({
+			await client.master.search({
 				searchType: "CODE",
 				recordCode: "508558",
 				languageCode: "02",
@@ -191,7 +231,7 @@ describeHttp("AvesClient", () => {
         </ManageMasterRecordRS>`,
 				);
 
-			const result = await client.upsertRecord({
+			const result = await client.master.upsertRecord({
 				name: "John Doe",
 				email: "john@example.com",
 				zipCode: "12345",
@@ -222,7 +262,7 @@ describeHttp("AvesClient", () => {
           </ManageMasterRecordRS>`;
 				});
 
-			await client.upsertRecord({
+			await client.master.upsertRecord({
 				name: "John Doe",
 				languageCode: "02",
 			});
@@ -247,7 +287,7 @@ describeHttp("AvesClient", () => {
           </ManageMasterRecordRS>`;
 				});
 
-			await client.upsertRecord({
+			await client.master.upsertRecord({
 				name: "John Doe",
 				email: "john@example.com",
 				zipCode: "12345",
@@ -277,7 +317,7 @@ describeHttp("AvesClient", () => {
         </ManageMasterRecordRS>`,
 				);
 
-			const result = await client.upsertRecord({
+			const result = await client.master.upsertRecord({
 				name: "John Doe",
 				languageCode: "02",
 			});
@@ -287,7 +327,7 @@ describeHttp("AvesClient", () => {
 				expect(result.error).toBeInstanceOf(AvesError);
 				expect(result.error.kind).toBe("api");
 				expect(result.error.code).toBe(1002);
-				expect(result.error.status).toBe("error");
+				expect(result.error.status).toBe("ERROR");
 			}
 		});
 	});
@@ -343,7 +383,7 @@ describeHttp("AvesClient", () => {
         </BookingFileRS>`,
 				);
 
-			const result = await client.createBooking(minimalBookingParams);
+			const result = await client.booking.createBooking(minimalBookingParams);
 
 			expect(result.success).toBe(true);
 			if (result.success) {
@@ -354,7 +394,7 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should validate input parameters", async () => {
-			const result = await client.createBooking({
+			const result = await client.booking.createBooking({
 				...minimalBookingParams,
 				bookingFileStatus: {
 					value: "INVALID_STATUS" as "QUOTATION",
@@ -384,14 +424,14 @@ describeHttp("AvesClient", () => {
         </BookingFileRS>`,
 				);
 
-			const result = await client.createBooking(minimalBookingParams);
+			const result = await client.booking.createBooking(minimalBookingParams);
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
 				expect(result.error).toBeInstanceOf(AvesError);
 				expect(result.error.kind).toBe("api");
 				expect(result.error.code).toBe(2001);
-				expect(result.error.status).toBe("error");
+				expect(result.error.status).toBe("ERROR");
 			}
 		});
 
@@ -411,7 +451,7 @@ describeHttp("AvesClient", () => {
           </BookingFileRS>`;
 				});
 
-			await client.createBooking(minimalBookingParams);
+			await client.booking.createBooking(minimalBookingParams);
 
 			expect(capturedBody).toContain("<BookFileRQ>");
 			expect(capturedBody).toContain("<CustomerDetail");
@@ -481,7 +521,7 @@ describeHttp("AvesClient", () => {
           </BookingFileRS>`,
 				);
 
-			const result = await client.modBookingServices(modParams);
+			const result = await client.booking.modBookingServices(modParams);
 			expect(result.success).toBe(true);
 			if (result.success) {
 				expect(result.data.bookingFileCode).toBe("14/036654");
@@ -502,7 +542,7 @@ describeHttp("AvesClient", () => {
 					return `<BookingFileRS><RsStatus Status="OK"/></BookingFileRS>`;
 				});
 
-			await client.modBookingServices(modParams);
+			await client.booking.modBookingServices(modParams);
 			expect(capturedBody).toContain("<ModFileServicesRQ>");
 			expect(capturedBody).toContain('CancelOperationType="DELETE"');
 			expect(capturedBody).toContain('pCode="2014MDE0000010"');
@@ -523,7 +563,7 @@ describeHttp("AvesClient", () => {
 				})
 				.reply(200, `<CancelFileRS><RsStatus Status="OK"/></CancelFileRS>`);
 
-			const result = await client.cancelBooking({
+			const result = await client.booking.cancelBooking({
 				bookingFileCode: "14/000081",
 				customerRecordCode: "000170",
 			});
@@ -549,7 +589,7 @@ describeHttp("AvesClient", () => {
           </SetStatusRS>`,
 				);
 
-			const result = await client.setBookingStatus({
+			const result = await client.booking.setBookingStatus({
 				customerRecordCode: "000170",
 				bookingFileCode: "14/000081",
 				fileStatus: { value: "CANCELED" },
@@ -582,7 +622,7 @@ describeHttp("AvesClient", () => {
           </SetStatusServiceRS>`,
 				);
 
-			const result = await client.setBookingServiceStatus({
+			const result = await client.booking.setBookingServiceStatus({
 				customerRecordCode: "000001",
 				bookingFileCode: "18/000252",
 				bookingServiceRef: "002",
@@ -597,7 +637,7 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should reject setBookingStatus with invalid status", async () => {
-			const result = await client.setBookingStatus({
+			const result = await client.booking.setBookingStatus({
 				customerRecordCode: "000170",
 				bookingFileCode: "14/000081",
 				fileStatus: { value: "INVALID" as "CANCELED" },
@@ -620,7 +660,7 @@ describeHttp("AvesClient", () => {
 					`<ModFileHeaderRS><RsStatus Status="OK"/></ModFileHeaderRS>`,
 				);
 
-			const result = await client.modBookingHeader({
+			const result = await client.booking.modBookingHeader({
 				bookingFileCode: "14/000043",
 				bookingFileStartDate: "2014-04-28",
 				customerRecordCode: "103737",
@@ -652,7 +692,7 @@ describeHttp("AvesClient", () => {
 					return `<FilePaymentListRS><RsStatus Status="OK"/></FilePaymentListRS>`;
 				});
 
-			const result = await client.insertFilePaymentList({
+			const result = await client.booking.insertFilePaymentList({
 				bookingFileCode: "18/000172",
 				paymentUser: "MLDN",
 				enableMultiplePayments: true,
@@ -679,7 +719,7 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should reject payload without booking file reference", async () => {
-			const result = await client.insertFilePaymentList({
+			const result = await client.booking.insertFilePaymentList({
 				enableMultiplePayments: true,
 				operationType: "AbsoluteAmountsInsertion",
 				filePaymentList: [
@@ -689,7 +729,7 @@ describeHttp("AvesClient", () => {
 						paymentType: "B",
 					},
 				],
-			} as Parameters<typeof client.insertFilePaymentList>[0]);
+			} as Parameters<typeof client.booking.insertFilePaymentList>[0]);
 			expect(result.success).toBe(false);
 			if (!result.success) expect(result.error).toBeInstanceOf(AvesError);
 		});
@@ -718,7 +758,7 @@ describeHttp("AvesClient", () => {
         </SearchPackageRS>`;
 				});
 
-			const result = await client.searchPackages({
+			const result = await client.packages.searchPackages({
 				customerRecordCode: "138311",
 				languageCode: "01",
 				currencyCode: "EUR",
@@ -780,7 +820,7 @@ describeHttp("AvesClient", () => {
 					return `<SearchPackageRS><RsStatus Status="OK"/></SearchPackageRS>`;
 				});
 
-			const result = await localized.searchPackages({
+			const result = await localized.packages.searchPackages({
 				customerRecordCode: "138311",
 				startDate: "2014-12-27T00:00:00",
 				endDate: "2015-01-03T00:00:00",
@@ -822,7 +862,7 @@ describeHttp("AvesClient", () => {
         </PackageDetailRS>`,
 				);
 
-			const result = await client.getPackageDetail({
+			const result = await client.packages.getPackageDetail({
 				customerRecordCode: "001692",
 				packageCode: "2015F042",
 				startDate: "2015-05-02T00:00:00",
@@ -853,7 +893,7 @@ describeHttp("AvesClient", () => {
 				})
 				.reply(200, `<CommitPackRS><RsStatus Status="OK"/></CommitPackRS>`);
 
-			const result = await client.commitPackage({
+			const result = await client.packages.commitPackage({
 				packageCode: "14/PACKAGE001",
 			});
 
@@ -884,7 +924,7 @@ describeHttp("AvesClient", () => {
         </SearchFileRS>`,
 				);
 
-			const result = await client.searchBookingFiles({
+			const result = await client.booking.searchBookingFiles({
 				searchType: "PACKAGE_CODE",
 				customerRecordCode: "138311",
 				packageCode: "2014MDE0000010",
@@ -902,14 +942,21 @@ describeHttp("AvesClient", () => {
 
 	describe("AvesError", () => {
 		it("should create error with correct properties", () => {
-			const error = new AvesError("api", "Test error message", "error", 1001);
+			const error = new AvesError("api", "Test error message", "ERROR", 1001);
 
 			expect(error).toBeInstanceOf(Error);
 			expect(error).toBeInstanceOf(AvesError);
 			expect(error.kind).toBe("api");
 			expect(error.message).toBe("Test error message");
-			expect(error.status).toBe("error");
+			expect(error.status).toBe("ERROR");
 			expect(error.code).toBe(1001);
+		});
+
+		it("preserves status casing and leaves absent code undefined", () => {
+			const error = apiError("Test error message", "ERROR");
+
+			expect(error.status).toBe("ERROR");
+			expect(error.code).toBeUndefined();
 		});
 
 		it("should create validation error", () => {

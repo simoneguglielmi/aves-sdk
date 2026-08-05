@@ -1,4 +1,4 @@
-import { AvesError } from "../error.js";
+import { validationError } from "../error.js";
 
 function buildUrl(baseURL: string, endpoint: string): URL {
 	try {
@@ -10,8 +10,7 @@ function buildUrl(baseURL: string, endpoint: string): URL {
 
 		return new URL(combinedPath, base);
 	} catch (error) {
-		throw new AvesError(
-			"validation",
+		throw validationError(
 			`Invalid baseURL: ${error instanceof Error ? error.message : "Invalid URL format"}`,
 		);
 	}
@@ -26,8 +25,7 @@ function buildUrl(baseURL: string, endpoint: string): URL {
  */
 export function parseUrl(baseURL: string, endpoint: string): string {
 	if (!endpoint.startsWith("/")) {
-		throw new AvesError(
-			"validation",
+		throw validationError(
 			`Invalid endpoint: endpoint must start with '/' but got '${endpoint}'`,
 		);
 	}
@@ -37,8 +35,7 @@ export function parseUrl(baseURL: string, endpoint: string): string {
 	const url = buildUrl(normalizedBaseURL, endpoint);
 
 	if (url.protocol !== "http:" && url.protocol !== "https:") {
-		throw new AvesError(
-			"validation",
+		throw validationError(
 			`Invalid protocol: baseURL must use http:// or https:// but got '${url.protocol}'`,
 		);
 	}

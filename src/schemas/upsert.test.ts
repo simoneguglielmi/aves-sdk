@@ -2,7 +2,7 @@ import { parse, safeParse } from "valibot";
 import { describe, expect, it } from "vitest";
 import {
 	AccountPoliciesSchema,
-	DynamicFieldsSchema,
+	DynamicFieldsInputSchema,
 	FinancialDetailSchema,
 	IdDocumentDetailSchema,
 	MasterRecordDetailApiSchema,
@@ -359,40 +359,21 @@ describe("SupplierRefMasterRecordsSchema", () => {
 	});
 });
 
-describe("DynamicFieldsSchema", () => {
+describe("DynamicFieldsInputSchema", () => {
 	it("should validate valid dynamic field", () => {
-		const input = [
-			{
-				key: "loyalty_tier",
-				value: "gold",
-			},
-		];
+		const input = {
+			key: "loyalty_tier",
+			value: "gold",
+		};
 
-		const result = parse(DynamicFieldsSchema, input);
+		const result = parse(DynamicFieldsInputSchema, input);
 		expect(result).toBeDefined();
-		expect(result).toHaveLength(1);
 	});
 
 	it("should require both key and value", () => {
-		expect(() => parse(DynamicFieldsSchema, [{ key: "test" }])).toThrow();
-		expect(() => parse(DynamicFieldsSchema, [{ value: "test" }])).toThrow();
-		expect(() => parse(DynamicFieldsSchema, [{}])).toThrow();
-	});
-
-	it("should transform to PascalCase with @ prefix for attributes", () => {
-		const input = [
-			{
-				key: "custom_field",
-				value: "custom_value",
-			},
-		];
-
-		const result = parse(DynamicFieldsSchema, input);
-
-		expect(result).toHaveLength(1);
-		// key and value are attribute fields
-		expect(result[0]).toHaveProperty("@Key", "custom_field");
-		expect(result[0]).toHaveProperty("@Value", "custom_value");
+		expect(() => parse(DynamicFieldsInputSchema, { key: "test" })).toThrow();
+		expect(() => parse(DynamicFieldsInputSchema, { value: "test" })).toThrow();
+		expect(() => parse(DynamicFieldsInputSchema, {})).toThrow();
 	});
 });
 
@@ -452,16 +433,13 @@ describe("MasterRecordDetailSchema with nested objects", () => {
 		const input = {
 			languageCode: "02",
 			name: "John Doe",
-			dynamicFields: {
-				key: "loyalty_tier",
-				value: "platinum",
-			},
+			dynamicFields: [{ key: "loyalty_tier", value: "platinum" }],
 		};
 
 		const result = parse(MasterRecordDetailSchema, input);
 		expect(result).toBeDefined();
 		expect(result.dynamicFields).toBeDefined();
-		expect(result.dynamicFields?.key).toBe("loyalty_tier");
+		expect(result.dynamicFields?.[0]?.key).toBe("loyalty_tier");
 	});
 
 	it("should validate master record with all nested objects", () => {
@@ -485,10 +463,7 @@ describe("MasterRecordDetailSchema with nested objects", () => {
 				acceptPrivacyPolicies: 1,
 				acceptNewsletterPolicies: 0,
 			},
-			dynamicFields: {
-				key: "referral_source",
-				value: "website",
-			},
+			dynamicFields: [{ key: "referral_source", value: "website" }],
 		};
 
 		const result = parse(MasterRecordDetailSchema, input);
@@ -591,18 +566,15 @@ describe("MasterRecordDetailApiSchema with nested objects", () => {
 		const input = {
 			languageCode: "02",
 			name: "John Doe",
-			dynamicFields: {
-				key: "custom_key",
-				value: "custom_value",
-			},
+			dynamicFields: [{ key: "custom_key", value: "custom_value" }],
 		};
 
 		const validated = parse(MasterRecordDetailSchema, input);
 		const result = parse(MasterRecordDetailApiSchema, validated);
 
 		expect(result).toHaveProperty("DynamicFields");
-		expect(result.DynamicFields).toHaveProperty("@Key", "custom_key");
-		expect(result.DynamicFields).toHaveProperty("@Value", "custom_value");
+		expect(result.DynamicFields?.[0]).toHaveProperty("@Key", "custom_key");
+		expect(result.DynamicFields?.[0]).toHaveProperty("@Value", "custom_value");
 	});
 });
 
@@ -741,10 +713,7 @@ describe("ManageMasterRecordResponseSchema with nested objects", () => {
 		const result = parse(ManageMasterRecordResponseSchema, apiResponse);
 
 		expect(result.dynamicFields).toBeDefined();
-		expect(result.dynamicFields).toHaveProperty("key", "key");
-		expect(result.dynamicFields).toBeInstanceOf(Object);
-		expect(result.dynamicFields?.key).toBe("key");
-		expect(result.dynamicFields?.value).toBe("value");
+		expect(result.dynamicFields).toEqual([{ key: "key", value: "value" }]);
 	});
 
 	it("should transform API response with multiple dynamicFields", () => {
@@ -758,7 +727,6 @@ describe("ManageMasterRecordResponseSchema with nested objects", () => {
 		};
 		const result = parse(ManageMasterRecordResponseSchema, apiResponse);
 		expect(result.dynamicFields).toBeDefined();
-		expect(result.dynamicFields?.key).toBe("field1");
-		expect(result.dynamicFields?.value).toBe("value1");
+		expect(result.dynamicFields).toEqual([{ key: "field1", value: "value1" }]);
 	});
 });
