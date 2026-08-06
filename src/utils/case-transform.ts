@@ -266,7 +266,7 @@ export function pascalToCamelKeys<T>(input: T): Camelize<T> {
 /**
  * In-place Pascal/@attrs → camelCase. Mutates plain objects/arrays owned by the
  * caller (Valibot parse output). Used by {@link createResponseSchema} to avoid a
- * second deep-copy after validation (ADR 0001 Phase 2a).
+ * second deep-copy after validation.
  */
 export function pascalToCamelKeysInPlace<T>(input: T): Camelize<T> {
 	return camelizeInPlace(input) as Camelize<T>;

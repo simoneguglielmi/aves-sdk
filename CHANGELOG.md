@@ -79,7 +79,7 @@ await client.master.upsert(record);
 - WeakMap cache for `itemShape` / `encodeShapeFor` on static WireShape refs.
 - `toWireBody` single shape-driven walk (list wrap + pax normalize + wire keys).
 - Zero-copy `withPublicAliases` via hardened lazy Proxy (WeakMap identity, proto-pollution blocked).
-- ADR 0001 Phase 2a: `createResponseSchema` camelizes Valibot output **in place** (`pascalToCamelKeysInPlace`) — no second deep-copy.
+- `createResponseSchema` camelizes Valibot output **in place** (`pascalToCamelKeysInPlace`) — no second deep-copy.
 - Performance harness: `yarn test:bench` (Vitest bench) and `AVES_PERF=1 yarn test:perf` (relative hot-path asserts).
 
 <a id="v3.0.0"></a>

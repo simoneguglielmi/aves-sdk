@@ -54,7 +54,7 @@ export function listDetailApiSchema<
 
 /**
  * Creates a schema that validates the PascalCase wire response, then camelizes
- * keys **in place** on the parse output (ADR 0001 Phase 2a — no second tree).
+ * keys **in place** on the parse output — no second tree copy.
  */
 export function createResponseSchema<TSchema extends v.GenericSchema>(
 	apiSchema: TSchema,
