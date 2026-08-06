@@ -33,7 +33,8 @@ const result = await client.master.search({
 });
 
 if (result.success) {
-  console.log(result.data.masterRecordList);
+  const [record] = result.data;
+  console.log(record?.recordCode);
 } else {
   console.error(result.error.kind, result.error.message, result.error.code);
 }
@@ -120,6 +121,11 @@ const byCode = await client.master.search({
   searchType: 'CODE',
   recordCode: '508558',
 });
+
+if (byCode.success) {
+  const [record] = byCode.data;
+  console.log(record?.recordCode);
+}
 
 const byEmail = await client.master.search({
   searchType: 'EMAIL',

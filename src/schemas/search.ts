@@ -150,9 +150,7 @@ const MasterRecordListApiSchema = listDetailApiSchema(
 	MasterRecordDetailApiValidationSchema,
 );
 
-/**
- * Search master record response schema (transforms to camelCase)
- */
+/** Wire RS parser (internal): `{ rsStatus, masterRecordList }` after camelCase transform. */
 export const SearchMasterRecordResponseSchema = createListResponseSchema(
 	"MasterRecordList",
 	MasterRecordListApiSchema,

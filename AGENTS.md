@@ -208,10 +208,13 @@ Source: `schema-transform.ts`, `booking-transform.ts`, `schemas/common.ts`.
 | `coalesceWireAliases`                           | dialect attrs → canonical                     |
 | `StatusOnlyResponseSchema`                      | cancel / mod-header / commit / payment list   |
 
+`master.search` is a special case: transport still parses wire `{ rsStatus, masterRecordList }`, but the domain client maps success to `MasterRecordDetailResponse[]` (no `rsStatus` on `result.data`).
+
 ```ts
 createFlattenedResponseSchema(PackageDetailApiSchema, 'packageDetail'); // data.pCode
 listDetailApiSchema('FeatureDetail', FeatureDetailApiSchema);
 createListResponseSchema('PackageList', PackageListApiSchema);
+// master.search → result.data is MasterRecordDetailResponse[]
 ```
 
 ### Request helpers & aliases

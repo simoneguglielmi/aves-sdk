@@ -31,18 +31,14 @@ import type {
 	SearchPackageResponseSchema,
 	SearchServicesResponseSchema,
 } from "./schemas/package-catalog.js";
-import type {
-	SearchMasterRecordResponseSchema,
-	SearchMasterRecordSchema,
-} from "./schemas/search.js";
-import type {
-	SearchBookingFileResponseSchema,
-	SearchBookingFileSchema,
-} from "./schemas/search-booking-file.js";
+import type { SearchMasterRecordSchema } from "./schemas/search.js";
+import type { BookingFileDetailApiSchema } from "./schemas/booking-response.js";
+import type { SearchBookingFileSchema } from "./schemas/search-booking-file.js";
 import type {
 	ManageMasterRecordRequestSchema,
 	ManageMasterRecordResponseSchema,
 } from "./schemas/upsert.js";
+import type { Camelize } from "./utils/case-transform.js";
 
 // ============================================================================
 // Common Types
@@ -267,8 +263,9 @@ export type SearchMasterRecord = InferInput<typeof SearchMasterRecordSchema>;
 /**
  * Response from a master record search operation.
  *
- * @property rsStatus - Operation status (check for 'OK' before accessing results)
- * @property masterRecordList - Matching records as a flat array
+ * On success, `result.data` is always a flat array of matching records
+ * (including a single-element array for one match, or `[]` when none).
+ * Non-OK AVES status is surfaced as `result.error` — there is no `rsStatus` on success.
  *
  * @example
  * ```typescript
@@ -276,15 +273,13 @@ export type SearchMasterRecord = InferInput<typeof SearchMasterRecordSchema>;
  *   searchType: 'CODE',
  *   recordCode: '508558',
  * });
- * if (result.success && result.data.rsStatus.status === 'OK') {
- *   const records = result.data.masterRecordList ?? [];
- *   records.forEach(record => console.log(record.name));
+ * if (result.success) {
+ *   const [record] = result.data;
+ *   console.log(record?.recordCode);
  * }
  * ```
  */
-export type SearchMasterRecordRS = InferOutput<
-	typeof SearchMasterRecordResponseSchema
->;
+export type SearchMasterRecordRS = MasterRecordDetailResponse[];
 
 // ============================================================================
 // Upsert Types
@@ -471,12 +466,20 @@ export type CommitPackageRS = InferOutput<typeof CommitPackageResponseSchema>;
  */
 export type SearchBookingFileRQ = InferInput<typeof SearchBookingFileSchema>;
 
+/** One row in `SearchBookingFileRS.bookingFileList` (camelCase RS shape). */
+export type SearchBookingFileDetail = Camelize<
+	InferOutput<typeof BookingFileDetailApiSchema>
+>;
+
 /**
  * Response from SearchBookingFile (SearchFileRS).
+ *
+ * Explicit shape — avoids excessively deep `InferOutput` on nested list schemas.
  */
-export type SearchBookingFileRS = InferOutput<
-	typeof SearchBookingFileResponseSchema
->;
+export type SearchBookingFileRS = {
+	rsStatus: RsStatus;
+	bookingFileList?: SearchBookingFileDetail[];
+};
 
 // ============================================================================
 // Client Configuration
