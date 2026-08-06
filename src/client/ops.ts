@@ -14,6 +14,7 @@ import {
 	SetFileStatusApiSchema,
 } from "../schemas/booking-ops.js";
 import type { RsStatusSchema } from "../schemas/common.js";
+import { OpBodyKey } from "../schemas/enums.js";
 import { MasterRecordDetailApiSchema } from "../schemas/master-record.js";
 import {
 	AvesSearchApiSchema,
@@ -48,7 +49,7 @@ type OpConfig<
 	responseRoot: string;
 	apiSchema: BaseSchema<TIn, TApiBody, BaseIssue<unknown>>;
 	responseSchema: BaseSchema<unknown, TOut, BaseIssue<unknown>>;
-	bodyKey?: string;
+	bodyKey?: OpBodyKey;
 };
 
 function defineOp<
@@ -61,7 +62,8 @@ function defineOp<
 
 /**
  * Static descriptor per AVES operation: endpoint, XML roots, schemas, optional body nest.
- * Domains call `invokeOp(op, params)` — everything else is looked up here.
+ * Domains call `invokeOp(op, params)` — keys match public method names where unique;
+ * collisions across namespaces use a short domain qualifier (`searchBookings`, `searchPackages`).
  */
 export const AVES_OPS = {
 	search: defineOp({
@@ -71,64 +73,64 @@ export const AVES_OPS = {
 		apiSchema: SearchMasterRecordApiSchema,
 		responseSchema: SearchMasterRecordResponseSchema,
 	}),
-	upsertRecord: defineOp({
+	upsert: defineOp({
 		endpoint: AVES_ENDPOINTS.upsert,
 		requestRoot: XML_ROOT_ELEMENTS.UPSERT_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.UPSERT_RESPONSE,
 		apiSchema: MasterRecordDetailApiSchema,
 		responseSchema: ManageMasterRecordResponseSchema,
-		bodyKey: "MasterRecordDetail",
+		bodyKey: OpBodyKey.MasterRecordDetail,
 	}),
-	createBooking: defineOp({
+	create: defineOp({
 		endpoint: AVES_ENDPOINTS.createBooking,
 		requestRoot: XML_ROOT_ELEMENTS.BOOKING_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.BOOKING_RESPONSE,
 		apiSchema: BookingFileApiSchema,
 		responseSchema: BookingFileResponseSchema,
 	}),
-	modBookingServices: defineOp({
+	updateServices: defineOp({
 		endpoint: AVES_ENDPOINTS.modBookingServices,
 		requestRoot: XML_ROOT_ELEMENTS.MOD_FILE_SERVICES_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.BOOKING_RESPONSE,
 		apiSchema: ModFileServicesApiSchema,
 		responseSchema: BookingFileDetailResponseSchema,
 	}),
-	modBookingHeader: defineOp({
+	updateHeader: defineOp({
 		endpoint: AVES_ENDPOINTS.modBookingHeader,
 		requestRoot: XML_ROOT_ELEMENTS.MOD_FILE_HEADER_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.MOD_FILE_HEADER_RESPONSE,
 		apiSchema: ModFileHeaderApiSchema,
 		responseSchema: BookingStatusOnlyResponseSchema,
 	}),
-	cancelBooking: defineOp({
+	cancel: defineOp({
 		endpoint: AVES_ENDPOINTS.cancelBooking,
 		requestRoot: XML_ROOT_ELEMENTS.CANCEL_FILE_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.CANCEL_FILE_RESPONSE,
 		apiSchema: CancelFileApiSchema,
 		responseSchema: BookingStatusOnlyResponseSchema,
 	}),
-	setBookingStatus: defineOp({
+	setStatus: defineOp({
 		endpoint: AVES_ENDPOINTS.setBookingStatus,
 		requestRoot: XML_ROOT_ELEMENTS.SET_STATUS_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.SET_STATUS_RESPONSE,
 		apiSchema: SetFileStatusApiSchema,
 		responseSchema: BookingFileDetailResponseSchema,
 	}),
-	setBookingServiceStatus: defineOp({
+	setServiceStatus: defineOp({
 		endpoint: AVES_ENDPOINTS.setBookingServiceStatus,
 		requestRoot: XML_ROOT_ELEMENTS.SET_STATUS_SERVICE_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.SET_STATUS_SERVICE_RESPONSE,
 		apiSchema: SetFileServiceStatusApiSchema,
 		responseSchema: BookingFileDetailResponseSchema,
 	}),
-	insertFilePaymentList: defineOp({
+	addPayments: defineOp({
 		endpoint: AVES_ENDPOINTS.insertFilePaymentList,
 		requestRoot: XML_ROOT_ELEMENTS.FILE_PAYMENT_LIST_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.FILE_PAYMENT_LIST_RESPONSE,
 		apiSchema: FilePaymentListApiSchema,
 		responseSchema: BookingStatusOnlyResponseSchema,
 	}),
-	searchBookingFiles: defineOp({
+	searchBookings: defineOp({
 		endpoint: AVES_ENDPOINTS.searchBookingFile,
 		requestRoot: XML_ROOT_ELEMENTS.SEARCH_BOOKING_FILE_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.SEARCH_BOOKING_FILE_RESPONSE,
@@ -142,21 +144,21 @@ export const AVES_OPS = {
 		apiSchema: AvesSearchApiSchema,
 		responseSchema: SearchPackageResponseSchema,
 	}),
-	searchTopServices: defineOp({
+	searchServices: defineOp({
 		endpoint: AVES_ENDPOINTS.searchTopServices,
 		requestRoot: XML_ROOT_ELEMENTS.AVES_SEARCH_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.SEARCH_SERVICES_RESPONSE,
 		apiSchema: AvesSearchApiSchema,
 		responseSchema: SearchServicesResponseSchema,
 	}),
-	getPackageDetail: defineOp({
+	get: defineOp({
 		endpoint: AVES_ENDPOINTS.getPackageDetail,
 		requestRoot: XML_ROOT_ELEMENTS.PACKAGE_DETAIL_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.PACKAGE_DETAIL_RESPONSE,
 		apiSchema: PackageDetailRequestApiSchema,
 		responseSchema: PackageDetailResponseSchema,
 	}),
-	commitPackage: defineOp({
+	commit: defineOp({
 		endpoint: AVES_ENDPOINTS.commitPackage,
 		requestRoot: XML_ROOT_ELEMENTS.COMMIT_PACKAGE_REQUEST,
 		responseRoot: XML_ROOT_ELEMENTS.COMMIT_PACKAGE_RESPONSE,

@@ -150,7 +150,7 @@ const TopServiceParamsInputSchema = facadeObject(
 /**
  * Flat AvesSearchRQ body (camelCase) — shared by SearchAvesPackages / SearchTopServices.
  * BaseSearch fields live at the root; wire transform nests them under `BaseSearch`.
- * `searchPackages` / `searchTopServices` default `avesSearchType`; `paxQty` defaults to
+ * `packages.search` / `packages.searchServices` default `avesSearchType`; `paxQty` defaults to
  * `passengerList.length`; `paxQtyCriteria` defaults to `GREATER_OR_EQUAL`.
  * `languageCode` may come from `AvesClient` options when omitted.
  */
