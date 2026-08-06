@@ -14,6 +14,7 @@ import {
 	toFacadeResult,
 } from "../utils/facade-transform.js";
 import type { Result } from "../utils/result.js";
+import { AvesOp } from "./ops.js";
 import type { AvesTransport } from "./transport.js";
 
 export class PackageCatalogClient {
@@ -38,7 +39,7 @@ export class PackageCatalogClient {
 		params: AvesSearchRQ,
 	): Promise<Result<FacadeOutput<SearchPackageRS>, AvesError>> {
 		const result = await this.transport.invokeOp(
-			"searchPackages",
+			AvesOp.searchPackages,
 			this.#prepareSearch(params, AvesSearchType.PACKAGE),
 		);
 		return toFacadeResult(result);
@@ -49,7 +50,7 @@ export class PackageCatalogClient {
 		params: AvesSearchRQ,
 	): Promise<Result<FacadeOutput<SearchServicesRS>, AvesError>> {
 		const result = await this.transport.invokeOp(
-			"searchServices",
+			AvesOp.searchServices,
 			this.#prepareSearch(params, AvesSearchType.SERVICE),
 		);
 		return toFacadeResult(result);
@@ -59,7 +60,7 @@ export class PackageCatalogClient {
 	async get(
 		params: PackageDetailRQ,
 	): Promise<Result<FacadeOutput<PackageDetailRS>, AvesError>> {
-		const result = await this.transport.invokeOp("get", params);
+		const result = await this.transport.invokeOp(AvesOp.get, params);
 		return toFacadeResult(result);
 	}
 
@@ -67,7 +68,7 @@ export class PackageCatalogClient {
 	async commit(
 		params: CommitPackageRQ,
 	): Promise<Result<FacadeOutput<CommitPackageRS>, AvesError>> {
-		const result = await this.transport.invokeOp("commit", params);
+		const result = await this.transport.invokeOp(AvesOp.commit, params);
 		return toFacadeResult(result);
 	}
 }

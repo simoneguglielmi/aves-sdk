@@ -2,7 +2,12 @@
 
 export { BookingClient } from "./client/booking.js";
 export { MasterRecordsClient } from "./client/master-records.js";
-export type { AvesOp, OpParams, OpResult } from "./client/ops.js";
+export {
+	AvesOp,
+	AvesOpSchema,
+	type OpParams,
+	type OpResult,
+} from "./client/ops.js";
 export { PackageCatalogClient } from "./client/packages.js";
 export { AvesTransport } from "./client/transport.js";
 export {
