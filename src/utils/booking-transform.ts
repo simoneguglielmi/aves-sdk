@@ -44,8 +44,7 @@ function encodeToWire(value: unknown, shape?: WireShape): unknown {
 	const result: Record<string, unknown> = {};
 	for (const [key, raw] of Object.entries(value)) {
 		const child = shape?.children?.[key];
-		const item =
-			key === "paxAssociated" ? normalizePaxAssociated(raw) : raw;
+		const item = key === "paxAssociated" ? normalizePaxAssociated(raw) : raw;
 
 		if (child?.listWrap && Array.isArray(item)) {
 			const detailKey = detailKeyFor(key, child);

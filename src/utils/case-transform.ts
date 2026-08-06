@@ -277,8 +277,7 @@ function camelizeInPlace(input: unknown): unknown {
 	if (typeof input !== "object" || isSpecialObject(input)) return input;
 
 	if (Array.isArray(input)) {
-		for (let i = 0; i < input.length; i++)
-			input[i] = camelizeInPlace(input[i]);
+		for (let i = 0; i < input.length; i++) input[i] = camelizeInPlace(input[i]);
 		return input;
 	}
 

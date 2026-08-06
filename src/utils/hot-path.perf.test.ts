@@ -67,8 +67,7 @@ function deepAliasCopy(value: unknown): unknown {
 		for (const [key, child] of Object.entries(node)) {
 			const next = walk(child);
 			output[key] = next;
-			const publicKey =
-				publicKeyAliases[key as keyof typeof publicKeyAliases];
+			const publicKey = publicKeyAliases[key as keyof typeof publicKeyAliases];
 			if (publicKey && output[publicKey] === undefined)
 				output[publicKey] = next;
 		}
@@ -99,9 +98,7 @@ describe.skipIf(!RUN)("hot-path performance (AVES_PERF=1)", () => {
 		const fused = timeMs(() => toWireBody(input, bookingFileWire), iterations);
 		const legacy = timeMs(() => {
 			camelToPascalKeys(
-				normalizeEmptyPaxAssociated(
-					wrapListDetails(input, bookingFileWire),
-				),
+				normalizeEmptyPaxAssociated(wrapListDetails(input, bookingFileWire)),
 				bookingFileWire,
 			);
 		}, iterations);

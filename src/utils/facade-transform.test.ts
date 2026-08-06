@@ -195,9 +195,7 @@ describe("withPublicAliases (Proxy facade)", () => {
 		const result = withPublicAliases(target);
 		expect(Reflect.set(result, "__proto__", { polluted: true })).toBe(false);
 		expect(Reflect.setPrototypeOf(result, {})).toBe(false);
-		expect(
-			Object.prototype.hasOwnProperty.call(Object.prototype, "polluted"),
-		).toBe(false);
+		expect(Object.hasOwn(Object.prototype, "polluted")).toBe(false);
 		expect(Object.getPrototypeOf(result)).toBe(Object.getPrototypeOf(target));
 	});
 
