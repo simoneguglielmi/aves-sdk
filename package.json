@@ -1,6 +1,6 @@
 {
   "name": "aves-sdk",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "TypeScript SDK for AVES XML REST",
   "homepage": "https://github.com/simoneguglielmi/aves-sdk#readme",
   "repository": [
