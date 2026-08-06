@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `OpBodyKey` object enum (`MasterRecordDetail`) for RQ payload nest keys; typed on `AVES_OPS` / envelope.
+- `AvesOp` object enum (+ `AvesOpSchema`) for `invokeOp` keys; domains use `AvesOp.create` instead of string literals.
 
 ### Changed
 
