@@ -84,3 +84,17 @@ describe("MasterRecordDetailResponse (#11 — response schema parses the wrong s
 		expectTypeOf<MasterRecordDetailResponse>().toHaveProperty("loginType");
 	});
 });
+
+describe("SearchMasterRecordRS — flat array, no rsStatus on success", () => {
+	it("is MasterRecordDetailResponse[]", () => {
+		expectTypeOf<import("./index.js").SearchMasterRecordRS>().toEqualTypeOf<
+			MasterRecordDetailResponse[]
+		>();
+	});
+
+	it("does not expose rsStatus on the success payload", () => {
+		expectTypeOf<
+			import("./index.js").SearchMasterRecordRS
+		>().not.toHaveProperty("rsStatus");
+	});
+});

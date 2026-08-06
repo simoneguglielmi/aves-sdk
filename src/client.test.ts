@@ -71,9 +71,10 @@ describeHttp("AvesClient", () => {
 
 			expect(result.success).toBe(true);
 			if (result.success) {
-				expect(result.data).toHaveProperty("rsStatus");
-				expect(result.data.rsStatus).toHaveProperty("status", "OK");
-				expect(result.data).toHaveProperty("masterRecordList");
+				expect(Array.isArray(result.data)).toBe(true);
+				expect(result.data).toHaveLength(1);
+				expect(result.data[0]?.recordCode).toBe("508558");
+				expect(result.data[0]?.name).toBe("ROSSI MARIO");
 			}
 		});
 
@@ -162,6 +163,7 @@ describeHttp("AvesClient", () => {
 			});
 
 			expect(result.success).toBe(true);
+			if (result.success) expect(result.data).toEqual([]);
 		});
 
 		it("should cap HTTP error response bodies", async () => {

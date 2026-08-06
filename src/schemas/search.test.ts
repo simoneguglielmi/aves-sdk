@@ -233,5 +233,39 @@ describe("SearchMasterRecordResponseSchema", () => {
 		expect(result).toHaveProperty("rsStatus");
 		expect(result.rsStatus).toHaveProperty("status", "OK");
 		expect(result).toHaveProperty("masterRecordList");
+		expect(result.masterRecordList).toEqual([]);
+	});
+
+	it("should always expose masterRecordList as a flat array", () => {
+		const apiResponse = {
+			RsStatus: { "@Status": "OK" },
+			MasterRecordList: {
+				MasterRecordDetail: [
+					{ "@RecordCode": "508558", Name: "Ennequadro s.r.l." },
+				],
+			},
+		};
+
+		const result = parse(SearchMasterRecordResponseSchema, apiResponse);
+		expect(result.masterRecordList).toHaveLength(1);
+		expect(result.masterRecordList?.[0]?.recordCode).toBe("508558");
+		expect(result.masterRecordList?.[0]?.name).toBe("Ennequadro s.r.l.");
+		expect(result).not.toHaveProperty("recordCode");
+	});
+
+	it("should keep multiple records in masterRecordList", () => {
+		const apiResponse = {
+			RsStatus: { "@Status": "OK" },
+			MasterRecordList: {
+				MasterRecordDetail: [
+					{ "@RecordCode": "508558", Name: "A" },
+					{ "@RecordCode": "508559", Name: "B" },
+				],
+			},
+		};
+
+		const result = parse(SearchMasterRecordResponseSchema, apiResponse);
+		expect(result.masterRecordList).toHaveLength(2);
+		expect(result).not.toHaveProperty("recordCode");
 	});
 });

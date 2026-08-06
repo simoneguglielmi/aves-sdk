@@ -11,7 +11,7 @@ import type {
 	SearchMasterRecord,
 	SearchMasterRecordRS,
 } from "../types.js";
-import type { Result } from "../utils/result.js";
+import { ok, type Result } from "../utils/result.js";
 import { XML_ROOT_ELEMENTS } from "../xml/root.js";
 import { AVES_ENDPOINTS } from "./endpoints.js";
 import type { AvesTransport } from "./transport.js";
@@ -19,11 +19,11 @@ import type { AvesTransport } from "./transport.js";
 export class MasterRecordsClient {
 	constructor(private readonly transport: AvesTransport) {}
 
-	/** Search master records (camelCase in/out). Fields spread at RQ root. */
-	search(
+	/** Search master records. Success returns a flat array (empty when no matches). */
+	async search(
 		params: SearchMasterRecord,
 	): Promise<Result<SearchMasterRecordRS, AvesError>> {
-		return this.transport.invokeOp({
+		const result = await this.transport.invokeOp({
 			op: "search",
 			params,
 			apiSchema: SearchMasterRecordApiSchema,
@@ -32,6 +32,8 @@ export class MasterRecordsClient {
 			responseRoot: XML_ROOT_ELEMENTS.SEARCH_RESPONSE,
 			responseSchema: SearchMasterRecordResponseSchema,
 		});
+		if (!result.success) return result;
+		return ok(result.data.masterRecordList ?? []);
 	}
 
 	/** Insert or update a master record. */
