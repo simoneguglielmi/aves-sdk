@@ -3,8 +3,11 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import {
 	type Camelize,
 	camelToPascalKeys,
+	encodeShapeFor,
+	itemShape,
 	type Pascalize,
 	pascalToCamelKeys,
+	pascalToCamelKeysInPlace,
 	wireKey,
 } from "./case-transform.js";
 import {
@@ -20,6 +23,27 @@ import {
 	searchMasterWire,
 	wire,
 } from "./wire-shapes.js";
+
+describe("pascalToCamelKeysInPlace", () => {
+	it("renames keys on the same object graph", () => {
+		const input = {
+			RsStatus: { Status: "OK" },
+			BookingFileCode: "14/1",
+		};
+		const output = pascalToCamelKeysInPlace(input);
+		expect(output).toBe(input);
+		expect(input).toEqual({
+			rsStatus: { status: "OK" },
+			bookingFileCode: "14/1",
+		});
+	});
+
+	it("strips @ attrs in place", () => {
+		const input = { "@RPH": "001", Name: "A" };
+		pascalToCamelKeysInPlace(input);
+		expect(input).toEqual({ rph: "001", name: "A" });
+	});
+});
 
 describe("case-transform", () => {
 	describe("pascalToCamelKeys", () => {
@@ -270,6 +294,29 @@ describe("financialDetailWire c_PaymentType (finding #6, runtime side)", () => {
 		);
 		expect(wire).toEqual({ "@C_PaymentType": "CASH" });
 		expect(pascalToCamelKeys(wire)).toEqual({ c_PaymentType: "CASH" });
+	});
+});
+
+describe("itemShape / encodeShapeFor cache", () => {
+	it("returns the same object for the same WireShape reference", () => {
+		const shape = { listWrap: "many" as const, attrs: ["rph"] };
+		expect(itemShape(shape)).toBe(itemShape(shape));
+		expect(encodeShapeFor("passengerList", shape)).toBe(
+			encodeShapeFor("passengerList", shape),
+		);
+	});
+
+	it("keys encode cache by listKey when detailKey is inferred", () => {
+		const shape = { listWrap: "many" as const };
+		const a = encodeShapeFor("passengerList", shape);
+		const b = encodeShapeFor("serviceList", shape);
+		expect(a).not.toBe(b);
+		expect(a).toEqual({
+			children: { passengerDetail: itemShape(shape) },
+		});
+		expect(b).toEqual({
+			children: { serviceDetail: itemShape(shape) },
+		});
 	});
 });
 

@@ -99,6 +99,62 @@ type Result<T, E> =
   | { success: false; error: E };
 ```
 
+## Simple facade names
+
+The facade exposes concise aliases for the AVES payload vocabulary. Inbound
+dual keys are owned by Valibot input schemas (`facadeObject` / `coalesceAliases`)
+and coalesced to AVES camelCase before wire encoding. Outbound success payloads
+keep AVES names and add concise compatibility aliases. XML shapes are unchanged.
+
+| AVES-shaped name | Facade name |
+| ---------------- | ----------- |
+| `customerRecordCode` | `customerCode` |
+| `bookingFileCode` / `bookingFileRefCode` | `bookingCode` / `bookingReference` |
+| `selectedPackageDetail` | `package` |
+| `*List` collections | plural collections, for example `services`, `passengers`, `payments` |
+| `pCode` / `sCode` / `ssCode` | `packageCode` / `serviceCode` / `subServiceCode` |
+| `rph` / `roomRph` | `passengerRef` / `roomRef` |
+| `qty` / `pax` / `avesSession` | `quantity` / `passengerCount` / `session` |
+| `rsStatus` | `response` |
+
+New code can use the simplified vocabulary directly:
+
+```typescript
+const created = await client.booking.createBooking({
+  customerCode: '138311',
+  status: 'CONFIRMED',
+  startDate: '2026-08-06',
+  endDate: '2026-08-07',
+  services: [
+    {
+      serviceCode: 'HT00110840',
+      serviceType: 'TOP',
+      targetType: 'RESIDENCE',
+      quantity: '1',
+      passengerCount: '2',
+      session: '1',
+    },
+  ],
+  passengers: [
+    {
+      passengerRef: '001',
+      name: 'ADULT 001',
+      categoryCode: 'AD',
+      gender: 'M',
+    },
+  ],
+});
+
+if (created.success) {
+  console.log(created.data.bookingCode);
+  console.log(created.data.services?.[0]?.serviceStatus);
+}
+```
+
+The previous AVES-shaped names remain accepted and returned as compatibility
+aliases. New type aliases such as `BookingInput`, `Booking`, `MasterRecord`,
+`PackageInput`, and `Package` are exported for new integrations.
+
 ---
 
 ## Master records
@@ -371,9 +427,10 @@ if (!result.success) {
 
 ## Case transformation & wire shapes
 
-- **Input**: camelCase (`recordCode`, `selectedServiceList`, `paymentUser`)
+- **Facade input**: concise camelCase (`customerCode`, `services`, `passengers`)
+- **Wire input**: AVES-shaped camelCase before XML (`recordCode`, `selectedServiceList`, `paymentUser`)
 - **Wire**: PascalCase keys; `@`-prefixed keys become XML attributes
-- **Output**: camelCase again
+- **Output**: concise facade aliases plus compatibility aliases
 
 You do not handle XML attribute prefixes yourself. Attr vs element is decided by a **per-request `WireShape`** (`src/utils/wire-shapes.ts`), not a global field set.
 

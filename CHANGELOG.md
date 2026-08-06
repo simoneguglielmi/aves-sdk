@@ -5,6 +5,27 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-08-06
+
+### Added
+
+- Concise facade aliases for common I/O properties: `customerCode`, `bookingCode`, `services`, `passengers`, `packageCode`, `serviceCode`, `quantity`, `session`, and related fields.
+- Schema-owned dual keys via `facadeObject` / `coalesceAliases` (same pattern as `coalesceCustomerRecordCode`).
+- Simplified public type aliases including `BookingInput`, `Booking`, `MasterRecord`, `PackageInput`, and `Package`.
+- `AVES_OPS` registry + `invokeOp(op, params)` with external `OpParams` / `OpResult` typings.
+
+### Changed
+
+- Facade names are accepted on Valibot input schemas and coalesced to AVES camelCase before wire encoding. Success payloads also expose concise compatibility aliases.
+- Internal transport split: `HttpClient`, `buildOpEnvelope`, `readAvesResponse`, `createRqHeader`; `toAvesError` lives in `error.ts`. Public `invokeOp` API unchanged.
+- Hot-path micro-opts: cached endpoint URLs, shared XML POST headers, frozen cached `RqHeader`, single `AVES_OPS` lookup per `invokeOp`.
+- Cap HTTP error body reads via `readTextCapped` (drain stream, keep ≤ `MAX_ERROR_BODY`).
+- WeakMap cache for `itemShape` / `encodeShapeFor` on static WireShape refs.
+- `toWireBody` single shape-driven walk (list wrap + pax normalize + wire keys).
+- Zero-copy `withPublicAliases` via hardened lazy Proxy (WeakMap identity, proto-pollution blocked).
+- ADR 0001 Phase 2a: `createResponseSchema` camelizes Valibot output **in place** (`pascalToCamelKeysInPlace`) — no second deep-copy. See [`docs/adr/0001-validate-during-camelize.md`](docs/adr/0001-validate-during-camelize.md).
+- Performance harness: `yarn test:bench` (Vitest bench) and `AVES_PERF=1 yarn test:perf` (relative hot-path asserts).
+
 ## [3.0.0] - 2026-08-06
 
 ### Changed

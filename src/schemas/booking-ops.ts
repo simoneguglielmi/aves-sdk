@@ -1,7 +1,16 @@
 import * as v from "valibot";
 import {
+	bookingRefFacades,
+	modHeaderFacades,
+	modServicesFacades,
+	paymentListFacades,
+	setServiceStatusFacades,
+	setStatusFacades,
+} from "../utils/facade-aliases.js";
+import {
 	coalesceListHead,
 	createApiSchema,
+	facadeObject,
 	valueFieldSchema,
 } from "../utils/schema-transform.js";
 import {
@@ -67,23 +76,26 @@ export const CancellableBookedServiceDetailInputSchema = v.object({
  * `selectedPackageList` (len 1) is an alias for `selectedPackageDetail`.
  */
 export const ModFileServicesSchema = v.pipe(
-	v.object({
-		...bookingFileRefEntries,
-		currencyCode: v.optional(v.string()),
-		deadlineList: v.optional(v.array(ModDeadlineDetailInputSchema)),
-		selectedPackageDetail: v.optional(SelectedPackageDetailInputSchema),
-		selectedPackageList: v.optional(
-			v.pipe(v.array(SelectedPackageDetailInputSchema), v.maxLength(1)),
-		),
-		selectedServiceList: v.pipe(
-			v.array(SelectedServiceDetailInputSchema),
-			v.minLength(1),
-		),
-		cancellableBookedServiceList: v.optional(
-			v.array(CancellableBookedServiceDetailInputSchema),
-		),
-		passengerList: v.optional(v.array(PassengerDetailPatchInputSchema)),
-	}),
+	facadeObject(
+		{
+			...bookingFileRefEntries,
+			currencyCode: v.optional(v.string()),
+			deadlineList: v.optional(v.array(ModDeadlineDetailInputSchema)),
+			selectedPackageDetail: v.optional(SelectedPackageDetailInputSchema),
+			selectedPackageList: v.optional(
+				v.pipe(v.array(SelectedPackageDetailInputSchema), v.maxLength(1)),
+			),
+			selectedServiceList: v.pipe(
+				v.array(SelectedServiceDetailInputSchema),
+				v.minLength(1),
+			),
+			cancellableBookedServiceList: v.optional(
+				v.array(CancellableBookedServiceDetailInputSchema),
+			),
+			passengerList: v.optional(v.array(PassengerDetailPatchInputSchema)),
+		},
+		modServicesFacades,
+	),
 	v.transform(coalesceListHead("selectedPackageList", "selectedPackageDetail")),
 );
 
@@ -100,31 +112,34 @@ export const ModFileServicesApiSchema = createApiSchema(
  * ModFileHeaderRQ body (camelCase).
  * Modify header only — no package/costs.
  */
-export const ModFileHeaderSchema = v.object({
-	...bookingFileRefEntries,
-	bookingFileStartDate: v.string(),
-	newCustomerRecordCode: v.optional(v.string()),
-	bookingFileReferenceName: v.optional(v.string()),
-	travelAgentCode: v.optional(v.string()),
-	billingReferenceCode: v.optional(v.string()),
-	paymentReferenceCode: v.optional(v.string()),
-	cupCode: v.optional(v.string()),
-	cigCode: v.optional(v.string()),
-	customerPromoterCode: v.optional(v.string()),
-	bookingNote: v.optional(v.string()),
-	passengerList: v.optional(v.array(PassengerDetailPatchInputSchema)),
-	statisticCodes: v.optional(StatisticCodesInputSchema),
-	bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
-	financialDeadlineList: v.optional(
-		v.array(
-			v.object({
-				reschedulingCode: v.string(),
-				expireDate: v.string(),
-				totalAmount: v.string(),
-			}),
+export const ModFileHeaderSchema = facadeObject(
+	{
+		...bookingFileRefEntries,
+		bookingFileStartDate: v.string(),
+		newCustomerRecordCode: v.optional(v.string()),
+		bookingFileReferenceName: v.optional(v.string()),
+		travelAgentCode: v.optional(v.string()),
+		billingReferenceCode: v.optional(v.string()),
+		paymentReferenceCode: v.optional(v.string()),
+		cupCode: v.optional(v.string()),
+		cigCode: v.optional(v.string()),
+		customerPromoterCode: v.optional(v.string()),
+		bookingNote: v.optional(v.string()),
+		passengerList: v.optional(v.array(PassengerDetailPatchInputSchema)),
+		statisticCodes: v.optional(StatisticCodesInputSchema),
+		bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
+		financialDeadlineList: v.optional(
+			v.array(
+				v.object({
+					reschedulingCode: v.string(),
+					expireDate: v.string(),
+					totalAmount: v.string(),
+				}),
+			),
 		),
-	),
-});
+	},
+	modHeaderFacades,
+);
 
 export const ModFileHeaderApiSchema = createApiSchema(
 	ModFileHeaderSchema,
@@ -135,9 +150,10 @@ export const ModFileHeaderApiSchema = createApiSchema(
 // CancelBookingFile — CancelFileRQ
 // ---------------------------------------------------------------------------
 
-export const CancelFileSchema = v.object({
-	...bookingFileRefEntries,
-});
+export const CancelFileSchema = facadeObject(
+	bookingFileRefEntries,
+	bookingRefFacades,
+);
 
 export const CancelFileApiSchema = createApiSchema(
 	CancelFileSchema,
@@ -153,22 +169,25 @@ export const CancelFileApiSchema = createApiSchema(
  * Change booking file status (incl. CANCELED / NULLIFIED).
  * `fileStatus` accepts a status string or `{ value, expiredDate?, ... }`.
  */
-export const SetFileStatusSchema = v.object({
-	...bookingFileRefEntries,
-	fileStatus: valueFieldSchema(SetFileStatusValueSchema, {
-		expiredDate: v.optional(v.string()),
-		optionedFileExpireDatePolicy: v.optional(OptionedExpirePolicySchema),
-	}),
-	backOfficeRequest: v.optional(BoolishSchema),
-	bookingFileDocument: v.optional(BookingFileDocumentInputSchema),
-	penalty: v.optional(
-		v.object({
-			apply: v.optional(BoolishSchema),
-			specificCode: v.optional(v.string()),
+export const SetFileStatusSchema = facadeObject(
+	{
+		...bookingFileRefEntries,
+		fileStatus: valueFieldSchema(SetFileStatusValueSchema, {
+			expiredDate: v.optional(v.string()),
+			optionedFileExpireDatePolicy: v.optional(OptionedExpirePolicySchema),
 		}),
-	),
-	simulateCancelAndGetPenaltyAmount: v.optional(BoolishSchema),
-});
+		backOfficeRequest: v.optional(BoolishSchema),
+		bookingFileDocument: v.optional(BookingFileDocumentInputSchema),
+		penalty: v.optional(
+			v.object({
+				apply: v.optional(BoolishSchema),
+				specificCode: v.optional(v.string()),
+			}),
+		),
+		simulateCancelAndGetPenaltyAmount: v.optional(BoolishSchema),
+	},
+	setStatusFacades,
+);
 
 export const SetFileStatusApiSchema = createApiSchema(
 	SetFileStatusSchema,
@@ -179,12 +198,15 @@ export const SetFileStatusApiSchema = createApiSchema(
 // SetBookingFileServiceStatus — SetStatusServiceRQ
 // ---------------------------------------------------------------------------
 
-export const SetFileServiceStatusSchema = v.object({
-	...bookingFileRefEntries,
-	bookingServiceRef: v.string(),
-	bookingFileServiceStatus: v.literal("NULLIFIED"),
-	bookingFileServiceStatusDate: v.optional(v.string()),
-});
+export const SetFileServiceStatusSchema = facadeObject(
+	{
+		...bookingFileRefEntries,
+		bookingServiceRef: v.string(),
+		bookingFileServiceStatus: v.literal("NULLIFIED"),
+		bookingFileServiceStatusDate: v.optional(v.string()),
+	},
+	setServiceStatusFacades,
+);
 
 export const SetFileServiceStatusApiSchema = createApiSchema(
 	SetFileServiceStatusSchema,
@@ -209,17 +231,20 @@ export const FilePaymentDetailInputSchema = v.object({
  * `filePaymentList` is a flat Detail array; wire wrap happens in FilePaymentListApiSchema.
  */
 export const FilePaymentListSchema = v.pipe(
-	v.object({
-		bookingFileCode: v.optional(v.string()),
-		bookingFileRefCode: v.optional(v.string()),
-		paymentUser: v.optional(v.string()),
-		enableMultiplePayments: BoolishSchema,
-		operationType: FilePaymentOperationTypeSchema,
-		filePaymentList: v.pipe(
-			v.array(FilePaymentDetailInputSchema),
-			v.minLength(1),
-		),
-	}),
+	facadeObject(
+		{
+			bookingFileCode: v.optional(v.string()),
+			bookingFileRefCode: v.optional(v.string()),
+			paymentUser: v.optional(v.string()),
+			enableMultiplePayments: BoolishSchema,
+			operationType: FilePaymentOperationTypeSchema,
+			filePaymentList: v.pipe(
+				v.array(FilePaymentDetailInputSchema),
+				v.minLength(1),
+			),
+		},
+		paymentListFacades,
+	),
 	v.check(
 		(input) => Boolean(input.bookingFileCode || input.bookingFileRefCode),
 		"bookingFileCode or bookingFileRefCode is required",

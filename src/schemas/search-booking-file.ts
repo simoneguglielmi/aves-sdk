@@ -1,7 +1,9 @@
 import * as v from "valibot";
+import { searchBookingFacades } from "../utils/facade-aliases.js";
 import {
 	createApiSchema,
 	createListResponseSchema,
+	facadeObject,
 	listDetailApiSchema,
 	valueFieldSchema,
 } from "../utils/schema-transform.js";
@@ -31,34 +33,46 @@ const searchFileBase = {
 	officeCode: v.optional(v.string()),
 };
 
-const FileCodeSearchSchema = v.object({
-	...searchFileBase,
-	searchType: v.literal(SearchBookingFileType.FILE_CODE),
-	bookingFileCode: v.string(),
-});
+const FileCodeSearchSchema = facadeObject(
+	{
+		...searchFileBase,
+		searchType: v.literal(SearchBookingFileType.FILE_CODE),
+		bookingFileCode: v.string(),
+	},
+	searchBookingFacades,
+);
 
-const PaxNameSearchSchema = v.object({
-	...searchFileBase,
-	searchType: v.literal(SearchBookingFileType.PAX_NAME),
-	firstPaxName: v.string(),
-});
+const PaxNameSearchSchema = facadeObject(
+	{
+		...searchFileBase,
+		searchType: v.literal(SearchBookingFileType.PAX_NAME),
+		firstPaxName: v.string(),
+	},
+	searchBookingFacades,
+);
 
-const PackageCodeSearchSchema = v.object({
-	...searchFileBase,
-	searchType: v.literal(SearchBookingFileType.PACKAGE_CODE),
-	packageCode: v.string(),
-});
+const PackageCodeSearchSchema = facadeObject(
+	{
+		...searchFileBase,
+		searchType: v.literal(SearchBookingFileType.PACKAGE_CODE),
+		packageCode: v.string(),
+	},
+	searchBookingFacades,
+);
 
-const OtherSearchSchema = v.object({
-	...searchFileBase,
-	searchType: v.literal(SearchBookingFileType.OTHER),
-	fileStatus: v.optional(searchFileStatusSchema),
-	startDate: v.optional(DateRangeSchema),
-	createdDate: v.optional(DateRangeSchema),
-	lastModificationDate: v.optional(DateRangeSchema),
-	insurance: v.optional(insuranceSchema),
-	isSearchForB2C: v.optional(BoolishSchema),
-});
+const OtherSearchSchema = facadeObject(
+	{
+		...searchFileBase,
+		searchType: v.literal(SearchBookingFileType.OTHER),
+		fileStatus: v.optional(searchFileStatusSchema),
+		startDate: v.optional(DateRangeSchema),
+		createdDate: v.optional(DateRangeSchema),
+		lastModificationDate: v.optional(DateRangeSchema),
+		insurance: v.optional(insuranceSchema),
+		isSearchForB2C: v.optional(BoolishSchema),
+	},
+	searchBookingFacades,
+);
 
 /**
  * SearchFileRQ body (camelCase) — discriminated by searchType.
