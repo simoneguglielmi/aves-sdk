@@ -2,6 +2,7 @@
 
 export { BookingClient } from "./client/booking.js";
 export { MasterRecordsClient } from "./client/master-records.js";
+export type { AvesOp, OpParams, OpResult } from "./client/ops.js";
 export { PackageCatalogClient } from "./client/packages.js";
 export { AvesTransport } from "./client/transport.js";
 export {
@@ -79,12 +80,21 @@ export type {
 	AccountPolicies,
 	AvesClientOptions,
 	AvesSearchRQ,
+	Booking,
+	BookingCancelInput,
 	BookingFileDetailRS,
 	// Booking file (CreateBookingFile + ops)
 	BookingFileRQ,
 	BookingFileRS,
+	BookingHeaderInput,
+	BookingInput,
+	BookingSearchInput,
+	BookingSearchResult,
+	BookingStatusInput,
 	BookingStatusOnlyRS,
 	CancelFileRQ,
+	CatalogSearchInput,
+	CommitInput,
 	CommitPackageRQ,
 	CommitPackageRS,
 	DynamicFields,
@@ -95,12 +105,21 @@ export type {
 	// Upsert types
 	ManageMasterRecordRequest,
 	ManageMasterRecordRS,
+	MasterRecord,
 	MasterRecordDetail,
 	MasterRecordDetailResponse,
+	MasterRecordInput,
+	MasterSearchInput,
+	MasterSearchResult,
 	ModFileHeaderRQ,
 	ModFileServicesRQ,
+	OperationStatus,
+	Package,
 	PackageDetailRQ,
 	PackageDetailRS,
+	PackageInput,
+	PackageSearchResult,
+	PaymentInput,
 	RqHeader,
 	RsStatus,
 	SearchBookingFileRQ,
@@ -110,6 +129,9 @@ export type {
 	SearchMasterRecordRS,
 	SearchPackageRS,
 	SearchServicesRS,
+	ServiceSearchResult,
+	ServiceStatusInput,
+	ServiceUpdateInput,
 	SetFileServiceStatusRQ,
 	SetFileStatusRQ,
 } from "./types.js";

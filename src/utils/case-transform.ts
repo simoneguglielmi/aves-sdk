@@ -114,13 +114,17 @@ export type Pascalize<T, S = undefined> = T extends Primitive
 					}
 				: T;
 
-function isSpecialObject(obj: unknown): boolean {
+export function isSpecialObject(obj: unknown): boolean {
+	if (obj === null || typeof obj !== "object") return false;
 	return (
 		obj instanceof Date ||
 		obj instanceof RegExp ||
 		obj instanceof Map ||
 		obj instanceof Set ||
-		obj instanceof Error
+		obj instanceof Error ||
+		obj instanceof URL ||
+		ArrayBuffer.isView(obj) ||
+		(typeof Buffer !== "undefined" && Buffer.isBuffer(obj))
 	);
 }
 
@@ -156,9 +160,18 @@ export function wireKey(camelKey: string, shape?: WireShape): string {
 		: `@${baseKey}`;
 }
 
+/** Cache stripped item shapes keyed by the static WireShape reference. */
+const itemShapeCache = new WeakMap<WireShape, WireShape>();
+
+/** Cache synthesized list-wrapper shapes: shape → listKey → encoded shape. */
+const encodeShapeCache = new WeakMap<WireShape, Map<string, WireShape>>();
+
 /** Strip listWrap metadata so item encode/walk uses attrs/children only. */
 export function itemShape(shape: WireShape): WireShape {
+	const cached = itemShapeCache.get(shape);
+	if (cached) return cached;
 	const { listWrap: _, detailKey: __, ...rest } = shape;
+	itemShapeCache.set(shape, rest);
 	return rest;
 }
 
@@ -171,12 +184,23 @@ export function encodeShapeFor(
 	shape: WireShape | undefined,
 ): WireShape | undefined {
 	if (!shape?.listWrap) return shape;
+
+	let byListKey = encodeShapeCache.get(shape);
+	if (!byListKey) {
+		byListKey = new Map();
+		encodeShapeCache.set(shape, byListKey);
+	}
+	const cached = byListKey.get(listKey);
+	if (cached) return cached;
+
 	const detailKey =
 		shape.detailKey ??
 		(listKey.endsWith("List")
 			? `${listKey.slice(0, -4)}Detail`
 			: `${listKey}Detail`);
-	return { children: { [detailKey]: itemShape(shape) } };
+	const encoded: WireShape = { children: { [detailKey]: itemShape(shape) } };
+	byListKey.set(listKey, encoded);
+	return encoded;
 }
 
 /**
@@ -217,6 +241,7 @@ export function camelToPascalKeys<T>(
 /**
  * PascalCase / @attrs → camelCase. Strips `@` only; no shape needed.
  * `#text` reverses via KEY_OVERRIDES to `text`.
+ * Allocates a new object graph (pure).
  */
 export function pascalToCamelKeys<T>(input: T): Camelize<T> {
 	if (input === null || typeof input === "undefined")
@@ -236,4 +261,34 @@ export function pascalToCamelKeys<T>(input: T): Camelize<T> {
 	}
 
 	return result as Camelize<T>;
+}
+
+/**
+ * In-place Pascal/@attrs → camelCase. Mutates plain objects/arrays owned by the
+ * caller (Valibot parse output). Used by {@link createResponseSchema} to avoid a
+ * second deep-copy after validation (ADR 0001 Phase 2a).
+ */
+export function pascalToCamelKeysInPlace<T>(input: T): Camelize<T> {
+	return camelizeInPlace(input) as Camelize<T>;
+}
+
+function camelizeInPlace(input: unknown): unknown {
+	if (input === null || typeof input === "undefined") return input;
+	if (typeof input !== "object" || isSpecialObject(input)) return input;
+
+	if (Array.isArray(input)) {
+		for (let i = 0; i < input.length; i++)
+			input[i] = camelizeInPlace(input[i]);
+		return input;
+	}
+
+	const obj = input as Record<string, unknown>;
+	for (const key of Object.keys(obj)) {
+		const value = camelizeInPlace(obj[key]);
+		const parsedKey = key.startsWith("@") ? key.slice(1) : key;
+		const camel = pascalToCamel(parsedKey);
+		if (camel !== key) delete obj[key];
+		obj[camel] = value;
+	}
+	return obj;
 }

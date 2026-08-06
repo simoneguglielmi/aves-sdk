@@ -1,8 +1,14 @@
 import * as v from "valibot";
 import {
+	avesSearchFacades,
+	packageDetailFacades,
+	packageParamsFacades,
+} from "../utils/facade-aliases.js";
+import {
 	createApiSchema,
 	createFlattenedResponseSchema,
 	createListResponseSchema,
+	facadeObject,
 	listDetailApiSchema,
 	toWireBody,
 } from "../utils/schema-transform.js";
@@ -121,19 +127,25 @@ const FeatureDetailInputSchema = v.object({
 	name: v.optional(v.string()),
 });
 
-const PackageParamsInputSchema = v.object({
-	getAllDeptDate: v.optional(BoolishSchema),
-	getFlightPlan: v.optional(BoolishSchema),
-	getAllAccomodation: v.optional(BoolishSchema),
-	getRealAvailability: v.optional(BoolishSchema),
-	minStay: v.optional(StringishSchema),
-	maxStay: v.optional(StringishSchema),
-});
+const PackageParamsInputSchema = facadeObject(
+	{
+		getAllDeptDate: v.optional(BoolishSchema),
+		getFlightPlan: v.optional(BoolishSchema),
+		getAllAccomodation: v.optional(BoolishSchema),
+		getRealAvailability: v.optional(BoolishSchema),
+		minStay: v.optional(StringishSchema),
+		maxStay: v.optional(StringishSchema),
+	},
+	packageParamsFacades,
+);
 
-const TopServiceParamsInputSchema = v.object({
-	compatibleAccomodation: v.optional(BoolishSchema),
-	alternativeAccomodation: v.optional(BoolishSchema),
-});
+const TopServiceParamsInputSchema = facadeObject(
+	{
+		compatibleAccomodation: v.optional(BoolishSchema),
+		alternativeAccomodation: v.optional(BoolishSchema),
+	},
+	packageParamsFacades,
+);
 
 /**
  * Flat AvesSearchRQ body (camelCase) — shared by SearchAvesPackages / SearchTopServices.
@@ -142,46 +154,52 @@ const TopServiceParamsInputSchema = v.object({
  * `passengerList.length`; `paxQtyCriteria` defaults to `GREATER_OR_EQUAL`.
  * `languageCode` may come from `AvesClient` options when omitted.
  */
-export const AvesSearchSchema = v.object({
-	customerRecordCode: v.string(),
-	languageCode: OptionalLanguageCodeSchema,
-	currencyCode: v.optional(v.string()),
-	startDate: v.string(),
-	endDate: v.string(),
-	earlyBookingDate: v.optional(v.string()),
-	passengerList: v.pipe(
-		v.array(PassengerDetailCreateInputSchema),
-		v.minLength(1),
-	),
-	avesSearchType: v.optional(AvesSearchTypeSchema),
-	paxQty: v.optional(StringishSchema),
-	paxQtyCriteria: v.optional(PaxQtyCriteriaSchema),
-	discartNotAvailables: v.optional(BoolishSchema),
-	discartNotAvailablesMinSales: v.optional(BoolishSchema),
-	discartNotAvailablesDaysInOut: v.optional(BoolishSchema),
-	discardPriceZero: v.optional(BoolishSchema),
-	discardZeroPriceDays: v.optional(BoolishSchema),
-	destination: v.optional(DestinationInputSchema),
-	objectTypeCode: v.optional(v.string()),
-	featureList: v.optional(v.array(FeatureDetailInputSchema)),
-	servOrPackCode: v.optional(v.string()),
-	servOrPackDesc: v.optional(v.string()),
-	priceListCode: v.optional(v.string()),
-	costListCode: v.optional(v.string()),
-	suballotmentCode: v.optional(v.string()),
-	markupCode: v.optional(v.string()),
-	statisticCodes: v.optional(StatisticCodesInputSchema),
-	mergeBoardAndAccomodation: v.optional(BoolishSchema),
-	packageParams: v.optional(PackageParamsInputSchema),
-	topServiceParams: v.optional(TopServiceParamsInputSchema),
-	getDocumentation: v.optional(BoolishSchema),
-});
+export const AvesSearchSchema = facadeObject(
+	{
+		customerRecordCode: v.string(),
+		languageCode: OptionalLanguageCodeSchema,
+		currencyCode: v.optional(v.string()),
+		startDate: v.string(),
+		endDate: v.string(),
+		earlyBookingDate: v.optional(v.string()),
+		passengerList: v.pipe(
+			v.array(PassengerDetailCreateInputSchema),
+			v.minLength(1),
+		),
+		avesSearchType: v.optional(AvesSearchTypeSchema),
+		paxQty: v.optional(StringishSchema),
+		paxQtyCriteria: v.optional(PaxQtyCriteriaSchema),
+		discartNotAvailables: v.optional(BoolishSchema),
+		discartNotAvailablesMinSales: v.optional(BoolishSchema),
+		discartNotAvailablesDaysInOut: v.optional(BoolishSchema),
+		discardPriceZero: v.optional(BoolishSchema),
+		discardZeroPriceDays: v.optional(BoolishSchema),
+		destination: v.optional(DestinationInputSchema),
+		objectTypeCode: v.optional(v.string()),
+		featureList: v.optional(v.array(FeatureDetailInputSchema)),
+		servOrPackCode: v.optional(v.string()),
+		servOrPackDesc: v.optional(v.string()),
+		priceListCode: v.optional(v.string()),
+		costListCode: v.optional(v.string()),
+		suballotmentCode: v.optional(v.string()),
+		markupCode: v.optional(v.string()),
+		statisticCodes: v.optional(StatisticCodesInputSchema),
+		mergeBoardAndAccomodation: v.optional(BoolishSchema),
+		packageParams: v.optional(PackageParamsInputSchema),
+		topServiceParams: v.optional(TopServiceParamsInputSchema),
+		getDocumentation: v.optional(BoolishSchema),
+	},
+	avesSearchFacades,
+);
 
 /** After client defaults: languageCode + avesSearchType must be present. */
-const AvesSearchResolvedSchema = v.required(AvesSearchSchema, [
-	"languageCode",
-	"avesSearchType",
-]);
+const AvesSearchResolvedSchema = v.pipe(
+	AvesSearchSchema,
+	v.check(
+		(i) => i.languageCode != null && i.avesSearchType != null,
+		"languageCode and avesSearchType required",
+	),
+);
 
 /** Nest BaseSearch under AvesSearchRQ; apply paxQty / paxQtyCriteria defaults. */
 function toAvesSearchApiBody(
@@ -255,23 +273,26 @@ export const PackagePrgServiceDetailInputSchema = v.object({
  * PackageDetailRQ body (camelCase).
  * Root startDate/endDate are XML elements (not listed on packageDetailRequestWire.attrs).
  */
-export const PackageDetailRequestSchema = v.object({
-	customerRecordCode: v.string(),
-	languageCode: OptionalLanguageCodeSchema,
-	currencyCode: v.optional(v.string()),
-	packageCode: v.string(),
-	startDate: v.string(),
-	endDate: v.string(),
-	priceListCode: v.optional(v.string()),
-	costListCode: v.optional(v.string()),
-	markupCode: v.optional(v.string()),
-	statisticCodes: v.optional(StatisticCodesInputSchema),
-	selectedServiceList: v.pipe(
-		v.array(PackagePrgServiceDetailInputSchema),
-		v.minLength(1),
-	),
-	passengerList: v.optional(v.array(PassengerDetailCreateInputSchema)),
-});
+export const PackageDetailRequestSchema = facadeObject(
+	{
+		customerRecordCode: v.string(),
+		languageCode: OptionalLanguageCodeSchema,
+		currencyCode: v.optional(v.string()),
+		packageCode: v.string(),
+		startDate: v.string(),
+		endDate: v.string(),
+		priceListCode: v.optional(v.string()),
+		costListCode: v.optional(v.string()),
+		markupCode: v.optional(v.string()),
+		statisticCodes: v.optional(StatisticCodesInputSchema),
+		selectedServiceList: v.pipe(
+			v.array(PackagePrgServiceDetailInputSchema),
+			v.minLength(1),
+		),
+		passengerList: v.optional(v.array(PassengerDetailCreateInputSchema)),
+	},
+	packageDetailFacades,
+);
 
 /** Map packagePrg fields → attrs; list wrap + element dates at root. */
 export const PackageDetailRequestApiSchema = createApiSchema(
