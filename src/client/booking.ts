@@ -18,6 +18,7 @@ import {
 	toFacadeResult,
 } from "../utils/facade-transform.js";
 import type { Result } from "../utils/result.js";
+import { AvesOp } from "./ops.js";
 import type { AvesTransport } from "./transport.js";
 
 export class BookingClient {
@@ -27,7 +28,7 @@ export class BookingClient {
 	async create(
 		params: BookingFileRQ,
 	): Promise<Result<FacadeOutput<BookingFileRS>, AvesError>> {
-		const result = await this.transport.invokeOp("create", params);
+		const result = await this.transport.invokeOp(AvesOp.create, params);
 		return toFacadeResult(result);
 	}
 
@@ -35,7 +36,7 @@ export class BookingClient {
 	async updateServices(
 		params: ModFileServicesRQ,
 	): Promise<Result<FacadeOutput<BookingFileDetailRS>, AvesError>> {
-		const result = await this.transport.invokeOp("updateServices", params);
+		const result = await this.transport.invokeOp(AvesOp.updateServices, params);
 		return toFacadeResult(result);
 	}
 
@@ -43,7 +44,7 @@ export class BookingClient {
 	async updateHeader(
 		params: ModFileHeaderRQ,
 	): Promise<Result<FacadeOutput<BookingStatusOnlyRS>, AvesError>> {
-		const result = await this.transport.invokeOp("updateHeader", params);
+		const result = await this.transport.invokeOp(AvesOp.updateHeader, params);
 		return toFacadeResult(result);
 	}
 
@@ -51,7 +52,7 @@ export class BookingClient {
 	async cancel(
 		params: CancelFileRQ,
 	): Promise<Result<FacadeOutput<BookingStatusOnlyRS>, AvesError>> {
-		const result = await this.transport.invokeOp("cancel", params);
+		const result = await this.transport.invokeOp(AvesOp.cancel, params);
 		return toFacadeResult(result);
 	}
 
@@ -59,7 +60,7 @@ export class BookingClient {
 	async setStatus(
 		params: SetFileStatusRQ,
 	): Promise<Result<FacadeOutput<BookingFileDetailRS>, AvesError>> {
-		const result = await this.transport.invokeOp("setStatus", params);
+		const result = await this.transport.invokeOp(AvesOp.setStatus, params);
 		return toFacadeResult(result);
 	}
 
@@ -67,7 +68,10 @@ export class BookingClient {
 	async setServiceStatus(
 		params: SetFileServiceStatusRQ,
 	): Promise<Result<FacadeOutput<BookingFileDetailRS>, AvesError>> {
-		const result = await this.transport.invokeOp("setServiceStatus", params);
+		const result = await this.transport.invokeOp(
+			AvesOp.setServiceStatus,
+			params,
+		);
 		return toFacadeResult(result);
 	}
 
@@ -75,7 +79,7 @@ export class BookingClient {
 	async addPayments(
 		params: FilePaymentListRQ,
 	): Promise<Result<FacadeOutput<BookingStatusOnlyRS>, AvesError>> {
-		const result = await this.transport.invokeOp("addPayments", params);
+		const result = await this.transport.invokeOp(AvesOp.addPayments, params);
 		return toFacadeResult(result);
 	}
 
@@ -83,7 +87,7 @@ export class BookingClient {
 	async search(
 		params: SearchBookingFileRQ,
 	): Promise<Result<FacadeOutput<SearchBookingFileRS>, AvesError>> {
-		const result = await this.transport.invokeOp("searchBookings", params);
+		const result = await this.transport.invokeOp(AvesOp.searchBookings, params);
 		return toFacadeResult(result);
 	}
 }
