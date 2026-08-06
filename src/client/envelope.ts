@@ -1,5 +1,5 @@
-import { createRootElement } from "../xml/root.js";
 import type { XMLRootElementValues } from "../xml/root.js";
+import { createRootElement } from "../xml/root.js";
 import type { RqHeader } from "./rq-header.js";
 
 /** Fields from an op def needed to wrap the request envelope. */

@@ -74,8 +74,7 @@ function deepAliasCopy(value: unknown): unknown {
 		for (const [key, child] of Object.entries(node)) {
 			const next = walk(child);
 			output[key] = next;
-			const publicKey =
-				publicKeyAliases[key as keyof typeof publicKeyAliases];
+			const publicKey = publicKeyAliases[key as keyof typeof publicKeyAliases];
 			if (publicKey && output[publicKey] === undefined)
 				output[publicKey] = next;
 		}

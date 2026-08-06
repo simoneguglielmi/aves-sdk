@@ -1,5 +1,5 @@
 import { parse } from "valibot";
-import { AvesError, toAvesError } from "../error.js";
+import { type AvesError, toAvesError } from "../error.js";
 import type { AvesClientOptions } from "../types.js";
 import { err, type Result } from "../utils/result.js";
 import { jsonToXml } from "../xml/client.js";
@@ -55,9 +55,7 @@ export class AvesTransport {
 				def.responseSchema,
 			);
 		} catch (error) {
-			return err(
-				toAvesError(error, `Validation error occurred during ${op}`),
-			);
+			return err(toAvesError(error, `Validation error occurred during ${op}`));
 		}
 	}
 }
