@@ -14,7 +14,7 @@ Task Progress:
 - [ ] WireShape in wire-shapes.ts (attrs / preserveCamel) — see aves-sdk-wire
 - [ ] Input schema + createApiSchema / createWireSchemaPair (+ facadeObject if dual keys)
 - [ ] Response: flatten detail and/or listDetailApiSchema + createListResponseSchema
-- [ ] Domain method: invokeOp("opName", params) → toFacadeResult (types from types.ts only)
+- [ ] Domain method: invokeOp(AvesOp.opName, params) → toFacadeResult (types from types.ts only)
 - [ ] Export InferInput/InferOutput / convenience aliases from types.ts / index.ts if public
 - [ ] Enums via enumSchema if new picklists — re-export from index
 - [ ] Tests: schema unit + client mock (success DX + facade aliases + error.kind)
@@ -30,7 +30,7 @@ Do not invent a parallel transform path — extend helpers (`aves-sdk-schemas` /
 async create(
   params: BookingFileRQ,
 ): Promise<Result<FacadeOutput<BookingFileRS>, AvesError>> {
-  const result = await this.transport.invokeOp("create", params);
+  const result = await this.transport.invokeOp(AvesOp.create, params);
   return toFacadeResult(result);
 }
 ```

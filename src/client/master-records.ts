@@ -11,6 +11,7 @@ import {
 	withPublicAliases,
 } from "../utils/facade-transform.js";
 import { ok, type Result } from "../utils/result.js";
+import { AvesOp } from "./ops.js";
 import type { AvesTransport } from "./transport.js";
 
 export class MasterRecordsClient {
@@ -20,7 +21,7 @@ export class MasterRecordsClient {
 	async search(
 		params: SearchMasterRecord,
 	): Promise<Result<FacadeOutput<SearchMasterRecordRS>, AvesError>> {
-		const result = await this.transport.invokeOp("search", params);
+		const result = await this.transport.invokeOp(AvesOp.search, params);
 		if (!result.success) return result;
 		const list: SearchMasterRecordRS = result.data.masterRecordList ?? [];
 		return ok(withPublicAliases(list));
@@ -30,7 +31,7 @@ export class MasterRecordsClient {
 	async upsert(
 		record: MasterRecordDetail,
 	): Promise<Result<FacadeOutput<ManageMasterRecordRS>, AvesError>> {
-		const result = await this.transport.invokeOp("upsert", record);
+		const result = await this.transport.invokeOp(AvesOp.upsert, record);
 		return toFacadeResult(result);
 	}
 }
