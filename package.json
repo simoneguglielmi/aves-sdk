@@ -1,6 +1,6 @@
 {
   "name": "aves-sdk",
-  "version": "3.0.0",
+	"version": "3.1.1",
   "description": "TypeScript SDK for AVES XML REST",
   "homepage": "https://github.com/simoneguglielmi/aves-sdk#readme",
   "repository": [
@@ -49,11 +49,11 @@
     "clean": "rimraf dist",
     "build": "yarn clean && yarn lint && yarn typecheck && yarn tsdown",
     "prepare": "yarn build",
-		"test": "vitest run",
-		"test:types": "vitest run --typecheck.only",
-		"test:bench": "vitest bench",
-		"test:perf": "AVES_PERF=1 vitest run src/utils/hot-path.perf.test.ts",
-		"publish": "npm publish",
+    "test": "vitest run",
+    "test:types": "vitest run --typecheck.only",
+    "test:bench": "vitest bench",
+    "test:perf": "AVES_PERF=1 vitest run src/utils/hot-path.perf.test.ts",
+    "publish": "npm publish",
     "lint": "biome check src",
     "check": "biome check --write src",
     "typecheck": "tsc --noEmit"
