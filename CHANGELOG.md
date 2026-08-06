@@ -5,12 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<a id="v4.0.1"></a>
 ## [4.0.1] - 2026-08-06
 
 ### Added
 
 - Copy `CHANGELOG.md` into `dist/` on build (`tsdown` `copy`) and include `dist/CHANGELOG.md` in published `files`.
 
+<a id="v4.0.0"></a>
 ## [4.0.0] - 2026-08-06
 
 ### Added
@@ -56,6 +58,7 @@ await client.packages.search(params);
 await client.master.upsert(record);
 ```
 
+<a id="v3.1.1"></a>
 ## [3.1.1] - 2026-08-06
 
 ### Added
@@ -79,6 +82,7 @@ await client.master.upsert(record);
 - ADR 0001 Phase 2a: `createResponseSchema` camelizes Valibot output **in place** (`pascalToCamelKeysInPlace`) — no second deep-copy. See [`docs/adr/0001-validate-during-camelize.md`](docs/adr/0001-validate-during-camelize.md).
 - Performance harness: `yarn test:bench` (Vitest bench) and `AVES_PERF=1 yarn test:perf` (relative hot-path asserts).
 
+<a id="v3.0.0"></a>
 ## [3.0.0] - 2026-08-06
 
 ### Changed
@@ -125,6 +129,7 @@ if (result.success) {
 
 3.1.x on top of 3.0 is additive (facade aliases / internal transport). No further breaking migration from 3.0 → 3.1.1.
 
+<a id="v2.0.1"></a>
 ## [2.0.1] - 2026-08-05
 
 ### Changed
@@ -132,6 +137,7 @@ if (result.success) {
 - Omit source maps from the published package; `files` now ships only
   `dist/index.mjs` and `dist/index.d.mts`.
 
+<a id="v2.0.0"></a>
 ## [2.0.0] - 2026-08-05
 
 ### Changed
@@ -155,6 +161,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.9.0"></a>
 ## [1.9.0] - 2026-08-03
 
 ### Changed
@@ -175,6 +182,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.8.0"></a>
 ## [1.8.0] - 2026-08-03
 
 ### Added
@@ -190,6 +198,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.7.0"></a>
 ## [1.7.0] - 2026-08-03
 
 ### Added
@@ -218,6 +227,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.6.0"></a>
 ## [1.6.0] - 2026-07-29
 
 ### Changed
@@ -229,6 +239,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.5.1"></a>
 ## [1.5.1] - 2026-07-29
 
 ### Changed
@@ -238,6 +249,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.5.0"></a>
 ## [1.5.0] - 2026-07-29
 
 ### Added
@@ -248,6 +260,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.4.0"></a>
 ## [1.4.0] - 2026-07-29
 
 ### Added
@@ -262,6 +275,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.3.4"></a>
 ## [1.3.4] - 2026-03-09
 
 ### Added
@@ -279,6 +293,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.3.3"></a>
 ## [1.3.3] - 2026-02-26
 
 ### Fixed
@@ -287,6 +302,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.3.2"></a>
 ## [1.3.2] - 2026-02-10
 
 ### Added
@@ -300,6 +316,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.3.1"></a>
 ## [1.3.1] - 2026-02-01
 
 ### Changed
@@ -309,6 +326,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.3.0"></a>
 ## [1.3.0] - 2026-02-01
 
 ### Added
@@ -324,6 +342,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.16"></a>
 ## [1.2.16] - 2026-01-27
 
 ### Changed
@@ -332,6 +351,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.15"></a>
 ## [1.2.15] - 2026-01-27
 
 ### Fixed
@@ -340,6 +360,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.14"></a>
 ## [1.2.14] - 2026-01-27
 
 ### Changed
@@ -348,6 +369,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.13"></a>
 ## [1.2.13] - 2026-01-27
 
 ### Added
@@ -364,6 +386,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.12"></a>
 ## [1.2.12] - 2026-01-26
 
 ### Added
@@ -382,6 +405,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.11"></a>
 ## [1.2.11] - 2026-01-21
 
 ### Fixed
@@ -390,6 +414,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.0.3"></a>
 ## [1.0.3] - 2025-10-04
 
 Early tagged releases (`v1.0.0` … `v1.0.3`) from the initial NestJS-oriented AVES SDK work. Detailed commit notes for those tags are limited in the current branch history.

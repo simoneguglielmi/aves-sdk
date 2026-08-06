@@ -51,13 +51,13 @@ await client.master.search({ searchType: 'CODE', recordCode: '508558' });
 ```
 
 Migration from 1.x: insert the appropriate domain namespace (for example,
-`client.search` → `client.master.search`). See the [2.0.0 migration notes](./CHANGELOG.md#200---2026-08-05).
+`client.search` → `client.master.search`). See the [2.0.0 migration notes](https://github.com/simoneguglielmi/aves-sdk/blob/main/CHANGELOG.md#v2.0.0).
 
 Migration from 2.x: `master.search` success is a flat array — see the
-[3.0.0 migration notes](./CHANGELOG.md#300---2026-08-06).
+[3.0.0 migration notes](https://github.com/simoneguglielmi/aves-sdk/blob/main/CHANGELOG.md#v3.0.0).
 
 Migration from 3.x: domain method names were shortened — see the
-[4.0.0 migration notes](./CHANGELOG.md#400---2026-08-06).
+[4.0.0 migration notes](https://github.com/simoneguglielmi/aves-sdk/blob/main/CHANGELOG.md#v4.0.0).
 
 | Namespace | Methods |
 | --------- | ------- |
@@ -673,7 +673,7 @@ Outbound path: validate → `createApiSchema` / `toWireBody` → `invokeOp` → 
 Operations are available only through `client.master`, `client.booking`, and
 `client.packages`; flat aliases were removed in 2.0.0. When upgrading from 2.x,
 also update `master.search` consumers for the flat array success payload (3.0.0).
-See the [CHANGELOG migration notes](./CHANGELOG.md).
+See the [CHANGELOG migration notes](https://github.com/simoneguglielmi/aves-sdk/blob/main/CHANGELOG.md).
 
 ```typescript
 import type {
@@ -713,7 +713,7 @@ MIT
 
 ## Links
 
-- [Changelog](./CHANGELOG.md)
+- [Changelog](https://github.com/simoneguglielmi/aves-sdk/blob/main/CHANGELOG.md)
 - [GitHub Repository](https://github.com/simoneguglielmi/aves-sdk)
 - [NPM Package](https://npmjs.com/package/aves-sdk)
 - [Issue Tracker](https://github.com/simoneguglielmi/aves-sdk/issues)
