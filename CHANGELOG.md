@@ -5,11 +5,74 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2026-08-06
+
+### Added
+
+- Concise facade aliases for common I/O properties: `customerCode`, `bookingCode`, `services`, `passengers`, `packageCode`, `serviceCode`, `quantity`, `session`, and related fields.
+- Schema-owned dual keys via `facadeObject` / `coalesceAliases` (same pattern as `coalesceCustomerRecordCode`).
+- Simplified public type aliases including `BookingInput`, `Booking`, `MasterRecord`, `PackageInput`, and `Package`.
+- `AVES_OPS` registry + `invokeOp(op, params)` with external `OpParams` / `OpResult` typings.
+- Full facade alias property map in README (outbound `publicKeyAliases` + inbound scoped maps).
+- 2.x → 3.x migration notes for `master.search` (flat array success payload).
+
+### Changed
+
+- Facade names are accepted on Valibot input schemas and coalesced to AVES camelCase before wire encoding. Success payloads also expose concise compatibility aliases.
+- Internal transport split: `HttpClient`, `buildOpEnvelope`, `readAvesResponse`, `createRqHeader`; `toAvesError` lives in `error.ts`. Public `invokeOp` API unchanged.
+- Hot-path micro-opts: cached endpoint URLs, shared XML POST headers, frozen cached `RqHeader`, single `AVES_OPS` lookup per `invokeOp`.
+- Cap HTTP error body reads via `readTextCapped` (drain stream, keep ≤ `MAX_ERROR_BODY`).
+- WeakMap cache for `itemShape` / `encodeShapeFor` on static WireShape refs.
+- `toWireBody` single shape-driven walk (list wrap + pax normalize + wire keys).
+- Zero-copy `withPublicAliases` via hardened lazy Proxy (WeakMap identity, proto-pollution blocked).
+- ADR 0001 Phase 2a: `createResponseSchema` camelizes Valibot output **in place** (`pascalToCamelKeysInPlace`) — no second deep-copy. See [`docs/adr/0001-validate-during-camelize.md`](docs/adr/0001-validate-during-camelize.md).
+- Performance harness: `yarn test:bench` (Vitest bench) and `AVES_PERF=1 yarn test:perf` (relative hot-path asserts).
+
 ## [3.0.0] - 2026-08-06
 
 ### Changed
 
 - **Breaking:** `master.search` success payload is now `MasterRecordDetailResponse[]` — always a flat array (`[]`, one element, or many). No `rsStatus` wrapper on success (non-OK AVES status remains `result.error`). Replaces the prior `{ rsStatus, masterRecordList }` shape.
+
+### Migration (2.x → 3.x)
+
+Only `master.search` success shape changed. Other domain methods and error/`Result` contracts are unchanged from 2.x.
+
+| Change | Symptom on upgrade | Fix |
+| ------ | ------------------ | --- |
+| `master.search` success is a flat array | `result.data.masterRecordList` / `result.data.rsStatus` are `undefined`; types fail | Use `result.data` as `MasterRecordDetailResponse[]` (e.g. `const [record] = result.data` or `result.data.map(...)`) |
+| Looking for `rsStatus` on success | Always missing when `result.success` | Keep using `result.error` for non-OK AVES / HTTP failures (`error.kind`, `error.status`, `error.code`) |
+| Empty search | May have expected a missing list or wrapper | Success with no hits is `result.data === []` |
+
+**Before (2.x):**
+
+```ts
+const result = await client.master.search({
+  searchType: "CODE",
+  recordCode: "508558",
+});
+if (result.success) {
+  const records = result.data.masterRecordList ?? [];
+  console.log(result.data.rsStatus.status, records[0]?.recordCode);
+}
+```
+
+**After (3.x):**
+
+```ts
+const result = await client.master.search({
+  searchType: "CODE",
+  recordCode: "508558",
+});
+if (result.success) {
+  const [record] = result.data; // MasterRecordDetailResponse[]
+  console.log(record?.recordCode);
+} else {
+  console.error(result.error.kind, result.error.status, result.error.message);
+}
+```
+
+3.1.x on top of 3.0 is additive (facade aliases / internal transport). No further breaking migration from 3.0 → 3.1.1.
 
 ## [2.0.1] - 2026-08-05
 

@@ -1,9 +1,11 @@
 import * as v from "valibot";
+import { masterRecordFacades } from "../utils/facade-aliases.js";
 import {
 	createApiSchema,
 	createApiValidationSchema,
 	createResponseSchema,
 	createWireSchemaPair,
+	facadeObject,
 } from "../utils/schema-transform.js";
 import {
 	accountPoliciesWire,
@@ -112,7 +114,7 @@ export const AccountPoliciesApiValidationSchema =
 /**
  * Master record detail input schema (camelCase)
  */
-export const MasterRecordDetailSchema = v.object({
+const masterRecordDetailEntries = {
 	recordCode: v.optional(v.pipe(v.string(), v.minLength(6), v.maxLength(6))),
 	insertCriteria: v.optional(InsertCriteriaSchema),
 	createdDate: v.optional(v.string()),
@@ -143,7 +145,12 @@ export const MasterRecordDetailSchema = v.object({
 	financialDetail: v.optional(FinancialDetailInputSchema),
 	dynamicFields: v.optional(v.array(DynamicFieldsInputSchema)),
 	supplierRefMasterRecords: v.optional(SupplierRefMasterRecordsInputSchema),
-});
+};
+
+export const MasterRecordDetailSchema = facadeObject(
+	masterRecordDetailEntries,
+	masterRecordFacades,
+);
 
 /**
  * Master record detail schema for API requests (transforms to PascalCase)
@@ -158,13 +165,17 @@ export const MasterRecordDetailApiSchema = createApiSchema(
  * Nested structure is generated from `masterRecordWire`; overrides are server-only fields.
  */
 export const MasterRecordDetailApiValidationSchema = v.partial(
-	createApiValidationSchema(MasterRecordDetailSchema, masterRecordWire, {
-		ModifiedDate: v.optional(v.string()),
-		LoginType: v.optional(v.string()),
-		PromoterCode: v.optional(v.string()),
-		EncryptedPassword: v.optional(BoolishSchema),
-		NewsletterDisabled: v.optional(BoolishSchema),
-	}),
+	createApiValidationSchema(
+		v.object(masterRecordDetailEntries),
+		masterRecordWire,
+		{
+			ModifiedDate: v.optional(v.string()),
+			LoginType: v.optional(v.string()),
+			PromoterCode: v.optional(v.string()),
+			EncryptedPassword: v.optional(BoolishSchema),
+			NewsletterDisabled: v.optional(BoolishSchema),
+		},
+	),
 );
 
 /**

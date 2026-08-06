@@ -51,7 +51,10 @@ await client.master.search({ searchType: 'CODE', recordCode: '508558' });
 ```
 
 Migration from 1.x: insert the appropriate domain namespace (for example,
-`client.search` → `client.master.search`). See the [2.0.0 migration notes](./CHANGELOG.md).
+`client.search` → `client.master.search`). See the [2.0.0 migration notes](./CHANGELOG.md#200---2026-08-05).
+
+Migration from 2.x: `master.search` success is a flat array — see the
+[3.0.0 migration notes](./CHANGELOG.md#300---2026-08-06).
 
 | Namespace | Methods |
 | --------- | ------- |
@@ -98,6 +101,244 @@ type Result<T, E> =
   | { success: true; data: T }
   | { success: false; error: E };
 ```
+
+## Simple facade names
+
+The facade exposes concise aliases for the AVES payload vocabulary. Inbound
+dual keys are owned by Valibot input schemas (`facadeObject` / `coalesceAliases`)
+and coalesced to AVES camelCase before wire encoding. Outbound success payloads
+keep AVES names and add concise compatibility aliases. XML shapes are unchanged.
+
+Source of truth in code:
+
+- Outbound (AVES → facade): `publicKeyAliases` in `src/utils/facade-transform.ts`
+- Inbound (facade → AVES): scoped maps in `src/utils/facade-aliases.ts`
+
+Some facade names are reused (`services`, `status`, `passengerCount`, `financial`,
+`payments`, `packages`, `identityDocument`). Resolution is **schema-scoped** on
+input and **target-key presence** on Proxy output — not a single global rename.
+
+### Outbound map (AVES → facade)
+
+Applied on success payloads via `withPublicAliases` (both names remain readable).
+
+| AVES-shaped name | Facade name |
+| ---------------- | ----------- |
+| `rsStatus` | `response` |
+| `customerRecordCode` | `customerCode` |
+| `bookingFileCode` | `bookingCode` |
+| `bookingFileRefCode` | `bookingReference` |
+| `bookingFileStatus` | `status` |
+| `fileStatus` | `status` |
+| `bookingFileDescription` | `description` |
+| `bookingFileStartDate` | `startDate` |
+| `bookingFileReferenceName` | `referenceName` |
+| `bookingFileServiceStatus` | `serviceStatus` |
+| `bookingFileServiceStatusDate` | `serviceStatusDate` |
+| `bookingServiceRef` | `serviceReference` |
+| `newCustomerRecordCode` | `newCustomerCode` |
+| `customerDetail` | `customer` |
+| `bookingFileDocument` | `documents` |
+| `bookingFinancialInfo` | `financial` |
+| `financialDetail` | `financial` |
+| `idDocumentDetail` | `identityDocument` |
+| `idDocInfo` | `identityDocument` |
+| `accountPolicies` | `policies` |
+| `dynamicFields` | `customFields` |
+| `supplierRefMasterRecords` | `supplierReference` |
+| `selectedPackageDetail` | `package` |
+| `selectedPackageList` | `packages` |
+| `packageList` | `packages` |
+| `selectedServiceList` | `services` |
+| `bookedServiceList` | `services` |
+| `serviceList` | `services` |
+| `extraQuoteServiceList` | `extraServices` |
+| `passengerList` | `passengers` |
+| `noteList` | `notes` |
+| `deadlineList` | `deadlines` |
+| `financialDeadlineList` | `financialDeadlines` |
+| `paymentList` | `payments` |
+| `filePaymentList` | `payments` |
+| `cancellableBookedServiceList` | `cancellableServices` |
+| `subServiceList` | `subServices` |
+| `featureList` | `features` |
+| `pCode` | `packageCode` |
+| `sCode` | `serviceCode` |
+| `ssCode` | `subServiceCode` |
+| `rph` | `passengerRef` |
+| `roomRph` | `roomRef` |
+| `avesSession` | `session` |
+| `paxAssociated` | `passengerRefs` |
+| `paxQty` | `passengerCount` |
+| `pax` | `passengerCount` |
+| `paxQtyCriteria` | `passengerCountRule` |
+| `qty` | `quantity` |
+| `eMail` | `email` |
+| `sex` | `gender` |
+| `nType` | `noteType` |
+| `avesServiceType` | `serviceType` |
+| `toServiceType` | `targetType` |
+| `packageParams` | `packageOptions` |
+| `topServiceParams` | `serviceOptions` |
+| `servOrPackCode` | `serviceOrPackageCode` |
+| `servOrPackDesc` | `serviceOrPackageDescription` |
+| `getDocumentation` | `includeDocumentation` |
+| `getServicesFromPackage` | `includeServices` |
+| `mergeBoardAndAccomodation` | `mergeBoardAndAccommodation` |
+| `discartNotAvailables` | `discardUnavailable` |
+| `discartNotAvailablesMinSales` | `discardUnavailableMinSales` |
+| `discartNotAvailablesDaysInOut` | `discardUnavailableDaysInOut` |
+| `getAllDeptDate` | `allDepartureDates` |
+| `getAllAccomodation` | `allAccommodation` |
+| `compatibleAccomodation` | `compatibleAccommodation` |
+| `alternativeAccomodation` | `alternativeAccommodation` |
+
+### Inbound map (facade → AVES)
+
+Applied only on the schema that owns each fragment (`facadeObject` / `coalesceAliases`).
+
+#### Shared refs
+
+| Facade | AVES |
+| ------ | ---- |
+| `customerCode` | `customerRecordCode` |
+| `bookingCode` | `bookingFileCode` |
+| `bookingReference` | `bookingFileRefCode` |
+
+#### Passenger / note / service line
+
+| Facade | AVES |
+| ------ | ---- |
+| `passengerRef` | `rph` |
+| `roomRef` | `roomRph` |
+| `gender` | `sex` |
+| `email` | `eMail` |
+| `identityDocument` | `idDocInfo` |
+| `noteType` | `nType` |
+| `serviceCode` | `sCode` |
+| `subServiceCode` | `ssCode` |
+| `quantity` | `qty` |
+| `passengerCount` | `pax` |
+| `session` | `avesSession` |
+| `passengerRefs` | `paxAssociated` |
+| `serviceType` | `avesServiceType` |
+| `targetType` | `toServiceType` |
+| `notes` | `noteList` |
+| `packageCode` | `pCode` |
+| `includeServices` | `getServicesFromPackage` |
+
+#### Booking root (`createBooking`)
+
+| Facade | AVES |
+| ------ | ---- |
+| `customer` | `customerDetail` |
+| `status` | `bookingFileStatus` |
+| `description` | `bookingFileDescription` |
+| `referenceName` | `bookingFileReferenceName` |
+| `financial` | `bookingFinancialInfo` |
+| `package` | `selectedPackageDetail` |
+| `packages` | `selectedPackageList` |
+| `services` | `selectedServiceList` |
+| `extraServices` | `extraQuoteServiceList` |
+| `passengers` | `passengerList` |
+| `payments` | `paymentList` |
+| `documents` | `bookingFileDocument` |
+| `deadlines` | `deadlineList` |
+| `financialDeadlines` | `financialDeadlineList` |
+| `notes` | `noteList` |
+
+(+ shared refs above)
+
+#### Mod services / mod header / status / payments / search booking
+
+| Scope | Facade | AVES |
+| ----- | ------ | ---- |
+| Mod services | `package` / `packages` | `selectedPackageDetail` / `selectedPackageList` |
+| Mod services | `services` / `passengers` / `deadlines` | `selectedServiceList` / `passengerList` / `deadlineList` |
+| Mod services | `cancellableServices` | `cancellableBookedServiceList` |
+| Mod header | `startDate` | `bookingFileStartDate` |
+| Mod header | `newCustomerCode` | `newCustomerRecordCode` |
+| Mod header | `referenceName` / `passengers` / `financial` / `financialDeadlines` | `bookingFileReferenceName` / `passengerList` / `bookingFinancialInfo` / `financialDeadlineList` |
+| Set file status | `status` / `documents` | `fileStatus` / `bookingFileDocument` |
+| Set service status | `serviceReference` / `serviceStatus` / `serviceStatusDate` | `bookingServiceRef` / `bookingFileServiceStatus` / `bookingFileServiceStatusDate` |
+| Insert payments | `payments` | `filePaymentList` |
+| Search booking files | `status` | `fileStatus` |
+
+(+ shared refs where listed in each map)
+
+#### Master record
+
+| Facade | AVES |
+| ------ | ---- |
+| `financial` | `financialDetail` |
+| `identityDocument` | `idDocumentDetail` |
+| `policies` | `accountPolicies` |
+| `customFields` | `dynamicFields` |
+| `supplierReference` | `supplierRefMasterRecords` |
+
+#### Package / top-service search + package params + get package detail
+
+| Facade | AVES |
+| ------ | ---- |
+| `searchType` | `avesSearchType` |
+| `passengers` | `passengerList` |
+| `packageOptions` | `packageParams` |
+| `serviceOptions` | `topServiceParams` |
+| `serviceOrPackageCode` | `servOrPackCode` |
+| `serviceOrPackageDescription` | `servOrPackDesc` |
+| `passengerCount` | `paxQty` |
+| `passengerCountRule` | `paxQtyCriteria` |
+| `features` | `featureList` |
+| `includeDocumentation` | `getDocumentation` |
+| `mergeBoardAndAccommodation` | `mergeBoardAndAccomodation` |
+| `discardUnavailable` | `discartNotAvailables` |
+| `discardUnavailableMinSales` | `discartNotAvailablesMinSales` |
+| `discardUnavailableDaysInOut` | `discartNotAvailablesDaysInOut` |
+| `allDepartureDates` | `getAllDeptDate` |
+| `allAccommodation` | `getAllAccomodation` |
+| `compatibleAccommodation` | `compatibleAccomodation` |
+| `alternativeAccommodation` | `alternativeAccomodation` |
+| `services` (package detail RQ) | `selectedServiceList` |
+
+(+ shared refs on search / package detail)
+
+New code can use the simplified vocabulary directly:
+
+```typescript
+const created = await client.booking.createBooking({
+  customerCode: '138311',
+  status: 'CONFIRMED',
+  startDate: '2026-08-06',
+  endDate: '2026-08-07',
+  services: [
+    {
+      serviceCode: 'HT00110840',
+      serviceType: 'TOP',
+      targetType: 'RESIDENCE',
+      quantity: '1',
+      passengerCount: '2',
+      session: '1',
+    },
+  ],
+  passengers: [
+    {
+      passengerRef: '001',
+      name: 'ADULT 001',
+      categoryCode: 'AD',
+      gender: 'M',
+    },
+  ],
+});
+
+if (created.success) {
+  console.log(created.data.bookingCode);
+  console.log(created.data.services?.[0]?.serviceStatus);
+}
+```
+
+The previous AVES-shaped names remain accepted and returned as compatibility
+aliases. New type aliases such as `BookingInput`, `Booking`, `MasterRecord`,
+`PackageInput`, and `Package` are exported for new integrations.
 
 ---
 
@@ -371,9 +612,10 @@ if (!result.success) {
 
 ## Case transformation & wire shapes
 
-- **Input**: camelCase (`recordCode`, `selectedServiceList`, `paymentUser`)
+- **Facade input**: concise camelCase (`customerCode`, `services`, `passengers`)
+- **Wire input**: AVES-shaped camelCase before XML (`recordCode`, `selectedServiceList`, `paymentUser`)
 - **Wire**: PascalCase keys; `@`-prefixed keys become XML attributes
-- **Output**: camelCase again
+- **Output**: concise facade aliases plus compatibility aliases
 
 You do not handle XML attribute prefixes yourself. Attr vs element is decided by a **per-request `WireShape`** (`src/utils/wire-shapes.ts`), not a global field set.
 
@@ -426,8 +668,9 @@ Outbound path: validate → `createApiSchema` / `toWireBody` → `invokeOp` → 
 ## Types
 
 Operations are available only through `client.master`, `client.booking`, and
-`client.packages`; flat aliases were removed in 2.0.0. See the
-[migration notes](./CHANGELOG.md) when upgrading.
+`client.packages`; flat aliases were removed in 2.0.0. When upgrading from 2.x,
+also update `master.search` consumers for the flat array success payload (3.0.0).
+See the [CHANGELOG migration notes](./CHANGELOG.md).
 
 ```typescript
 import type {
