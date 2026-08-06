@@ -5,6 +5,50 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-08-06
+
+### Added
+
+- `OpBodyKey` object enum (`MasterRecordDetail`) for RQ payload nest keys; typed on `AVES_OPS` / envelope.
+
+### Changed
+
+- **Breaking:** Domain method names no longer repeat the namespace / AVES verb soup. `AVES_OPS` keys follow the same short names (with `searchBookings` / `searchPackages` where `search` would collide).
+
+| Namespace | 3.x | 4.x |
+| --------- | --- | --- |
+| `master` | `upsertRecord` | `upsert` |
+| `booking` | `createBooking` | `create` |
+| `booking` | `modBookingServices` | `updateServices` |
+| `booking` | `modBookingHeader` | `updateHeader` |
+| `booking` | `cancelBooking` | `cancel` |
+| `booking` | `setBookingStatus` | `setStatus` |
+| `booking` | `setBookingServiceStatus` | `setServiceStatus` |
+| `booking` | `insertFilePaymentList` | `addPayments` |
+| `booking` | `searchBookingFiles` | `search` |
+| `packages` | `searchPackages` | `search` |
+| `packages` | `searchTopServices` | `searchServices` |
+| `packages` | `getPackageDetail` | `get` |
+| `packages` | `commitPackage` | `commit` |
+
+`master.search` is unchanged. Endpoint URLs and XML roots are unchanged.
+
+### Migration (1.x / 3.x → 4.x)
+
+Jump straight to 4.x for September apps: apply the 3.x facade + `master.search` flat-array notes, then rename methods per the table above (no compatibility aliases).
+
+```ts
+// 3.x
+await client.booking.createBooking(params);
+await client.packages.searchPackages(params);
+await client.master.upsertRecord(record);
+
+// 4.x
+await client.booking.create(params);
+await client.packages.search(params);
+await client.master.upsert(record);
+```
+
 ## [3.1.1] - 2026-08-06
 
 ### Added

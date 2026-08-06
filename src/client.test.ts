@@ -212,7 +212,7 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
-	describe("upsertRecord", () => {
+	describe("upsert", () => {
 		it("should make upsert request and return camelCase response", async () => {
 			const mockClient = mockAgent.get(baseURL);
 
@@ -233,7 +233,7 @@ describeHttp("AvesClient", () => {
         </ManageMasterRecordRS>`,
 				);
 
-			const result = await client.master.upsertRecord({
+			const result = await client.master.upsert({
 				name: "John Doe",
 				email: "john@example.com",
 				zipCode: "12345",
@@ -264,7 +264,7 @@ describeHttp("AvesClient", () => {
           </ManageMasterRecordRS>`;
 				});
 
-			await client.master.upsertRecord({
+			await client.master.upsert({
 				name: "John Doe",
 				languageCode: "02",
 			});
@@ -289,7 +289,7 @@ describeHttp("AvesClient", () => {
           </ManageMasterRecordRS>`;
 				});
 
-			await client.master.upsertRecord({
+			await client.master.upsert({
 				name: "John Doe",
 				email: "john@example.com",
 				zipCode: "12345",
@@ -319,7 +319,7 @@ describeHttp("AvesClient", () => {
         </ManageMasterRecordRS>`,
 				);
 
-			const result = await client.master.upsertRecord({
+			const result = await client.master.upsert({
 				name: "John Doe",
 				languageCode: "02",
 			});
@@ -334,7 +334,7 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
-	describe("createBooking", () => {
+	describe("create", () => {
 		const minimalBookingParams = {
 			customerDetail: { recordCode: "138311" },
 			bookingFileStatus: { value: "QUOTATION" as const },
@@ -364,7 +364,7 @@ describeHttp("AvesClient", () => {
 			],
 		};
 
-		it("should make createBooking request and return camelCase response", async () => {
+		it("should make create booking request and return camelCase response", async () => {
 			const mockClient = mockAgent.get(baseURL);
 
 			mockClient
@@ -385,7 +385,7 @@ describeHttp("AvesClient", () => {
         </BookingFileRS>`,
 				);
 
-			const result = await client.booking.createBooking(minimalBookingParams);
+			const result = await client.booking.create(minimalBookingParams);
 
 			expect(result.success).toBe(true);
 			if (result.success) {
@@ -396,7 +396,7 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should validate input parameters", async () => {
-			const result = await client.booking.createBooking({
+			const result = await client.booking.create({
 				...minimalBookingParams,
 				bookingFileStatus: {
 					value: "INVALID_STATUS" as "QUOTATION",
@@ -426,7 +426,7 @@ describeHttp("AvesClient", () => {
         </BookingFileRS>`,
 				);
 
-			const result = await client.booking.createBooking(minimalBookingParams);
+			const result = await client.booking.create(minimalBookingParams);
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
@@ -453,7 +453,7 @@ describeHttp("AvesClient", () => {
           </BookingFileRS>`;
 				});
 
-			await client.booking.createBooking(minimalBookingParams);
+			await client.booking.create(minimalBookingParams);
 
 			expect(capturedBody).toContain("<BookFileRQ>");
 			expect(capturedBody).toContain("<CustomerDetail");
@@ -466,7 +466,7 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
-	describe("modBookingServices", () => {
+	describe("updateServices", () => {
 		const modParams = {
 			customerRecordCode: "138311",
 			bookingFileCode: "14/036654",
@@ -523,7 +523,7 @@ describeHttp("AvesClient", () => {
           </BookingFileRS>`,
 				);
 
-			const result = await client.booking.modBookingServices(modParams);
+			const result = await client.booking.updateServices(modParams);
 			expect(result.success).toBe(true);
 			if (result.success) {
 				expect(result.data.bookingFileCode).toBe("14/036654");
@@ -544,7 +544,7 @@ describeHttp("AvesClient", () => {
 					return `<BookingFileRS><RsStatus Status="OK"/></BookingFileRS>`;
 				});
 
-			await client.booking.modBookingServices(modParams);
+			await client.booking.updateServices(modParams);
 			expect(capturedBody).toContain("<ModFileServicesRQ>");
 			expect(capturedBody).toContain('CancelOperationType="DELETE"');
 			expect(capturedBody).toContain('pCode="2014MDE0000010"');
@@ -555,7 +555,7 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
-	describe("cancelBooking / setBookingStatus", () => {
+	describe("cancel / setStatus", () => {
 		it("should cancel booking file", async () => {
 			const mockClient = mockAgent.get(baseURL);
 			mockClient
@@ -565,7 +565,7 @@ describeHttp("AvesClient", () => {
 				})
 				.reply(200, `<CancelFileRS><RsStatus Status="OK"/></CancelFileRS>`);
 
-			const result = await client.booking.cancelBooking({
+			const result = await client.booking.cancel({
 				bookingFileCode: "14/000081",
 				customerRecordCode: "000170",
 			});
@@ -591,7 +591,7 @@ describeHttp("AvesClient", () => {
           </SetStatusRS>`,
 				);
 
-			const result = await client.booking.setBookingStatus({
+			const result = await client.booking.setStatus({
 				customerRecordCode: "000170",
 				bookingFileCode: "14/000081",
 				fileStatus: { value: "CANCELED" },
@@ -624,7 +624,7 @@ describeHttp("AvesClient", () => {
           </SetStatusServiceRS>`,
 				);
 
-			const result = await client.booking.setBookingServiceStatus({
+			const result = await client.booking.setServiceStatus({
 				customerRecordCode: "000001",
 				bookingFileCode: "18/000252",
 				bookingServiceRef: "002",
@@ -638,8 +638,8 @@ describeHttp("AvesClient", () => {
 			}
 		});
 
-		it("should reject setBookingStatus with invalid status", async () => {
-			const result = await client.booking.setBookingStatus({
+		it("should reject setStatus with invalid status", async () => {
+			const result = await client.booking.setStatus({
 				customerRecordCode: "000170",
 				bookingFileCode: "14/000081",
 				fileStatus: { value: "INVALID" as "CANCELED" },
@@ -649,7 +649,7 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
-	describe("modBookingHeader", () => {
+	describe("updateHeader", () => {
 		it("should modify header and return status-only response", async () => {
 			const mockClient = mockAgent.get(baseURL);
 			mockClient
@@ -662,7 +662,7 @@ describeHttp("AvesClient", () => {
 					`<ModFileHeaderRS><RsStatus Status="OK"/></ModFileHeaderRS>`,
 				);
 
-			const result = await client.booking.modBookingHeader({
+			const result = await client.booking.updateHeader({
 				bookingFileCode: "14/000043",
 				bookingFileStartDate: "2014-04-28",
 				customerRecordCode: "103737",
@@ -680,7 +680,7 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
-	describe("insertFilePaymentList", () => {
+	describe("addPayments", () => {
 		it("should insert payments and return status OK", async () => {
 			const mockClient = mockAgent.get(baseURL);
 			let capturedBody = "";
@@ -694,7 +694,7 @@ describeHttp("AvesClient", () => {
 					return `<FilePaymentListRS><RsStatus Status="OK"/></FilePaymentListRS>`;
 				});
 
-			const result = await client.booking.insertFilePaymentList({
+			const result = await client.booking.addPayments({
 				bookingFileCode: "18/000172",
 				paymentUser: "MLDN",
 				enableMultiplePayments: true,
@@ -721,7 +721,7 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should reject payload without booking file reference", async () => {
-			const result = await client.booking.insertFilePaymentList({
+			const result = await client.booking.addPayments({
 				enableMultiplePayments: true,
 				operationType: "AbsoluteAmountsInsertion",
 				filePaymentList: [
@@ -731,13 +731,13 @@ describeHttp("AvesClient", () => {
 						paymentType: "B",
 					},
 				],
-			} as Parameters<typeof client.booking.insertFilePaymentList>[0]);
+			} as Parameters<typeof client.booking.addPayments>[0]);
 			expect(result.success).toBe(false);
 			if (!result.success) expect(result.error).toBeInstanceOf(AvesError);
 		});
 	});
 
-	describe("searchPackages", () => {
+	describe("search", () => {
 		it("should search packages and return camelCase package list", async () => {
 			const mockClient = mockAgent.get(baseURL);
 			let capturedBody = "";
@@ -760,7 +760,7 @@ describeHttp("AvesClient", () => {
         </SearchPackageRS>`;
 				});
 
-			const result = await client.packages.searchPackages({
+			const result = await client.packages.search({
 				customerRecordCode: "138311",
 				languageCode: "01",
 				currencyCode: "EUR",
@@ -822,7 +822,7 @@ describeHttp("AvesClient", () => {
 					return `<SearchPackageRS><RsStatus Status="OK"/></SearchPackageRS>`;
 				});
 
-			const result = await localized.packages.searchPackages({
+			const result = await localized.packages.search({
 				customerRecordCode: "138311",
 				startDate: "2014-12-27T00:00:00",
 				endDate: "2015-01-03T00:00:00",
@@ -845,7 +845,7 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
-	describe("getPackageDetail", () => {
+	describe("get", () => {
 		it("should get package detail", async () => {
 			const mockClient = mockAgent.get(baseURL);
 
@@ -864,7 +864,7 @@ describeHttp("AvesClient", () => {
         </PackageDetailRS>`,
 				);
 
-			const result = await client.packages.getPackageDetail({
+			const result = await client.packages.get({
 				customerRecordCode: "001692",
 				packageCode: "2015F042",
 				startDate: "2015-05-02T00:00:00",
@@ -884,7 +884,7 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
-	describe("commitPackage", () => {
+	describe("commit", () => {
 		it("should commit package", async () => {
 			const mockClient = mockAgent.get(baseURL);
 
@@ -895,7 +895,7 @@ describeHttp("AvesClient", () => {
 				})
 				.reply(200, `<CommitPackRS><RsStatus Status="OK"/></CommitPackRS>`);
 
-			const result = await client.packages.commitPackage({
+			const result = await client.packages.commit({
 				packageCode: "14/PACKAGE001",
 			});
 
@@ -904,7 +904,7 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
-	describe("searchBookingFiles", () => {
+	describe("searchBookings", () => {
 		it("should search by PACKAGE_CODE", async () => {
 			const mockClient = mockAgent.get(baseURL);
 
@@ -926,7 +926,7 @@ describeHttp("AvesClient", () => {
         </SearchFileRS>`,
 				);
 
-			const result = await client.booking.searchBookingFiles({
+			const result = await client.booking.search({
 				searchType: "PACKAGE_CODE",
 				customerRecordCode: "138311",
 				packageCode: "2014MDE0000010",
