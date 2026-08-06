@@ -12,6 +12,7 @@ import type {
 	SetFileServiceStatusSchema,
 	SetFileStatusSchema,
 } from "./schemas/booking-ops.js";
+import type { BookingFileDetailApiSchema } from "./schemas/booking-response.js";
 import type { RqHeaderSchema, RsStatusSchema } from "./schemas/common.js";
 import type {
 	AccountPoliciesSchema,
@@ -32,7 +33,6 @@ import type {
 	SearchServicesResponseSchema,
 } from "./schemas/package-catalog.js";
 import type { SearchMasterRecordSchema } from "./schemas/search.js";
-import type { BookingFileDetailApiSchema } from "./schemas/booking-response.js";
 import type { SearchBookingFileSchema } from "./schemas/search-booking-file.js";
 import type {
 	ManageMasterRecordRequestSchema,
