@@ -1,6 +1,6 @@
 ---
 name: aves-sdk-validation
-description: aves-sdk validation and error model — Result, AvesError kinds, Valibot parse/safeParse, rsStatus handling, timeouts. Use when changing transport, error.ts, client return types, or request/response validation behavior.
+description: aves-sdk validation and error model — Result, AvesError kinds, Valibot parse/safeParse, rsStatus, transport invokeOp flow. Use when changing transport, error.ts, client return types, or request/response validation behavior.
 ---
 
 # aves-sdk validation
@@ -27,39 +27,38 @@ Callers branch on `result.success`. Do not introduce throwing domain methods.
 | `api` | HTTP non-200, `rsStatus.status !== "OK"`, timeout (`TIMEOUT`) |
 | `unknown` | Unexpected thrown errors |
 
-Factories: `validationError`, `apiError`, `unknownError`. Format Valibot issues with `buildDetails(issues)`.
+Factories: `validationError`, `apiError`, `unknownError`, **`toAvesError`** (in `error.ts`). Format Valibot issues with `buildDetails(issues)`.
 
-`status` is lowercased; `code` coerced to number (`0` default).
+`status` keeps AVES casing (`"OK"` / `"ERROR"` / …). `code` is `number | undefined` (absent → `undefined`, not `0`).
 
 ## Transport flow
 
-`invokeOp`:
+`invokeOp(op, params)` (`AvesTransport`):
 
-1. `parse(apiSchema, params)` — **throws** `ValiError` on bad input → caught → `validation` Result
-2. Build root + `RqHeader` (+ optional `bodyKey` nest)
-3. `request` → POST XML (`undici`)
+1. Look up `AVES_OPS[op]` (endpoint, roots, schemas, `bodyKey?`)
+2. `parse(apiSchema, params)` — **throws** `ValiError` on bad input → caught → `validation` Result
+3. `buildOpEnvelope` + cached frozen `RqHeader`
+4. `HttpClient.postXml` — timeout, status, capped error body (`readTextCapped` / `MAX_ERROR_BODY`)
+5. `readAvesResponse` — XML root → `safeParse(responseSchema)` → `rsStatus` gate
 
-`request`:
+Response reader:
 
-1. Timeout via `createTimeoutSignal` (default 30s) → abort → `api` / `TIMEOUT`
-2. Non-200 → `api` with body text
-3. Missing response root → `validation`
-4. `safeParse(responseSchema, root)` — soft fail → `validation` + `buildDetails`
-5. `handleApiStatus`: `rsStatus.status !== "OK"` → `api` with `errorDescription` / `errorCode`
-6. Else `ok(output)`
-
-`toAvesError`: `AvesError` passthrough → `ValiError` → validation → `Error` → unknown.
+1. Missing root → `validation`
+2. `safeParse` soft fail → `validation` + `buildDetails`
+3. `rsStatus.status !== "OK"` → `api`
+4. Else `ok(output)` (already camelized in-place by `createResponseSchema`)
 
 ## Rules
 
 - Request path: `parse` (fail fast at invoke)
-- Response path: `safeParse` (never throw from Valibot in `request`)
+- Response path: `safeParse` (never throw from Valibot in the reader)
 - Map all caught errors through `toAvesError` / factories — no raw `Error` in Results
-- XML helpers throw `AvesError("validation", …)` on convert failure; transport maps them
+- XML helpers throw `AvesError` validation on convert failure; transport maps them
 - Do not widen public APIs to `throw` instead of `Result`
+- Types for ops: `OpParams` / `OpResult` from `ops.ts` — domain methods still take/return aliases from `types.ts`
 
 ## Related
 
-- Schema helpers → `aves-sdk-schemas`
+- Schema helpers / facade → `aves-sdk-schemas`
 - Transport placement → `aves-sdk-architecture`
 - Tests asserting `error.kind` → `aves-sdk-style`

@@ -39,6 +39,7 @@ import type {
 	ManageMasterRecordResponseSchema,
 } from "./schemas/upsert.js";
 import type { Camelize } from "./utils/case-transform.js";
+import type { FacadeOutput } from "./utils/facade-transform.js";
 
 // ============================================================================
 // Common Types
@@ -480,6 +481,33 @@ export type SearchBookingFileRS = {
 	rsStatus: RsStatus;
 	bookingFileList?: SearchBookingFileDetail[];
 };
+
+// ============================================================================
+// Simplified facade types
+// ============================================================================
+
+/** Dual-key inputs already live on RQ types; outputs add concise aliases. */
+export type MasterRecordInput = MasterRecordDetail;
+export type MasterRecord = FacadeOutput<MasterRecordDetailResponse>;
+export type MasterSearchInput = SearchMasterRecord;
+export type MasterSearchResult = FacadeOutput<SearchMasterRecordRS>;
+export type BookingInput = BookingFileRQ;
+export type Booking = FacadeOutput<BookingFileRS>;
+export type ServiceUpdateInput = ModFileServicesRQ;
+export type BookingHeaderInput = ModFileHeaderRQ;
+export type BookingCancelInput = CancelFileRQ;
+export type BookingStatusInput = SetFileStatusRQ;
+export type ServiceStatusInput = SetFileServiceStatusRQ;
+export type PaymentInput = FilePaymentListRQ;
+export type BookingSearchInput = SearchBookingFileRQ;
+export type BookingSearchResult = FacadeOutput<SearchBookingFileRS>;
+export type CatalogSearchInput = AvesSearchRQ;
+export type PackageSearchResult = FacadeOutput<SearchPackageRS>;
+export type ServiceSearchResult = FacadeOutput<SearchServicesRS>;
+export type PackageInput = PackageDetailRQ;
+export type Package = FacadeOutput<PackageDetailRS>;
+export type CommitInput = CommitPackageRQ;
+export type OperationStatus = FacadeOutput<BookingStatusOnlyRS>;
 
 // ============================================================================
 // Client Configuration

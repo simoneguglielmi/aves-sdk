@@ -4,7 +4,7 @@ import { RsStatusSchema } from "../schemas/common.js";
 import { toWireBody } from "./booking-transform.js";
 import {
 	camelToPascalKeys,
-	pascalToCamelKeys,
+	pascalToCamelKeysInPlace,
 	wireKey,
 } from "./case-transform.js";
 import type { WireShape, WireShapeFor } from "./wire-shapes.js";
@@ -53,14 +53,15 @@ export function listDetailApiSchema<
 }
 
 /**
- * Creates a schema that transforms PascalCase API responses to camelCase
+ * Creates a schema that validates the PascalCase wire response, then camelizes
+ * keys **in place** on the parse output (ADR 0001 Phase 2a — no second tree).
  */
 export function createResponseSchema<TSchema extends v.GenericSchema>(
 	apiSchema: TSchema,
 ) {
 	return v.pipe(
 		apiSchema,
-		v.transform((input) => pascalToCamelKeys(input)),
+		v.transform((input) => pascalToCamelKeysInPlace(input)),
 	);
 }
 
@@ -180,6 +181,83 @@ export function coalesceCustomerRecordCode<
 	};
 }
 
+/**
+ * Copy facade keys onto canonical AVES keys (AVES wins); strip facade keys.
+ * `aliases` is facade → AVES.
+ */
+export function coalesceAliases<
+	const M extends Readonly<Record<string, string>>,
+>(aliases: M) {
+	return <T extends object>(input: T): Omit<T, keyof M & keyof T> => {
+		const out: Record<string, unknown> = {
+			...(input as Record<string, unknown>),
+		};
+		for (const [facade, aves] of Object.entries(aliases)) {
+			const facadeVal = out[facade];
+			delete out[facade];
+			if (out[aves] === undefined && facadeVal !== undefined)
+				out[aves] = facadeVal;
+		}
+		return out as Omit<T, keyof M & keyof T>;
+	};
+}
+
+type AvesObjectInput<TEntries extends ObjectEntries> = v.InferInput<
+	v.ObjectSchema<TEntries, undefined>
+>;
+type AvesObjectOutput<TEntries extends ObjectEntries> = v.InferOutput<
+	v.ObjectSchema<TEntries, undefined>
+>;
+
+/** Facade keys whose AVES target exists on `TEntries`. */
+type AppliedFacades<
+	TEntries extends ObjectEntries,
+	A extends Readonly<Record<string, string>>,
+> = {
+	[K in keyof A as A[K] extends keyof TEntries & string
+		? K
+		: never]?: A[K] extends keyof AvesObjectInput<TEntries>
+		? AvesObjectInput<TEntries>[A[K]]
+		: unknown;
+};
+
+/**
+ * Object schema that accepts AVES keys and/or facade aliases.
+ * Output is AVES-only (aliases coalesced; required fields re-validated).
+ * Alias targets missing from `avesEntries` are skipped.
+ */
+export function facadeObject<
+	TEntries extends ObjectEntries,
+	const A extends Readonly<Record<string, string>>,
+>(
+	avesEntries: TEntries,
+	aliases: A,
+): v.GenericSchema<
+	AvesObjectInput<TEntries> & AppliedFacades<TEntries, A>,
+	AvesObjectOutput<TEntries>
+> {
+	const inputEntries: ObjectEntries = { ...avesEntries };
+	const applied: Record<string, string> = {};
+	for (const [facade, avesKey] of Object.entries(aliases)) {
+		const avesSchema = avesEntries[avesKey];
+		if (avesSchema === undefined) continue;
+		applied[facade] = avesKey;
+		inputEntries[facade] = isOptionalSchema(avesSchema)
+			? avesSchema
+			: v.optional(avesSchema);
+		if (!isOptionalSchema(avesSchema))
+			inputEntries[avesKey] = v.optional(avesSchema);
+	}
+	return v.pipe(
+		v.object(inputEntries),
+		v.transform(coalesceAliases(applied)),
+		v.object(avesEntries),
+	) as v.GenericSchema<
+		AvesObjectInput<TEntries> & AppliedFacades<TEntries, A>,
+		AvesObjectOutput<TEntries>
+	>;
+}
+
 function isObjectSchema(
 	schema: v.GenericSchema,
 ): schema is v.ObjectSchema<
@@ -215,7 +293,7 @@ function toWireEntrySchema(
 	if (isOptionalSchema(schema)) {
 		const inner = toWireEntrySchema(schema.wrapped, shape);
 		return schema.default !== undefined
-			? v.optional(inner, schema.default as never)
+			? v.optional(inner, schema.default)
 			: v.optional(inner);
 	}
 	if (isArraySchema(schema))
@@ -232,9 +310,7 @@ function buildApiValidationObject(
 	shape: WireShape,
 	overrides?: ObjectEntries,
 ) {
-	const validationEntries = {} as {
-		[K in string]: BaseSchema<unknown, unknown, BaseIssue<unknown>>;
-	};
+	const validationEntries: ObjectEntries = {};
 
 	for (const key in inputSchema.entries) {
 		const childShape = shape.children?.[key] ?? {};

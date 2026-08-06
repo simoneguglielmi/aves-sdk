@@ -1,22 +1,4 @@
 import type { AvesError } from "../error.js";
-import {
-	BookingFileApiSchema,
-	BookingFileResponseSchema,
-} from "../schemas/booking-file.js";
-import {
-	BookingFileDetailResponseSchema,
-	BookingStatusOnlyResponseSchema,
-	CancelFileApiSchema,
-	FilePaymentListApiSchema,
-	ModFileHeaderApiSchema,
-	ModFileServicesApiSchema,
-	SetFileServiceStatusApiSchema,
-	SetFileStatusApiSchema,
-} from "../schemas/booking-ops.js";
-import {
-	SearchBookingFileApiSchema,
-	SearchBookingFileResponseSchema,
-} from "../schemas/search-booking-file.js";
 import type {
 	BookingFileDetailRS,
 	BookingFileRQ,
@@ -31,131 +13,83 @@ import type {
 	SetFileServiceStatusRQ,
 	SetFileStatusRQ,
 } from "../types.js";
+import {
+	type FacadeOutput,
+	toFacadeResult,
+} from "../utils/facade-transform.js";
 import type { Result } from "../utils/result.js";
-import { XML_ROOT_ELEMENTS } from "../xml/root.js";
-import { AVES_ENDPOINTS } from "./endpoints.js";
 import type { AvesTransport } from "./transport.js";
 
 export class BookingClient {
 	constructor(private readonly transport: AvesTransport) {}
 
 	/** Create a booking file (CreateBookingFile). */
-	createBooking(
+	async createBooking(
 		params: BookingFileRQ,
-	): Promise<Result<BookingFileRS, AvesError>> {
-		return this.transport.invokeOp({
-			op: "createBooking",
-			params,
-			apiSchema: BookingFileApiSchema,
-			endpoint: AVES_ENDPOINTS.createBooking,
-			requestRoot: XML_ROOT_ELEMENTS.BOOKING_REQUEST,
-			responseRoot: XML_ROOT_ELEMENTS.BOOKING_RESPONSE,
-			responseSchema: BookingFileResponseSchema,
-		});
+	): Promise<Result<FacadeOutput<BookingFileRS>, AvesError>> {
+		const result = await this.transport.invokeOp("createBooking", params);
+		return toFacadeResult(result);
 	}
 
 	/** Add/replace services, assign package, delete/nullify cost items. */
-	modBookingServices(
+	async modBookingServices(
 		params: ModFileServicesRQ,
-	): Promise<Result<BookingFileDetailRS, AvesError>> {
-		return this.transport.invokeOp({
-			op: "modBookingServices",
-			params,
-			apiSchema: ModFileServicesApiSchema,
-			endpoint: AVES_ENDPOINTS.modBookingServices,
-			requestRoot: XML_ROOT_ELEMENTS.MOD_FILE_SERVICES_REQUEST,
-			responseRoot: XML_ROOT_ELEMENTS.BOOKING_RESPONSE,
-			responseSchema: BookingFileDetailResponseSchema,
-		});
+	): Promise<Result<FacadeOutput<BookingFileDetailRS>, AvesError>> {
+		const result = await this.transport.invokeOp("modBookingServices", params);
+		return toFacadeResult(result);
 	}
 
 	/** Header only (pax, notes, billing) — no costs. */
-	modBookingHeader(
+	async modBookingHeader(
 		params: ModFileHeaderRQ,
-	): Promise<Result<BookingStatusOnlyRS, AvesError>> {
-		return this.transport.invokeOp({
-			op: "modBookingHeader",
-			params,
-			apiSchema: ModFileHeaderApiSchema,
-			endpoint: AVES_ENDPOINTS.modBookingHeader,
-			requestRoot: XML_ROOT_ELEMENTS.MOD_FILE_HEADER_REQUEST,
-			responseRoot: XML_ROOT_ELEMENTS.MOD_FILE_HEADER_RESPONSE,
-			responseSchema: BookingStatusOnlyResponseSchema,
-		});
+	): Promise<Result<FacadeOutput<BookingStatusOnlyRS>, AvesError>> {
+		const result = await this.transport.invokeOp("modBookingHeader", params);
+		return toFacadeResult(result);
 	}
 
 	/** Delete a booking file (CancelBookingFile). */
-	cancelBooking(
+	async cancelBooking(
 		params: CancelFileRQ,
-	): Promise<Result<BookingStatusOnlyRS, AvesError>> {
-		return this.transport.invokeOp({
-			op: "cancelBooking",
-			params,
-			apiSchema: CancelFileApiSchema,
-			endpoint: AVES_ENDPOINTS.cancelBooking,
-			requestRoot: XML_ROOT_ELEMENTS.CANCEL_FILE_REQUEST,
-			responseRoot: XML_ROOT_ELEMENTS.CANCEL_FILE_RESPONSE,
-			responseSchema: BookingStatusOnlyResponseSchema,
-		});
+	): Promise<Result<FacadeOutput<BookingStatusOnlyRS>, AvesError>> {
+		const result = await this.transport.invokeOp("cancelBooking", params);
+		return toFacadeResult(result);
 	}
 
 	/** Change booking file status (incl. CANCELED / NULLIFIED). */
-	setBookingStatus(
+	async setBookingStatus(
 		params: SetFileStatusRQ,
-	): Promise<Result<BookingFileDetailRS, AvesError>> {
-		return this.transport.invokeOp({
-			op: "setBookingStatus",
-			params,
-			apiSchema: SetFileStatusApiSchema,
-			endpoint: AVES_ENDPOINTS.setBookingStatus,
-			requestRoot: XML_ROOT_ELEMENTS.SET_STATUS_REQUEST,
-			responseRoot: XML_ROOT_ELEMENTS.SET_STATUS_RESPONSE,
-			responseSchema: BookingFileDetailResponseSchema,
-		});
+	): Promise<Result<FacadeOutput<BookingFileDetailRS>, AvesError>> {
+		const result = await this.transport.invokeOp("setBookingStatus", params);
+		return toFacadeResult(result);
 	}
 
 	/** Nullify a single booked service line. */
-	setBookingServiceStatus(
+	async setBookingServiceStatus(
 		params: SetFileServiceStatusRQ,
-	): Promise<Result<BookingFileDetailRS, AvesError>> {
-		return this.transport.invokeOp({
-			op: "setBookingServiceStatus",
+	): Promise<Result<FacadeOutput<BookingFileDetailRS>, AvesError>> {
+		const result = await this.transport.invokeOp(
+			"setBookingServiceStatus",
 			params,
-			apiSchema: SetFileServiceStatusApiSchema,
-			endpoint: AVES_ENDPOINTS.setBookingServiceStatus,
-			requestRoot: XML_ROOT_ELEMENTS.SET_STATUS_SERVICE_REQUEST,
-			responseRoot: XML_ROOT_ELEMENTS.SET_STATUS_SERVICE_RESPONSE,
-			responseSchema: BookingFileDetailResponseSchema,
-		});
+		);
+		return toFacadeResult(result);
 	}
 
 	/** Register one or more payments on a booking file. */
-	insertFilePaymentList(
+	async insertFilePaymentList(
 		params: FilePaymentListRQ,
-	): Promise<Result<BookingStatusOnlyRS, AvesError>> {
-		return this.transport.invokeOp({
-			op: "insertFilePaymentList",
+	): Promise<Result<FacadeOutput<BookingStatusOnlyRS>, AvesError>> {
+		const result = await this.transport.invokeOp(
+			"insertFilePaymentList",
 			params,
-			apiSchema: FilePaymentListApiSchema,
-			endpoint: AVES_ENDPOINTS.insertFilePaymentList,
-			requestRoot: XML_ROOT_ELEMENTS.FILE_PAYMENT_LIST_REQUEST,
-			responseRoot: XML_ROOT_ELEMENTS.FILE_PAYMENT_LIST_RESPONSE,
-			responseSchema: BookingStatusOnlyResponseSchema,
-		});
+		);
+		return toFacadeResult(result);
 	}
 
 	/** Search booking files, incl. by PACKAGE_CODE. */
-	searchBookingFiles(
+	async searchBookingFiles(
 		params: SearchBookingFileRQ,
-	): Promise<Result<SearchBookingFileRS, AvesError>> {
-		return this.transport.invokeOp({
-			op: "searchBookingFiles",
-			params,
-			apiSchema: SearchBookingFileApiSchema,
-			endpoint: AVES_ENDPOINTS.searchBookingFile,
-			requestRoot: XML_ROOT_ELEMENTS.SEARCH_BOOKING_FILE_REQUEST,
-			responseRoot: XML_ROOT_ELEMENTS.SEARCH_BOOKING_FILE_RESPONSE,
-			responseSchema: SearchBookingFileResponseSchema,
-		});
+	): Promise<Result<FacadeOutput<SearchBookingFileRS>, AvesError>> {
+		const result = await this.transport.invokeOp("searchBookingFiles", params);
+		return toFacadeResult(result);
 	}
 }
