@@ -39,6 +39,7 @@
   "files": [
     "dist/index.mjs",
     "dist/index.d.mts",
+    "dist/CHANGELOG.md",
     "README.md",
     "CHANGELOG.md"
   ],
