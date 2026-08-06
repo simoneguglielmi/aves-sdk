@@ -24,72 +24,66 @@ export class BookingClient {
 	constructor(private readonly transport: AvesTransport) {}
 
 	/** Create a booking file (CreateBookingFile). */
-	async createBooking(
+	async create(
 		params: BookingFileRQ,
 	): Promise<Result<FacadeOutput<BookingFileRS>, AvesError>> {
-		const result = await this.transport.invokeOp("createBooking", params);
+		const result = await this.transport.invokeOp("create", params);
 		return toFacadeResult(result);
 	}
 
 	/** Add/replace services, assign package, delete/nullify cost items. */
-	async modBookingServices(
+	async updateServices(
 		params: ModFileServicesRQ,
 	): Promise<Result<FacadeOutput<BookingFileDetailRS>, AvesError>> {
-		const result = await this.transport.invokeOp("modBookingServices", params);
+		const result = await this.transport.invokeOp("updateServices", params);
 		return toFacadeResult(result);
 	}
 
 	/** Header only (pax, notes, billing) — no costs. */
-	async modBookingHeader(
+	async updateHeader(
 		params: ModFileHeaderRQ,
 	): Promise<Result<FacadeOutput<BookingStatusOnlyRS>, AvesError>> {
-		const result = await this.transport.invokeOp("modBookingHeader", params);
+		const result = await this.transport.invokeOp("updateHeader", params);
 		return toFacadeResult(result);
 	}
 
 	/** Delete a booking file (CancelBookingFile). */
-	async cancelBooking(
+	async cancel(
 		params: CancelFileRQ,
 	): Promise<Result<FacadeOutput<BookingStatusOnlyRS>, AvesError>> {
-		const result = await this.transport.invokeOp("cancelBooking", params);
+		const result = await this.transport.invokeOp("cancel", params);
 		return toFacadeResult(result);
 	}
 
 	/** Change booking file status (incl. CANCELED / NULLIFIED). */
-	async setBookingStatus(
+	async setStatus(
 		params: SetFileStatusRQ,
 	): Promise<Result<FacadeOutput<BookingFileDetailRS>, AvesError>> {
-		const result = await this.transport.invokeOp("setBookingStatus", params);
+		const result = await this.transport.invokeOp("setStatus", params);
 		return toFacadeResult(result);
 	}
 
 	/** Nullify a single booked service line. */
-	async setBookingServiceStatus(
+	async setServiceStatus(
 		params: SetFileServiceStatusRQ,
 	): Promise<Result<FacadeOutput<BookingFileDetailRS>, AvesError>> {
-		const result = await this.transport.invokeOp(
-			"setBookingServiceStatus",
-			params,
-		);
+		const result = await this.transport.invokeOp("setServiceStatus", params);
 		return toFacadeResult(result);
 	}
 
 	/** Register one or more payments on a booking file. */
-	async insertFilePaymentList(
+	async addPayments(
 		params: FilePaymentListRQ,
 	): Promise<Result<FacadeOutput<BookingStatusOnlyRS>, AvesError>> {
-		const result = await this.transport.invokeOp(
-			"insertFilePaymentList",
-			params,
-		);
+		const result = await this.transport.invokeOp("addPayments", params);
 		return toFacadeResult(result);
 	}
 
 	/** Search booking files, incl. by PACKAGE_CODE. */
-	async searchBookingFiles(
+	async search(
 		params: SearchBookingFileRQ,
 	): Promise<Result<FacadeOutput<SearchBookingFileRS>, AvesError>> {
-		const result = await this.transport.invokeOp("searchBookingFiles", params);
+		const result = await this.transport.invokeOp("searchBookings", params);
 		return toFacadeResult(result);
 	}
 }

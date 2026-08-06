@@ -1,3 +1,4 @@
+import type { OpBodyKey } from "../schemas/enums.js";
 import type { XMLRootElementValues } from "../xml/root.js";
 import { createRootElement } from "../xml/root.js";
 import type { RqHeader } from "./rq-header.js";
@@ -5,7 +6,7 @@ import type { RqHeader } from "./rq-header.js";
 /** Fields from an op def needed to wrap the request envelope. */
 export type OpEnvelopeDef = {
 	requestRoot: XMLRootElementValues;
-	bodyKey?: string;
+	bodyKey?: OpBodyKey;
 };
 
 /**

@@ -144,7 +144,7 @@ export type SupplierRefMasterRecords = InferInput<
 /**
  * Master record detail for creating or updating customer, supplier, or general records.
  *
- * This is the primary input type for the `upsertRecord` method.
+ * This is the primary input type for the `upsert` method.
  *
  * @property recordCode - 6-character unique identifier (auto-generated if not provided)
  * @property insertCriteria - Duplicate handling strategy:
@@ -293,7 +293,7 @@ export type SearchMasterRecordRS = MasterRecordDetailResponse[];
  * @property MasterRecordDetail - Record data to insert or update
  *
  * @internal This type is primarily for internal SDK use. Use {@link MasterRecordDetail}
- * as the input type for `client.master.upsertRecord()`.
+ * as the input type for `client.master.upsert()`.
  */
 export type ManageMasterRecordRequest = InferInput<
 	typeof ManageMasterRecordRequestSchema
@@ -308,7 +308,7 @@ export type ManageMasterRecordRequest = InferInput<
  *
  * @example
  * ```typescript
- * const result = await client.master.upsertRecord({
+ * const result = await client.master.upsert({
  *   languageCode: '02',
  *   name: 'New Customer',
  *   insertCriteria: 'N',

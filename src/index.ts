@@ -47,6 +47,8 @@ export {
 	MakeDocumentToSchema,
 	MasterPaymentType,
 	MasterPaymentTypeSchema,
+	OpBodyKey,
+	OpBodyKeySchema,
 	OptionedExpirePolicy,
 	OptionedExpirePolicySchema,
 	PassengerCategory,
