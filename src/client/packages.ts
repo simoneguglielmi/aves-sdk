@@ -34,7 +34,7 @@ export class PackageCatalogClient {
 	}
 
 	/** Search packages / programs. Defaults `avesSearchType` to `PACKAGE`. */
-	async searchPackages(
+	async search(
 		params: AvesSearchRQ,
 	): Promise<Result<FacadeOutput<SearchPackageRS>, AvesError>> {
 		const result = await this.transport.invokeOp(
@@ -45,29 +45,29 @@ export class PackageCatalogClient {
 	}
 
 	/** Search TOP services. Defaults `avesSearchType` to `SERVICE`. */
-	async searchTopServices(
+	async searchServices(
 		params: AvesSearchRQ,
 	): Promise<Result<FacadeOutput<SearchServicesRS>, AvesError>> {
 		const result = await this.transport.invokeOp(
-			"searchTopServices",
+			"searchServices",
 			this.#prepareSearch(params, AvesSearchType.SERVICE),
 		);
 		return toFacadeResult(result);
 	}
 
 	/** Package / program detail + service list. */
-	async getPackageDetail(
+	async get(
 		params: PackageDetailRQ,
 	): Promise<Result<FacadeOutput<PackageDetailRS>, AvesError>> {
-		const result = await this.transport.invokeOp("getPackageDetail", params);
+		const result = await this.transport.invokeOp("get", params);
 		return toFacadeResult(result);
 	}
 
 	/** Publish an existing package. Does not create packages. */
-	async commitPackage(
+	async commit(
 		params: CommitPackageRQ,
 	): Promise<Result<FacadeOutput<CommitPackageRS>, AvesError>> {
-		const result = await this.transport.invokeOp("commitPackage", params);
+		const result = await this.transport.invokeOp("commit", params);
 		return toFacadeResult(result);
 	}
 }

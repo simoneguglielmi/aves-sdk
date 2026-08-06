@@ -21,6 +21,17 @@ export type RsStatusValue = EnumValue<typeof RsStatusValue>;
 export const RsStatusValueSchema = enumSchema(RsStatusValue);
 
 // ---------------------------------------------------------------------------
+// Request envelope (RQ body nest keys)
+// ---------------------------------------------------------------------------
+
+/** Nest key when an op wraps the API body under a Detail element (vs spread at RQ root). */
+export const OpBodyKey = {
+	MasterRecordDetail: "MasterRecordDetail",
+} as const;
+export type OpBodyKey = EnumValue<typeof OpBodyKey>;
+export const OpBodyKeySchema = enumSchema(OpBodyKey);
+
+// ---------------------------------------------------------------------------
 // Master records
 // ---------------------------------------------------------------------------
 

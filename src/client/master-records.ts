@@ -27,10 +27,10 @@ export class MasterRecordsClient {
 	}
 
 	/** Insert or update a master record. */
-	async upsertRecord(
+	async upsert(
 		record: MasterRecordDetail,
 	): Promise<Result<FacadeOutput<ManageMasterRecordRS>, AvesError>> {
-		const result = await this.transport.invokeOp("upsertRecord", record);
+		const result = await this.transport.invokeOp("upsert", record);
 		return toFacadeResult(result);
 	}
 }
