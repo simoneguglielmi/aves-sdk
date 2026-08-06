@@ -45,8 +45,8 @@ if (result.success) {
 `AvesClient` is a facade over domain clients. Operations are namespaced by domain.
 
 ```typescript
-await client.booking.createBooking(params);
-await client.packages.searchPackages(params);
+await client.booking.create(params);
+await client.packages.search(params);
 await client.master.search({ searchType: 'CODE', recordCode: '508558' });
 ```
 
@@ -56,11 +56,14 @@ Migration from 1.x: insert the appropriate domain namespace (for example,
 Migration from 2.x: `master.search` success is a flat array — see the
 [3.0.0 migration notes](./CHANGELOG.md#300---2026-08-06).
 
+Migration from 3.x: domain method names were shortened — see the
+[4.0.0 migration notes](./CHANGELOG.md#400---2026-08-06).
+
 | Namespace | Methods |
 | --------- | ------- |
-| `master` | `search`, `upsertRecord` |
-| `booking` | `createBooking`, `modBookingServices`, `modBookingHeader`, `cancelBooking`, `setBookingStatus`, `setBookingServiceStatus`, `insertFilePaymentList`, `searchBookingFiles` |
-| `packages` | `searchPackages`, `searchTopServices`, `getPackageDetail`, `commitPackage` |
+| `master` | `search`, `upsert` |
+| `booking` | `create`, `updateServices`, `updateHeader`, `cancel`, `setStatus`, `setServiceStatus`, `addPayments`, `search` |
+| `packages` | `search`, `searchServices`, `get`, `commit` |
 
 ### Constructor
 
@@ -227,7 +230,7 @@ Applied only on the schema that owns each fragment (`facadeObject` / `coalesceAl
 | `packageCode` | `pCode` |
 | `includeServices` | `getServicesFromPackage` |
 
-#### Booking root (`createBooking`)
+#### Booking root (`create`)
 
 | Facade | AVES |
 | ------ | ---- |
@@ -305,7 +308,7 @@ Applied only on the schema that owns each fragment (`facadeObject` / `coalesceAl
 New code can use the simplified vocabulary directly:
 
 ```typescript
-const created = await client.booking.createBooking({
+const created = await client.booking.create({
   customerCode: '138311',
   status: 'CONFIRMED',
   startDate: '2026-08-06',
@@ -374,12 +377,12 @@ const byEmail = await client.master.search({
 });
 ```
 
-### `client.master.upsertRecord(record)`
+### `client.master.upsert(record)`
 
 `insertCriteria`: `'S'` always insert · `'N'` skip if exists · `'T'` update all (default) · `'M'` secondary fields only.
 
 ```typescript
-const result = await client.master.upsertRecord({
+const result = await client.master.upsert({
   name: 'Jane Smith',
   email: 'jane@example.com',
   languageCode: '02',
@@ -399,19 +402,19 @@ if (result.success) {
 
 | Method | Purpose |
 | ------ | ------- |
-| `createBooking` | Create booking file |
-| `modBookingServices` | Add/replace services, assign package, delete/nullify lines |
-| `modBookingHeader` | Header only (pax, notes, billing) — no costs |
-| `cancelBooking` | Delete booking file |
-| `setBookingStatus` | Change file status (`CANCELED` / `NULLIFIED` / …) |
-| `setBookingServiceStatus` | Nullify a single service line |
-| `insertFilePaymentList` | Register payments |
-| `searchBookingFiles` | Search practices (`FILE_CODE`, `PAX_NAME`, `PACKAGE_CODE`, `OTHER`) |
+| `create` | Create booking file |
+| `updateServices` | Add/replace services, assign package, delete/nullify lines |
+| `updateHeader` | Header only (pax, notes, billing) — no costs |
+| `cancel` | Delete booking file |
+| `setStatus` | Change file status (`CANCELED` / `NULLIFIED` / …) |
+| `setServiceStatus` | Nullify a single service line |
+| `addPayments` | Register payments |
+| `search` | Search practices (`FILE_CODE`, `PAX_NAME`, `PACKAGE_CODE`, `OTHER`) |
 
 ### Create
 
 ```typescript
-const created = await client.booking.createBooking({
+const created = await client.booking.create({
   customerRecordCode: '138311', // or customerDetail: { recordCode: '138311' }
   bookingFileStatus: 'QUOTATION', // or { value: 'QUOTATION', expiredDate? }
   startDate: '2015-01-22T00:00:00',
@@ -450,7 +453,7 @@ if (created.success) {
 ### Modify services / package / overwrite lines
 
 ```typescript
-await client.booking.modBookingServices({
+await client.booking.updateServices({
   customerRecordCode: '138311',
   bookingFileCode: '14/036654',
   selectedPackageDetail: {
@@ -489,7 +492,7 @@ Requires `bookingFileCode` **or** `bookingFileRefCode`.
 `paymentUser` is serialized as an XML **attribute** on `FilePaymentListRQ` (`PaymentUser="…"`), not as a child element.
 
 ```typescript
-await client.booking.insertFilePaymentList({
+await client.booking.addPayments({
   bookingFileCode: '18/000172',
   paymentUser: 'MLDN',
   enableMultiplePayments: true,
@@ -508,32 +511,32 @@ await client.booking.insertFilePaymentList({
 ### Header, status, cancel, search practices
 
 ```typescript
-await client.booking.modBookingHeader({
+await client.booking.updateHeader({
   bookingFileCode: '14/000043',
   bookingFileStartDate: '2014-04-28',
   customerRecordCode: '103737',
   passengerList: [{ rph: '001', name: 'ADULTI 001', sex: 'M' }],
 });
 
-await client.booking.setBookingStatus({
+await client.booking.setStatus({
   customerRecordCode: '000170',
   bookingFileCode: '14/000081',
   fileStatus: 'CANCELED', // or { value: 'CANCELED' }
 });
 
-await client.booking.setBookingServiceStatus({
+await client.booking.setServiceStatus({
   customerRecordCode: '000001',
   bookingFileCode: '18/000252',
   bookingServiceRef: '002',
   bookingFileServiceStatus: 'NULLIFIED',
 });
 
-await client.booking.cancelBooking({
+await client.booking.cancel({
   bookingFileCode: '14/000081',
   customerRecordCode: '000170',
 });
 
-await client.booking.searchBookingFiles({
+await client.booking.search({
   searchType: 'PACKAGE_CODE',
   customerRecordCode: '138311',
   packageCode: '2014MDE0000010',
@@ -548,15 +551,15 @@ There is **no** Create Package API in AVES XML 1.8.0. Search, detail, and commit
 
 | Method | Purpose |
 | ------ | ------- |
-| `searchPackages` | Search programs (defaults `avesSearchType: 'PACKAGE'`) |
-| `searchTopServices` | Search TOP services (defaults `avesSearchType: 'SERVICE'`) |
-| `getPackageDetail` | Package base info + service list |
-| `commitPackage` | Publish existing package (`packageCode` only) |
+| `search` | Search programs (defaults `avesSearchType: 'PACKAGE'`) |
+| `searchServices` | Search TOP services (defaults `avesSearchType: 'SERVICE'`) |
+| `get` | Package base info + service list |
+| `commit` | Publish existing package (`packageCode` only) |
 
 `paxQty` defaults to `passengerList.length`; `paxQtyCriteria` defaults to `GREATER_OR_EQUAL`. `languageCode` can be omitted when set on `AvesClient` options.
 
 ```typescript
-const packages = await client.packages.searchPackages({
+const packages = await client.packages.search({
   customerRecordCode: '138311',
   languageCode: '01',
   currencyCode: 'EUR',
@@ -574,7 +577,7 @@ const packages = await client.packages.searchPackages({
   servOrPackCode: '2014MDE0000010',
 });
 
-const detail = await client.packages.getPackageDetail({
+const detail = await client.packages.get({
   customerRecordCode: '001692',
   packageCode: '2015F042',
   startDate: '2015-05-02T00:00:00',
@@ -584,7 +587,7 @@ const detail = await client.packages.getPackageDetail({
   ],
 });
 
-await client.packages.commitPackage({ packageCode: '14/PACKAGE001' });
+await client.packages.commit({ packageCode: '14/PACKAGE001' });
 
 if (packages.success) console.log(packages.data.packageList?.[0]?.pCode);
 if (detail.success) console.log(detail.data.pCode, detail.data.serviceList?.[0]);

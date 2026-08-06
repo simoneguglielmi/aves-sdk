@@ -27,10 +27,10 @@ Do not invent a parallel transform path — extend helpers (`aves-sdk-schemas` /
 ## Client sketch
 
 ```ts
-async createBooking(
+async create(
   params: BookingFileRQ,
 ): Promise<Result<FacadeOutput<BookingFileRS>, AvesError>> {
-  const result = await this.transport.invokeOp("createBooking", params);
+  const result = await this.transport.invokeOp("create", params);
   return toFacadeResult(result);
 }
 ```
