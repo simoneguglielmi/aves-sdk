@@ -9,3 +9,13 @@ export type AvesClientDeps = {
 	booking?: BookingClient;
 	packages?: PackageCatalogClient;
 };
+
+export type HttpTextResponse = {
+	statusCode: number;
+	body: string;
+};
+
+export type HttpClientOptions = {
+	baseURL: string;
+	timeoutMs?: number;
+};

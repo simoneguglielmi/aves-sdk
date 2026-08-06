@@ -1,4 +1,5 @@
 import type { BaseIssue } from "valibot";
+import { ValiError } from "valibot";
 import type { RsStatusValue } from "./schemas/enums.js";
 
 export const ERROR_KINDS = {
@@ -40,6 +41,15 @@ export function unknownError(message: string): AvesError {
 	return new AvesError(ERROR_KINDS.UNKNOWN, message);
 }
 
+/** Map unknown thrown values to a typed {@link AvesError}. */
+export function toAvesError(error: unknown, defaultMessage: string): AvesError {
+	if (error instanceof AvesError) return error;
+	if (error instanceof ValiError)
+		return validationError(`Validation error: ${buildDetails(error.issues)}`);
+	if (error instanceof Error) return unknownError(error.message);
+	return unknownError(defaultMessage);
+}
+
 export function buildDetails(issues: readonly BaseIssue<unknown>[]): string {
 	return issues.map(formatIssue).join("; ");
 }
@@ -76,3 +86,6 @@ function extractSegment(segment: unknown): string | undefined {
 export function isAbortError(error: unknown): boolean {
 	return error instanceof Error && error.name === "AbortError";
 }
+
+export const isErrorStatus = (statusCode: number) =>
+	statusCode < 200 || statusCode > 299;

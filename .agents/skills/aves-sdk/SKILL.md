@@ -17,15 +17,16 @@ Before changing Valibot APIs, check Context7.
 
 | Skill | When |
 | ----- | ---- |
-| `aves-sdk-architecture` | Client layers, domains, DI, flat aliases |
-| `aves-sdk-wire` | WireShape, PascalCase/@attrs, outbound encoding |
-| `aves-sdk-schemas` | Valibot helpers, flatten DX, input aliases |
+| `aves-sdk-architecture` | Client layers, domains, DI, `AVES_OPS`, transport split |
+| `aves-sdk-wire` | WireShape, PascalCase/@attrs, fused `toWireBody` |
+| `aves-sdk-schemas` | Valibot helpers, flatten DX, facade aliases |
 | `aves-sdk-validation` | Result, AvesError, parse/safeParse, rsStatus |
-| `aves-sdk-style` | Biome, ESM, enums, Infer types, Vitest |
+| `aves-sdk-style` | Biome, ESM, enums, Infer types, Vitest / bench |
 | `aves-sdk-add-op` | Adding an API op end-to-end + verify/release |
 
-Prefer existing helpers over new transform paths.
+Prefer existing helpers over new transform paths. Facade dual keys: schema-owned inbound (`facade-aliases.ts`) + Proxy outbound (`withPublicAliases`).
 
 ```bash
 yarn typecheck && yarn test
+# optional: yarn test:bench · AVES_PERF=1 yarn test:perf
 ```

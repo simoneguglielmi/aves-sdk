@@ -1,13 +1,13 @@
 ---
 name: aves-sdk-wire
-description: AVES XML wire encoding for aves-sdk — WireShape attrs, PascalCase/@attrs, list wrap, bodyKey nesting. Use when editing wire-shapes.ts, toWireBody, camelToPascalKeys, or request XML attributes.
+description: AVES XML wire encoding for aves-sdk — WireShape attrs, PascalCase/@attrs, fused toWireBody, list wrap. Use when editing wire-shapes.ts, toWireBody, camelToPascalKeys, or request XML attributes.
 ---
 
 # aves-sdk wire
 
 ## Rules
 
-- **SDK I/O**: camelCase, flat DX
+- **SDK I/O**: camelCase, flat DX (plus optional facade aliases — see `aves-sdk-schemas`)
 - **Wire**: PascalCase keys; `@`-prefixed keys → XML attributes
 - Attr vs element is **per-request `WireShape`** in `src/utils/wire-shapes.ts` — never a global field set
 - Element-only roots → `elementOnlyWire` (`{}`)
@@ -17,11 +17,15 @@ description: AVES XML wire encoding for aves-sdk — WireShape attrs, PascalCase
 
 ## Outbound path
 
-1. Valibot validates camelCase input
-2. `createApiSchema(schema, shape)` → `toWireBody` (shape-driven list wrap + `paxAssociated` normalize + `camelToPascalKeys`)
-3. `invokeOp` adds `RqHeader`, optional `bodyKey`, POSTs XML
+1. Valibot validates camelCase input (after schema-owned facade coalesce)
+2. `createApiSchema(schema, shape)` → **`toWireBody`** — **single** shape-driven walk (list wrap + `paxAssociated` normalize + Pascal/`@` keys)
+3. `invokeOp` looks up `AVES_OPS`, adds `RqHeader`, optional `bodyKey`, POSTs XML
 
 Prefer `createWireSchemaPair(inputSchema, shape)` when you need both `api` + PascalCase `validation` schemas.
+
+Keep exported `wrapListDetails` / `normalizeEmptyPaxAssociated` for tests/direct callers; hot path is fused `toWireBody`.
+
+`itemShape` / `encodeShapeFor` cache synthesized shapes on static `WireShape` refs (`WeakMap`).
 
 ## List wrap (request)
 
@@ -62,9 +66,10 @@ Attrs/children describe each item; encode synthesizes the Detail wrapper so `Wir
 - Global list-key name scans (`listKeys: string[]`)
 - `| WireShape` on `WireShapeFor.children`
 - Hand-written `as const satisfies WireShape` — use `wire` / `attrsWire` / `camelAttrsWire` / `listWire`
+- Reintroducing a 3-walk outbound path beside fused `toWireBody`
 
 ## Related
 
-- Response flatten / aliases → `aves-sdk-schemas`
+- Response flatten / facade aliases → `aves-sdk-schemas`
 - parse/safeParse / Result → `aves-sdk-validation`
 - New op → `aves-sdk-add-op`
