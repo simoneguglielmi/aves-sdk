@@ -23,8 +23,8 @@ import {
 	PassengerDetailCreateInputSchema,
 	StatisticCodesInputSchema,
 } from "./booking-file.js";
-import { BoolishSchema } from "./booking-shared.js";
 import {
+	BoolishSchema,
 	OptionalLanguageCodeSchema,
 	RsStatusSchema,
 	StatusOnlyResponseSchema,

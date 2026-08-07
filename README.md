@@ -410,6 +410,7 @@ if (result.success) {
 | `setServiceStatus` | Nullify a single service line |
 | `addPayments` | Register payments |
 | `search` | Search practices (`FILE_CODE`, `PAX_NAME`, `PACKAGE_CODE`, `OTHER`) |
+| `exportData` | Read practices back whole, **incl. registered payments and amounts** |
 
 ### Create
 
@@ -542,6 +543,54 @@ await client.booking.search({
   packageCode: '2014MDE0000010',
 });
 ```
+
+### Read a practice back (`exportData`)
+
+`search` returns the header and booked services. `exportData` is the only AVES
+operation that also returns **registered payments**, per-line amounts and file
+totals — use it to reconcile what was written with `addPayments` / `create`.
+
+Every field is an optional filter. With none set AVES exports everything the
+credentials can reach, so pass `limitRange` for anything broader than one
+`bookingFileCode` (`skip` ≥ 0, `take` ≤ 1000 — enforced before sending).
+
+```typescript
+const result = await client.booking.exportData({
+  bookingFileCode: '14/036654',
+  // or filter a window:
+  // lastModificationDate: { minDate: '2026-08-01', maxDate: '2026-08-07' },
+  // statusLists: ['CONFIRMED'],
+  // limitRange: { skip: 0, take: 500 },
+});
+
+if (result.success) {
+  const file = result.data.bookingFileList?.[0];
+
+  for (const payment of file?.paymentList ?? []) {
+    console.log(payment.paymentDate, payment.amount, payment.paymentType);
+  }
+
+  for (const service of file?.bookedServices ?? []) {
+    console.log(service.serviceCode, service.amountsDetail?.costWithTax);
+  }
+
+  console.log(file?.bookedFileAmounts?.customerDueAmount);
+
+  // Lookup tables the exported codes resolve against.
+  // `territoriality` (IN_UE | OUT_UE | MIXED_UE) drives the VAT regime.
+  console.log(result.data.extraInfo?.nationList);
+  console.log(result.data.extraInfo?.vatList);
+}
+```
+
+`extraInfo.masterDataSet` rows are validated as full master records — the same
+shape `client.master.search` returns. Read responses accept `RecordType:
+'NOT_SET'` via `RecordTypeWire`; the request-side `RecordType` stays strict.
+
+Every picklist the spec closes is validated, so an undocumented value fails the
+whole response rather than reaching your code. Two fields are deliberately
+plain strings because AVES documents no values for them: `regimeType` (no list
+given) and `customerPayAt` (absent from the response table entirely).
 
 ---
 

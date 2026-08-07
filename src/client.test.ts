@@ -942,6 +942,135 @@ describeHttp("AvesClient", () => {
 		});
 	});
 
+	describe("exportData", () => {
+		const exportResponse = `<BookingDataExportRS>
+          <RsStatus Status="OK"/>
+          <BookingFileList>
+            <BookingFileData BookingFileCode="14/036654">
+              <BookingFileStatus Value="CONFIRM"/>
+              <CustomerRecordCode>138311</CustomerRecordCode>
+              <CurrencyCode>EUR</CurrencyCode>
+              <BookedServices>
+                <BookedServiceData RPH="001" ServiceCode="HA51-2">
+                  <AvesServiceType>TOP</AvesServiceType>
+                  <AmountsDetail CostWithTax="210.000000"/>
+                </BookedServiceData>
+              </BookedServices>
+              <PaymentList>
+                <PaymentDetail PaymentDate="2015-03-05T10:07:02+01:00"
+                 Amount="11.000000" PaymentType="C"/>
+              </PaymentList>
+              <BookedFileAmounts CustomerTotalAmount="280.000000"
+               CustomerDueAmount="269.000000"/>
+            </BookingFileData>
+          </BookingFileList>
+          <ExtraInfo>
+            <NationList>
+              <NationDetail Code="ITA" Name="ITALIA" Territoriality="IN_UE"/>
+            </NationList>
+          </ExtraInfo>
+        </BookingDataExportRS>`;
+
+		it("reads payments and amounts back for a booking file", async () => {
+			const mockClient = mockAgent.get(baseURL);
+
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/ExportBookingData",
+					method: "POST",
+				})
+				.reply(200, exportResponse);
+
+			const result = await client.booking.exportData({
+				bookingFileCode: "14/036654",
+			});
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				const [file] = result.data.bookingFileList ?? [];
+				expect(file?.bookingFileCode).toBe("14/036654");
+				expect(file?.bookingFileStatus?.value).toBe("CONFIRMED");
+				expect(file?.paymentList).toEqual([
+					{
+						paymentDate: "2015-03-05T10:07:02+01:00",
+						amount: "11.000000",
+						paymentType: "C",
+					},
+				]);
+				expect(file?.bookedFileAmounts?.customerDueAmount).toBe("269.000000");
+				expect(result.data.extraInfo?.nationList?.[0]?.territoriality).toBe(
+					"IN_UE",
+				);
+			}
+		});
+
+		it("exposes the same payload under facade alias names", async () => {
+			const mockClient = mockAgent.get(baseURL);
+
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/ExportBookingData",
+					method: "POST",
+				})
+				.reply(200, exportResponse);
+
+			const result = await client.booking.exportData({
+				bookingCode: "14/036654",
+			});
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				const [file] = result.data.bookings ?? [];
+				expect(file?.bookingCode).toBe("14/036654");
+				expect(file?.status?.value).toBe("CONFIRMED");
+				expect(file?.payments?.[0]?.amount).toBe("11.000000");
+				expect(file?.services?.[0]?.amounts?.costWithTax).toBe("210.000000");
+				expect(file?.totals?.customerTotalAmount).toBe("280.000000");
+			}
+		});
+
+		it("rejects a take above the AVES ceiling before sending", async () => {
+			const result = await client.booking.exportData({
+				limitRange: { skip: 0, take: 5000 },
+			});
+
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error).toBeInstanceOf(AvesError);
+				expect(result.error.kind).toBe("validation");
+			}
+		});
+
+		it("surfaces AVES errors as api errors", async () => {
+			const mockClient = mockAgent.get(baseURL);
+
+			mockClient
+				.intercept({
+					path: "/interop/booking/v2/rest/ExportBookingData",
+					method: "POST",
+				})
+				.reply(
+					200,
+					`<BookingDataExportRS>
+            <RsStatus Status="ERROR">
+              <ErrorCode>1002</ErrorCode>
+              <ErrorDescription>Booking file not found</ErrorDescription>
+            </RsStatus>
+          </BookingDataExportRS>`,
+				);
+
+			const result = await client.booking.exportData({
+				bookingFileCode: "99/999999",
+			});
+
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error.kind).toBe("api");
+				expect(result.error.code).toBe(1002);
+			}
+		});
+	});
+
 	describe("AvesError", () => {
 		it("should create error with correct properties", () => {
 			const error = new AvesError("api", "Test error message", "ERROR", 1001);

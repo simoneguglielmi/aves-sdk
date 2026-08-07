@@ -29,7 +29,6 @@ import {
 	StatisticCodesInputSchema,
 } from "./booking-file.js";
 import {
-	BoolishSchema,
 	CancelOperationTypeSchema,
 	FilePaymentOperationTypeSchema,
 	OptionedExpirePolicySchema,
@@ -37,7 +36,7 @@ import {
 	ServiceRefTypeSchema,
 	SetFileStatusValueSchema,
 } from "./booking-shared.js";
-import { StatusOnlyResponseSchema } from "./common.js";
+import { BoolishSchema, StatusOnlyResponseSchema } from "./common.js";
 
 /** Response with RsStatus only (Cancel / ModHeader) */
 export const BookingStatusOnlyResponseSchema = StatusOnlyResponseSchema;
