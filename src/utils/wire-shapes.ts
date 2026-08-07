@@ -371,6 +371,26 @@ export const searchFileWire = childrenWire({
 	insurance: attrsWire("code", "number"),
 });
 
+/**
+ * BookingDataExportRQ — code filters are element lists, not attribute lists.
+ * The RQ table writes `@Status` / `@Code`, but the only worked example of this
+ * family in the spec is `<FeatureCodeList><Code>HTL</Code></FeatureCodeList>`
+ * (Booking.txt:2342-2344), so each entry is a bare `<Code>` / `<Status>` element.
+ */
+const codeListWire = listWire(wire({}), "many", "code");
+
+export const exportBookingDataWire = childrenWire({
+	startDate: dateRangeWire,
+	endDate: dateRangeWire,
+	createdDate: dateRangeWire,
+	lastModificationDate: dateRangeWire,
+	lastModificationDateTime: dateRangeWire,
+	statusLists: listWire(wire({}), "many", "status"),
+	featureCodeList: codeListWire,
+	packageCodeList: codeListWire,
+	limitRange: attrsWire("skip", "take"),
+});
+
 /** GetPackageDetail SelectedServiceDetail (ServiceCode + PackageRow). */
 export const packagePrgServiceDetailWire = attrsWire(
 	"serviceCode",

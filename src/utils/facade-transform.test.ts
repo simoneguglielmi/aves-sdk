@@ -214,6 +214,54 @@ describe("withPublicAliases (Proxy facade)", () => {
 		expect(withPublicAliases(target)).toBe(withPublicAliases(target));
 	});
 
+	it("yields aliased items when iterated, not just when indexed", () => {
+		const result = sample();
+
+		const [destructured] = result.services ?? [];
+		expect(destructured?.serviceCode).toBe("S1");
+
+		const iterated = [];
+		for (const service of result.services ?? []) iterated.push(service);
+		expect(iterated[0]?.serviceCode).toBe("S1");
+
+		expect([...(result.services ?? [])][0]?.serviceCode).toBe("S1");
+		expect(Array.from(result.services ?? [])[0]?.serviceCode).toBe("S1");
+	});
+
+	it("passes aliased items to array method callbacks", () => {
+		const result = sample();
+
+		expect(result.services?.map((s) => s.serviceCode)).toEqual(["S1"]);
+		expect(result.services?.find((s) => s.serviceCode === "S1")).toBeDefined();
+		expect(result.services?.filter((s) => s.quantity === "2")).toHaveLength(1);
+		expect(result.services?.at(0)?.passengerCount).toBe("1");
+
+		const seen: string[] = [];
+		result.services?.forEach((s) => {
+			seen.push(s.serviceCode);
+		});
+		expect(seen).toEqual(["S1"]);
+	});
+
+	it("keeps element identity stable across access styles", () => {
+		const result = sample();
+		const [viaIteration] = result.services ?? [];
+
+		expect(viaIteration).toBe(result.services?.[0]);
+		expect(result.services?.indexOf(result.services[0])).toBe(0);
+		expect(result.services?.includes(result.services[0])).toBe(true);
+	});
+
+	it("still mutates the underlying array through the facade", () => {
+		const target = { bookedServiceList: [{ sCode: "S1" }] };
+		const result = withPublicAliases(target);
+
+		result.services?.push({ serviceCode: "S2" });
+
+		expect(target.bookedServiceList).toHaveLength(2);
+		expect(result.services?.[1]?.serviceCode).toBe("S2");
+	});
+
 	it("does not wrap Date / special objects", () => {
 		const created = new Date("2026-08-06T00:00:00.000Z");
 		const result = withPublicAliases({ created });

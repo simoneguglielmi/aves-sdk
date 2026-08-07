@@ -60,6 +60,23 @@ export const RecordType = {
 export type RecordType = EnumValue<typeof RecordType>;
 export const RecordTypeSchema = enumSchema(RecordType);
 
+/**
+ * RecordType as it comes **back** from AVES. Read responses add `NOT_SET`,
+ * which the request-side picklist has no reason to accept — see the
+ * ExportBookingData ExtraInfo example (Booking.txt:11841).
+ * Mirrors the {@link BookingFileStatus} / {@link BookingFileStatusWire} split.
+ */
+export const RecordTypeWire = {
+	CUSTOMER: "CUSTOMER",
+	SUPPLIER: "SUPPLIER",
+	VOUCHER: "VOUCHER",
+	SUPPLIER_VOUCHER: "SUPPLIER_VOUCHER",
+	GENERAL: "GENERAL",
+	NOT_SET: "NOT_SET",
+} as const;
+export type RecordTypeWire = EnumValue<typeof RecordTypeWire>;
+export const RecordTypeWireSchema = enumSchema(RecordTypeWire);
+
 export const RecordStatus = {
 	ENABLED: "ENABLED",
 	DISABLED: "DISABLED",
@@ -180,6 +197,109 @@ export const ToServiceType = {
 } as const;
 export type ToServiceType = EnumValue<typeof ToServiceType>;
 export const ToServiceTypeSchema = enumSchema(ToServiceType);
+
+/** BookedServiceData sub-service classification (Booking.txt:11243-11251). */
+export const ToSubServiceType = {
+	ACCOMODATION: "ACCOMODATION",
+	BOARD_BASIS: "BOARD_BASIS",
+	SUPPLEMENT: "SUPPLEMENT",
+	REDUCTION: "REDUCTION",
+	PRINCIPAL: "PRINCIPAL",
+	GOING_TO: "GOING_TO",
+	RETURN_BY: "RETURN_BY",
+	NOT_SET: "NOT_SET",
+} as const;
+export type ToSubServiceType = EnumValue<typeof ToSubServiceType>;
+export const ToSubServiceTypeSchema = enumSchema(ToSubServiceType);
+
+/**
+ * How a booked service was sold (Booking.txt:11257-11260).
+ * `NOT_SPECIFIED` is a literal single space on the wire, not an empty string.
+ */
+export const SellingType = {
+	IN_PACKAGE: "P",
+	SINGLE_SERVICE: "S",
+	NOT_SPECIFIED: " ",
+} as const;
+export type SellingType = EnumValue<typeof SellingType>;
+export const SellingTypeSchema = enumSchema(SellingType);
+
+/**
+ * Booked service print layout (Booking.txt:11261-11289).
+ *
+ * The spec table hard-wraps these identifiers mid-token (`VOUCHER_AND_ONE_ROW_AND_A`
+ * / `CCOMODATION_AND_TREATMENT`), so the values below are rejoined across line
+ * breaks. If a live response is ever rejected on `Printable`, this reconstruction
+ * is the first thing to re-check against the PDF.
+ */
+export const Printable = {
+	ONE_ROW: "ONE_ROW",
+	TWO_ROW: "TWO_ROW",
+	VOUCHER_AND_ONE_ROW: "VOUCHER_AND_ONE_ROW",
+	VOUCHER_AND_TWO_ROW: "VOUCHER_AND_TWO_ROW",
+	VOUCHER_AND_ACCOMODATION_AND_TREATMENT:
+		"VOUCHER_AND_ACCOMODATION_AND_TREATMENT",
+	VOUCHER_AND_ONE_ROW_AND_ACCOMODATION_AND_TREATMENT:
+		"VOUCHER_AND_ONE_ROW_AND_ACCOMODATION_AND_TREATMENT",
+	VOUCHER_AND_TWO_ROW_AND_ACCOMODATION_AND_TREATMENT:
+		"VOUCHER_AND_TWO_ROW_AND_ACCOMODATION_AND_TREATMENT",
+	VOUCHER_AND_ADRESSE_AND_ONE_ROW: "VOUCHER_AND_ADRESSE_AND_ONE_ROW",
+	VOUCHER_AND_ADRESSE_AND_ONE_ROW_AND_ACCOMODATION_AND_TREATMENT:
+		"VOUCHER_AND_ADRESSE_AND_ONE_ROW_AND_ACCOMODATION_AND_TREATMENT",
+	VOUCHER_AND_ADRESSE_AND_TWO_ROW_AND_ACCOMODATION_AND_TREATMENT:
+		"VOUCHER_AND_ADRESSE_AND_TWO_ROW_AND_ACCOMODATION_AND_TREATMENT",
+	TOSERVICE_AND_ONE_ROW: "TOSERVICE_AND_ONE_ROW",
+	TOSERVICE_AND_TWO_ROW: "TOSERVICE_AND_TWO_ROW",
+	TOSERVICE_AND_ONE_ROW_AND_ACCOMODATION_AND_TREATMENT:
+		"TOSERVICE_AND_ONE_ROW_AND_ACCOMODATION_AND_TREATMENT",
+	TOSERVICE_AND_TWO_ROW_AND_ACCOMODATION_AND_TREATMENT:
+		"TOSERVICE_AND_TWO_ROW_AND_ACCOMODATION_AND_TREATMENT",
+	TOSERVICE_AND_ACCOMODATION_AND_TREATMENT:
+		"TOSERVICE_AND_ACCOMODATION_AND_TREATMENT",
+	NO: "NO",
+} as const;
+export type Printable = EnumValue<typeof Printable>;
+export const PrintableSchema = enumSchema(Printable);
+
+/** ProcessedPrintDetail print kind (Booking.txt:11197-11204). */
+export const PrintType = {
+	ACCOUNT_STATEMENT: "ACCOUNT_STATEMENT",
+	PROFORMA_INVOICE: "PROFORMA_INVOICE",
+	COMMERCIAL_INVOICE: "COMMERCIAL_INVOICE",
+} as const;
+export type PrintType = EnumValue<typeof PrintType>;
+export const PrintTypeSchema = enumSchema(PrintType);
+
+/** DeadlineDetail state (Booking.txt:11451). Capitalized on the wire. */
+export const DeadlineStatus = {
+	ToDo: "ToDo",
+	Done: "Done",
+} as const;
+export type DeadlineStatus = EnumValue<typeof DeadlineStatus>;
+export const DeadlineStatusSchema = enumSchema(DeadlineStatus);
+
+/**
+ * CommissionIncomeDetail kind (Booking.txt:11461-11469).
+ * `COMMISION` keeps the AVES misspelling — it is the literal wire value.
+ */
+export const CommissionIncomeType = {
+	COMMISION: "COMMISION",
+	DISCOUNT: "DISCOUNT",
+	FROM_COMMISSION_TO_DISCOUNT: "FROM_COMMISSION_TO_DISCOUNT",
+	FROM_DISCOUNT_TO_COMMISSION: "FROM_DISCOUNT_TO_COMMISSION",
+	NO_COMMISSION: "NO_COMMISSION",
+} as const;
+export type CommissionIncomeType = EnumValue<typeof CommissionIncomeType>;
+export const CommissionIncomeTypeSchema = enumSchema(CommissionIncomeType);
+
+/** CommissionOwedDetails kind (Booking.txt:11486-11491) — a subset of income types. */
+export const CommissionOwedType = {
+	COMMISION: "COMMISION",
+	DISCOUNT: "DISCOUNT",
+	NO_COMMISSION: "NO_COMMISSION",
+} as const;
+export type CommissionOwedType = EnumValue<typeof CommissionOwedType>;
+export const CommissionOwedTypeSchema = enumSchema(CommissionOwedType);
 
 export const BookedServiceStatus = {
 	REQUEST: "REQUEST",
@@ -346,6 +466,42 @@ export const SearchBookingFileType = {
 } as const;
 export type SearchBookingFileType = EnumValue<typeof SearchBookingFileType>;
 export const SearchBookingFileTypeSchema = enumSchema(SearchBookingFileType);
+
+/** ExportBookingData granularity (Booking.txt:11065-11070). LEGACY is the AVES default. */
+export const ExportType = {
+	LEGACY: "LEGACY",
+	SUPPLIER_BACKOFFICE: "SUPPLIER_BACKOFFICE",
+	CUSTOMER_BACKOFFICE: "CUSTOMER_BACKOFFICE",
+} as const;
+export type ExportType = EnumValue<typeof ExportType>;
+export const ExportTypeSchema = enumSchema(ExportType);
+
+/**
+ * NationDetail territoriality in ExportBookingData ExtraInfo (Booking.txt:11589-11598).
+ * Drives the VAT regime of a booking: OUT_UE lines are VAT-exempt.
+ */
+export const Territoriality = {
+	IN_UE: "IN_UE",
+	OUT_UE: "OUT_UE",
+	MIXED_UE: "MIXED_UE",
+	NOT_SET: "NOT_SET",
+} as const;
+export type Territoriality = EnumValue<typeof Territoriality>;
+export const TerritorialitySchema = enumSchema(Territoriality);
+
+/** StatisticDetail type in ExportBookingData ExtraInfo (Booking.txt:11569-11578). */
+export const StatisticType = {
+	STA1: "STA1",
+	STA2: "STA2",
+	STA3: "STA3",
+	STA4: "STA4",
+	STA5: "STA5",
+	STA6: "STA6",
+	STA_SERVICE: "STA_SERVICE",
+	NOT_SET: "NOT_SET",
+} as const;
+export type StatisticType = EnumValue<typeof StatisticType>;
+export const StatisticTypeSchema = enumSchema(StatisticType);
 
 // ---------------------------------------------------------------------------
 // Package / Program catalog

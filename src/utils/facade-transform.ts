@@ -39,7 +39,11 @@ export const publicKeyAliases = {
 	filePaymentList: "payments",
 	cancellableBookedServiceList: "cancellableServices",
 	bookedServiceList: "services",
+	bookedServices: "services",
 	serviceList: "services",
+	bookingFileList: "bookings",
+	amountsDetail: "amounts",
+	bookedFileAmounts: "totals",
 	subServiceList: "subServices",
 	featureList: "features",
 	packageList: "packages",
@@ -141,13 +145,15 @@ function wrapArray(target: unknown[]): unknown[] {
 			if (typeof prop === "string" && /^\d+$/.test(prop)) {
 				const index = Number(prop);
 				if (index < 0 || index >= t.length) return;
-				const value = t[index];
-				if (typeof value === "function") return value.bind(t);
-				return wrapValue(value);
+				return wrapValue(t[index]);
 			}
-			const value = Reflect.get(t, prop, receiver);
-			if (typeof value === "function") return value.bind(t);
-			return value;
+			/**
+			 * Array methods are returned unbound so they run with `this` set to the
+			 * proxy. Binding them to `t` would make `for…of`, destructuring, `map`
+			 * and friends read elements straight off the target, handing back rows
+			 * without their public aliases.
+			 */
+			return Reflect.get(t, prop, receiver);
 		},
 		set(t, prop, value, receiver) {
 			if (isDangerousKey(prop)) return false;

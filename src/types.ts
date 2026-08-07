@@ -1,5 +1,10 @@
 import type { InferInput, InferOutput } from "valibot";
 import type {
+	ExportBookingDataSchema,
+	ExportExtraInfoApiSchema,
+	ExportedBookingFileApiSchema,
+} from "./schemas/booking-export.js";
+import type {
 	BookingFileResponseSchema,
 	BookingFileSchema,
 } from "./schemas/booking-file.js";
@@ -483,6 +488,56 @@ export type SearchBookingFileRS = {
 };
 
 // ============================================================================
+// Booking export (ExportBookingData)
+// ============================================================================
+
+/**
+ * Request body for ExportBookingData (BookingDataExportRQ).
+ *
+ * Every field is an optional filter. With none set, AVES exports every booking
+ * file the credentials can reach — pass `limitRange` (skip ≥ 0, take ≤ 1000)
+ * for anything broader than a single `bookingFileCode`.
+ *
+ * @example
+ * ```typescript
+ * const result = await client.booking.exportData({
+ *   bookingFileCode: '14/036654',
+ * });
+ * if (result.success) {
+ *   const [file] = result.data.bookingFileList ?? [];
+ *   for (const payment of file?.paymentList ?? []) {
+ *     console.log(payment.paymentDate, payment.amount, payment.paymentType);
+ *   }
+ * }
+ * ```
+ */
+export type ExportBookingDataRQ = InferInput<typeof ExportBookingDataSchema>;
+
+/** One row in `ExportBookingDataRS.bookingFileList` (camelCase RS shape). */
+export type ExportedBookingFile = Camelize<
+	InferOutput<typeof ExportedBookingFileApiSchema>
+>;
+
+/**
+ * Lookup tables the exported codes resolve against.
+ * `nationList[].territoriality` is what determines a booking's VAT regime.
+ */
+export type ExportExtraInfo = Camelize<
+	InferOutput<typeof ExportExtraInfoApiSchema>
+>;
+
+/**
+ * Response from ExportBookingData (BookingDataExportRS).
+ *
+ * Explicit shape — avoids excessively deep `InferOutput` on nested list schemas.
+ */
+export type ExportBookingDataRS = {
+	rsStatus: RsStatus;
+	bookingFileList?: ExportedBookingFile[];
+	extraInfo?: ExportExtraInfo;
+};
+
+// ============================================================================
 // Simplified facade types
 // ============================================================================
 
@@ -501,6 +556,8 @@ export type ServiceStatusInput = SetFileServiceStatusRQ;
 export type PaymentInput = FilePaymentListRQ;
 export type BookingSearchInput = SearchBookingFileRQ;
 export type BookingSearchResult = FacadeOutput<SearchBookingFileRS>;
+export type BookingExportInput = ExportBookingDataRQ;
+export type BookingExportResult = FacadeOutput<ExportBookingDataRS>;
 export type CatalogSearchInput = AvesSearchRQ;
 export type PackageSearchResult = FacadeOutput<SearchPackageRS>;
 export type ServiceSearchResult = FacadeOutput<SearchServicesRS>;

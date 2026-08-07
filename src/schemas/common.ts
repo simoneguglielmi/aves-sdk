@@ -21,6 +21,13 @@ export const StringishBoolSchema = v.union([
 	v.boolean(),
 ]);
 
+/** AVES bool-ish wire values */
+export const BoolishSchema = v.union([
+	v.literal("true"),
+	v.literal("false"),
+	v.boolean(),
+]);
+
 export const DateRangeSchema = v.object({
 	minDate: v.string(),
 	maxDate: v.string(),
