@@ -25,6 +25,13 @@ export const XML_ROOT_ELEMENTS = {
 	COMMIT_PACKAGE_RESPONSE: "CommitPackRS",
 	SEARCH_BOOKING_FILE_REQUEST: "SearchFileRQ",
 	SEARCH_BOOKING_FILE_RESPONSE: "SearchFileRS",
+	/**
+	 * ExportBookingData roots are `BookingDataExport*`, not `ExportBookingData*`.
+	 * The section tables label the endpoint; the index (Booking.txt:385-386) and both
+	 * XML examples (Booking.txt:11110, :11702) agree on the element names below.
+	 */
+	EXPORT_BOOKING_DATA_REQUEST: "BookingDataExportRQ",
+	EXPORT_BOOKING_DATA_RESPONSE: "BookingDataExportRS",
 } as const;
 
 export type XMLRootElementValues =

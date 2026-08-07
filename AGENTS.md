@@ -224,7 +224,7 @@ Source: `schema-transform.ts`, `booking-transform.ts`, `facade-aliases.ts`, `fac
 
 | Helper | Use when |
 | ------ | -------- |
-| `createResponseSchema` | camelCase via **in-place** `pascalToCamelKeysInPlace` (ADR 0001 Phase 2a) |
+| `createResponseSchema` | camelCase via **in-place** `pascalToCamelKeysInPlace` |
 | `createFlattenedResponseSchema(api, detailKey)` | spread one `*Detail` onto `data` |
 | `createListResponseSchema(listKey, listSchema)` | typed list RS (`PackageList` → `packageList`) |
 | `listDetailApiSchema(DetailKey, item)` | wire `{ Detail }` → flat `Detail[]` |

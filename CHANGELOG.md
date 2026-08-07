@@ -5,6 +5,47 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<a id="v4.1.0"></a>
+## [4.1.0] - 2026-08-07
+
+### Added
+
+- `client.booking.exportData(params)` — **ExportBookingData** (`BookingDataExportRQ` / `BookingDataExportRS`). The only AVES operation that reads a booking file back whole: header, passengers, booked services with per-line `amountsDetail`, file-level `bookedFileAmounts`, and **registered payments**. `addPayments` finally has a read counterpart.
+- `ExtraInfo` lookup tables on the response: `currencyList`, `vatList`, `nationList`, `travelAgentList`, `programList`, `statisticList`, `priceOffertList`, `userList`, `passengerCategoryList`, `masterDataSet`, `masterDataSetExtraInfo`. `nationList[].territoriality` (`IN_UE` / `OUT_UE` / `MIXED_UE`) is the VAT-regime input.
+- Object enums (+ schemas) for every closed picklist the export returns: `ExportType`, `Territoriality`, `StatisticType`, `ToSubServiceType`, `SellingType`, `Printable`, `PrintType`, `DeadlineStatus`, `CommissionIncomeType`, `CommissionOwedType`.
+- `RecordTypeWire` — `RecordType` plus `NOT_SET`, for read responses. Mirrors the existing `BookingFileStatus` / `BookingFileStatusWire` split.
+- Remaining documented export structures are now typed: `customerProcessedPrintList`, `instalmentPlanList`, `supplierInstalmentPlanList`, file- and service-level `deadlineList`, `commissionIncomeDetails`, `commissionOwedDetails`.
+- Types `ExportBookingDataRQ` / `ExportBookingDataRS`, `ExportedBookingFile`, `ExportExtraInfo`, and facade aliases `BookingExportInput` / `BookingExportResult`.
+- Facade output aliases: `bookingFileList` → `bookings`, `bookedServices` → `services`, `amountsDetail` → `amounts`, `bookedFileAmounts` → `totals`.
+
+### Fixed
+
+- `master.search` / `master.upsert` responses no longer reject a record whose `RecordType` is `NOT_SET`. The response validation schema was reusing the request picklist, which omits it. Server-only fields AVES returns on read (`AreaCode`, `LastDateContact`, `UseSupplierDataOnTravelDoc`, `BookingEnabled`, `PrivacyPolicyAccepted`, and the misspelled `ModifitedDate`) are no longer dropped.
+
+  Note for TypeScript consumers: `MasterRecordDetailResponse["recordType"]` widens from `RecordType` to `RecordTypeWire`, so an exhaustive `switch` over it now needs a `NOT_SET` branch. Input types are unchanged.
+- Facade arrays now expose public aliases when **iterated**, not only when indexed. `withPublicAliases` bound array methods to the raw target, so `for…of`, destructuring, spread, `Array.from`, `map`, `filter`, `find`, `forEach` and `at` all handed back rows without their alias keys — `const [p] = result.data.payments` yielded a row with `paymentDate` but no aliases, while `result.data.payments[0]` worked. Methods now run with `this` bound to the proxy. This also makes `indexOf` / `includes` consistent: `arr.indexOf(arr[0])` returned `-1` before, since it compared wrapped items against raw ones.
+
+### Changed
+
+- `BoolishSchema` moved from `schemas/booking-shared.ts` to `schemas/common.ts`, next to `StringishSchema` — it is a cross-domain wire primitive, and `master-record` / `package-catalog` were already importing it out of the booking module. Internal only; it is not part of the published entry point.
+
+### Notes
+
+- Request roots are `BookingDataExport*`, not `ExportBookingData*`: the spec's section tables name the endpoint, while its index and both worked XML examples name the elements.
+- `limitRange` enforces the documented bounds (`skip` ≥ 0, `take` ≤ 1000) before the request leaves the SDK.
+- Wire misspellings are normalized on the way in: `PaumentNote` → `paymentNote`, `FirstConfemationDate` → `firstConfirmationDate`, `UsersList` → `userList`, `TOSubServiceType` → `toSubServiceType`.
+- `extraInfo.masterDataSet` rows validate as full master records, reusing the schema behind `master.search`.
+- `regimeType` and `customerPayAt` are the only response fields left as plain strings: Booking.txt:11312 documents no value list for the first, and the second appears nowhere in the response table — only in the example, as `OUR_AGENCY`. There is nothing to validate against; an enum built from one sample would reject every other value.
+- `Printable` values are rejoined from a spec table that hard-wraps identifiers mid-token. If a live response is ever rejected on that field, check the reconstruction against Booking.txt:11261-11289 first.
+
+<a id="v4.0.1"></a>
+## [4.0.1] - 2026-08-06
+
+### Added
+
+- Copy `CHANGELOG.md` into `dist/` on build (`tsdown` `copy`) and include `dist/CHANGELOG.md` in published `files`.
+
+<a id="v4.0.0"></a>
 ## [4.0.0] - 2026-08-06
 
 ### Added
@@ -50,6 +91,7 @@ await client.packages.search(params);
 await client.master.upsert(record);
 ```
 
+<a id="v3.1.1"></a>
 ## [3.1.1] - 2026-08-06
 
 ### Added
@@ -70,9 +112,10 @@ await client.master.upsert(record);
 - WeakMap cache for `itemShape` / `encodeShapeFor` on static WireShape refs.
 - `toWireBody` single shape-driven walk (list wrap + pax normalize + wire keys).
 - Zero-copy `withPublicAliases` via hardened lazy Proxy (WeakMap identity, proto-pollution blocked).
-- ADR 0001 Phase 2a: `createResponseSchema` camelizes Valibot output **in place** (`pascalToCamelKeysInPlace`) — no second deep-copy. See [`docs/adr/0001-validate-during-camelize.md`](docs/adr/0001-validate-during-camelize.md).
+- `createResponseSchema` camelizes Valibot output **in place** (`pascalToCamelKeysInPlace`) — no second deep-copy.
 - Performance harness: `yarn test:bench` (Vitest bench) and `AVES_PERF=1 yarn test:perf` (relative hot-path asserts).
 
+<a id="v3.0.0"></a>
 ## [3.0.0] - 2026-08-06
 
 ### Changed
@@ -119,6 +162,7 @@ if (result.success) {
 
 3.1.x on top of 3.0 is additive (facade aliases / internal transport). No further breaking migration from 3.0 → 3.1.1.
 
+<a id="v2.0.1"></a>
 ## [2.0.1] - 2026-08-05
 
 ### Changed
@@ -126,6 +170,7 @@ if (result.success) {
 - Omit source maps from the published package; `files` now ships only
   `dist/index.mjs` and `dist/index.d.mts`.
 
+<a id="v2.0.0"></a>
 ## [2.0.0] - 2026-08-05
 
 ### Changed
@@ -149,6 +194,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.9.0"></a>
 ## [1.9.0] - 2026-08-03
 
 ### Changed
@@ -169,6 +215,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.8.0"></a>
 ## [1.8.0] - 2026-08-03
 
 ### Added
@@ -184,6 +231,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.7.0"></a>
 ## [1.7.0] - 2026-08-03
 
 ### Added
@@ -212,6 +260,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.6.0"></a>
 ## [1.6.0] - 2026-07-29
 
 ### Changed
@@ -223,6 +272,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.5.1"></a>
 ## [1.5.1] - 2026-07-29
 
 ### Changed
@@ -232,6 +282,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.5.0"></a>
 ## [1.5.0] - 2026-07-29
 
 ### Added
@@ -242,6 +293,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.4.0"></a>
 ## [1.4.0] - 2026-07-29
 
 ### Added
@@ -256,6 +308,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.3.4"></a>
 ## [1.3.4] - 2026-03-09
 
 ### Added
@@ -273,6 +326,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.3.3"></a>
 ## [1.3.3] - 2026-02-26
 
 ### Fixed
@@ -281,6 +335,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.3.2"></a>
 ## [1.3.2] - 2026-02-10
 
 ### Added
@@ -294,6 +349,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.3.1"></a>
 ## [1.3.1] - 2026-02-01
 
 ### Changed
@@ -303,6 +359,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.3.0"></a>
 ## [1.3.0] - 2026-02-01
 
 ### Added
@@ -318,6 +375,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.16"></a>
 ## [1.2.16] - 2026-01-27
 
 ### Changed
@@ -326,6 +384,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.15"></a>
 ## [1.2.15] - 2026-01-27
 
 ### Fixed
@@ -334,6 +393,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.14"></a>
 ## [1.2.14] - 2026-01-27
 
 ### Changed
@@ -342,6 +402,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.13"></a>
 ## [1.2.13] - 2026-01-27
 
 ### Added
@@ -358,6 +419,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.12"></a>
 ## [1.2.12] - 2026-01-26
 
 ### Added
@@ -376,6 +438,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.2.11"></a>
 ## [1.2.11] - 2026-01-21
 
 ### Fixed
@@ -384,6 +447,7 @@ if (result.success) {
 
 ---
 
+<a id="v1.0.3"></a>
 ## [1.0.3] - 2025-10-04
 
 Early tagged releases (`v1.0.0` … `v1.0.3`) from the initial NestJS-oriented AVES SDK work. Detailed commit notes for those tags are limited in the current branch history.

@@ -10,6 +10,7 @@ export default defineConfig({
 	minify: true,
 	treeshake: true,
 	target: false,
+	copy: ["CHANGELOG.md"],
 	deps: {
 		neverBundle: [
 			"valibot",

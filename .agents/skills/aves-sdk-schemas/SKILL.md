@@ -19,7 +19,7 @@ Facade concise names (`customerCode`, `bookingCode`, `services`, …) are also a
 
 | Helper | Use when |
 | ------ | -------- |
-| `createResponseSchema` | camelCase via **in-place** `pascalToCamelKeysInPlace` after parse (ADR 0001 Phase 2a) |
+| `createResponseSchema` | camelCase via **in-place** `pascalToCamelKeysInPlace` after parse |
 | `createFlattenedResponseSchema(api, detailKey)` | spread one `*Detail` onto `data` |
 | `createListResponseSchema(listKey, listSchema)` | typed list RS (`PackageList` → `packageList`) |
 | `listDetailApiSchema(DetailKey, item)` | wire `{ Detail }` → flat `Detail[]` |
