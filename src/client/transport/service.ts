@@ -41,9 +41,9 @@ export function makeAvesTransport({
 				"Validation error occurred during invoke",
 			);
 			const envelope = buildOpEnvelope(def, apiBody, rqHeader);
-			const httpResult = yield* http.postXml(def.endpoint, jsonToXml(envelope));
+			const xml = yield* http.post(def.endpoint, jsonToXml(envelope));
 			return yield* readAvesResponseEffect(
-				httpResult.body,
+				xml,
 				def.responseRoot,
 				def.responseSchema,
 			);

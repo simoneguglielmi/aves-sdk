@@ -1,19 +1,14 @@
 import type { Effect } from "effect";
 import type { AvesError } from "../../error.js";
 
-export type HttpTextResponse = {
-	statusCode: number;
-	body: string;
-};
-
 export type HttpClientOptions = {
 	baseURL: string;
 	timeoutMs?: number;
 };
 
 export type AvesHttpService = {
-	readonly postXml: (
+	readonly post: (
 		endpoint: string,
-		xmlBody: string,
-	) => Effect.Effect<HttpTextResponse, AvesError>;
+		xml: string,
+	) => Effect.Effect<string, AvesError>;
 };
