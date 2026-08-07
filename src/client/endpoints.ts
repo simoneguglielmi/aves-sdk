@@ -14,6 +14,7 @@ export const AVES_ENDPOINTS = {
 	getPackageDetail: "/interop/booking/v2/rest/GetPackageDetail",
 	commitPackage: "/interop/booking/v2/rest/CommitPackage",
 	searchBookingFile: "/interop/booking/v2/rest/SearchBookingFile",
+	exportBookingData: "/interop/booking/v2/rest/ExportBookingData",
 } as const;
 
 export type AvesEndpointKey = keyof typeof AVES_ENDPOINTS;

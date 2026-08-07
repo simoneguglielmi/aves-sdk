@@ -5,6 +5,8 @@ import type {
 	BookingFileRS,
 	BookingStatusOnlyRS,
 	CancelFileRQ,
+	ExportBookingDataRQ,
+	ExportBookingDataRS,
 	FilePaymentListRQ,
 	ModFileHeaderRQ,
 	ModFileServicesRQ,
@@ -88,6 +90,18 @@ export class BookingClient {
 		params: SearchBookingFileRQ,
 	): Promise<Result<FacadeOutput<SearchBookingFileRS>, AvesError>> {
 		const result = await this.transport.invokeOp(AvesOp.searchBookings, params);
+		return toFacadeResult(result);
+	}
+
+	/**
+	 * Read booking files back whole (ExportBookingData) — the only op that
+	 * returns registered payments, per-service amounts and file totals.
+	 * `search` returns the header and booked services; this returns the money.
+	 */
+	async exportData(
+		params: ExportBookingDataRQ,
+	): Promise<Result<FacadeOutput<ExportBookingDataRS>, AvesError>> {
+		const result = await this.transport.invokeOp(AvesOp.exportData, params);
 		return toFacadeResult(result);
 	}
 }

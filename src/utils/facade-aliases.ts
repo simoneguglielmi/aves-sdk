@@ -101,6 +101,16 @@ export const searchBookingFacades = {
 	status: "fileStatus",
 } as const;
 
+export const exportBookingDataFacades = {
+	...bookingRefFacades,
+	statuses: "statusLists",
+	features: "featureCodeList",
+	packageCodes: "packageCodeList",
+	supplierCode: "supplierRecordCode",
+	passengerName: "firstPassengerName",
+	limit: "limitRange",
+} as const;
+
 export const masterRecordFacades = {
 	financial: "financialDetail",
 	identityDocument: "idDocumentDetail",

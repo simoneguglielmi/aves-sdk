@@ -22,7 +22,6 @@ import {
 import {
 	AvesServiceTypeSchema,
 	BookingFileStatusSchema,
-	BoolishSchema,
 	CostPriceTypeSchema,
 	CustomerPaymentTypeSchema,
 	DocumentTypeSchema,
@@ -34,7 +33,7 @@ import {
 	ToServiceTypeSchema,
 	TypeDownloadFileSchema,
 } from "./booking-shared.js";
-import { RsStatusSchema } from "./common.js";
+import { BoolishSchema, RsStatusSchema } from "./common.js";
 import { DestinationTypeSchema } from "./enums.js";
 import { IdDocumentDetailInputSchema } from "./master-record.js";
 

@@ -1,5 +1,9 @@
 import type { BaseIssue, BaseSchema, InferInput, InferOutput } from "valibot";
 import {
+	ExportBookingDataApiSchema,
+	ExportBookingDataResponseSchema,
+} from "../schemas/booking-export.js";
+import {
 	BookingFileApiSchema,
 	BookingFileResponseSchema,
 } from "../schemas/booking-file.js";
@@ -76,6 +80,7 @@ export const AvesOp = {
 	setServiceStatus: "setServiceStatus",
 	addPayments: "addPayments",
 	searchBookings: "searchBookings",
+	exportData: "exportData",
 	searchPackages: "searchPackages",
 	searchServices: "searchServices",
 	get: "get",
@@ -160,6 +165,13 @@ export const AVES_OPS = {
 		responseRoot: XML_ROOT_ELEMENTS.SEARCH_BOOKING_FILE_RESPONSE,
 		apiSchema: SearchBookingFileApiSchema,
 		responseSchema: SearchBookingFileResponseSchema,
+	}),
+	[AvesOp.exportData]: defineOp({
+		endpoint: AVES_ENDPOINTS.exportBookingData,
+		requestRoot: XML_ROOT_ELEMENTS.EXPORT_BOOKING_DATA_REQUEST,
+		responseRoot: XML_ROOT_ELEMENTS.EXPORT_BOOKING_DATA_RESPONSE,
+		apiSchema: ExportBookingDataApiSchema,
+		responseSchema: ExportBookingDataResponseSchema,
 	}),
 	[AvesOp.searchPackages]: defineOp({
 		endpoint: AVES_ENDPOINTS.searchAvesPackages,

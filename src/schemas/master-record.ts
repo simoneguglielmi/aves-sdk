@@ -15,8 +15,7 @@ import {
 	masterRecordWire,
 	supplierRefMasterRecordsWire,
 } from "../utils/wire-shapes.js";
-import { BoolishSchema } from "./booking-shared.js";
-import { LanguageCodeSchema } from "./common.js";
+import { BoolishSchema, LanguageCodeSchema } from "./common.js";
 import {
 	CarrierTypeSchema,
 	GenderSchema,
@@ -26,6 +25,7 @@ import {
 	RecordStatusSchema,
 	RecordType,
 	RecordTypeSchema,
+	RecordTypeWireSchema,
 } from "./enums.js";
 
 const FinancialDetailInputSchema = v.object({
@@ -169,11 +169,20 @@ export const MasterRecordDetailApiValidationSchema = v.partial(
 		v.object(masterRecordDetailEntries),
 		masterRecordWire,
 		{
+			// Responses widen RecordType with NOT_SET; requests keep the strict set.
+			RecordType: v.optional(RecordTypeWireSchema),
 			ModifiedDate: v.optional(v.string()),
+			// AVES misspells ModifiedDate on ExportBookingData MasterData rows.
+			ModifitedDate: v.optional(v.string()),
 			LoginType: v.optional(v.string()),
 			PromoterCode: v.optional(v.string()),
 			EncryptedPassword: v.optional(BoolishSchema),
 			NewsletterDisabled: v.optional(BoolishSchema),
+			AreaCode: v.optional(v.string()),
+			LastDateContact: v.optional(v.string()),
+			UseSupplierDataOnTravelDoc: v.optional(BoolishSchema),
+			BookingEnabled: v.optional(BoolishSchema),
+			PrivacyPolicyAccepted: v.optional(BoolishSchema),
 		},
 	),
 );

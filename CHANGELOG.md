@@ -5,6 +5,39 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<a id="v4.1.0"></a>
+## [4.1.0] - 2026-08-07
+
+### Added
+
+- `client.booking.exportData(params)` — **ExportBookingData** (`BookingDataExportRQ` / `BookingDataExportRS`). The only AVES operation that reads a booking file back whole: header, passengers, booked services with per-line `amountsDetail`, file-level `bookedFileAmounts`, and **registered payments**. `addPayments` finally has a read counterpart.
+- `ExtraInfo` lookup tables on the response: `currencyList`, `vatList`, `nationList`, `travelAgentList`, `programList`, `statisticList`, `priceOffertList`, `userList`, `passengerCategoryList`, `masterDataSet`, `masterDataSetExtraInfo`. `nationList[].territoriality` (`IN_UE` / `OUT_UE` / `MIXED_UE`) is the VAT-regime input.
+- Object enums (+ schemas) for every closed picklist the export returns: `ExportType`, `Territoriality`, `StatisticType`, `ToSubServiceType`, `SellingType`, `Printable`, `PrintType`, `DeadlineStatus`, `CommissionIncomeType`, `CommissionOwedType`.
+- `RecordTypeWire` — `RecordType` plus `NOT_SET`, for read responses. Mirrors the existing `BookingFileStatus` / `BookingFileStatusWire` split.
+- Remaining documented export structures are now typed: `customerProcessedPrintList`, `instalmentPlanList`, `supplierInstalmentPlanList`, file- and service-level `deadlineList`, `commissionIncomeDetails`, `commissionOwedDetails`.
+- Types `ExportBookingDataRQ` / `ExportBookingDataRS`, `ExportedBookingFile`, `ExportExtraInfo`, and facade aliases `BookingExportInput` / `BookingExportResult`.
+- Facade output aliases: `bookingFileList` → `bookings`, `bookedServices` → `services`, `amountsDetail` → `amounts`, `bookedFileAmounts` → `totals`.
+
+### Fixed
+
+- `master.search` / `master.upsert` responses no longer reject a record whose `RecordType` is `NOT_SET`. The response validation schema was reusing the request picklist, which omits it. Server-only fields AVES returns on read (`AreaCode`, `LastDateContact`, `UseSupplierDataOnTravelDoc`, `BookingEnabled`, `PrivacyPolicyAccepted`, and the misspelled `ModifitedDate`) are no longer dropped.
+
+  Note for TypeScript consumers: `MasterRecordDetailResponse["recordType"]` widens from `RecordType` to `RecordTypeWire`, so an exhaustive `switch` over it now needs a `NOT_SET` branch. Input types are unchanged.
+- Facade arrays now expose public aliases when **iterated**, not only when indexed. `withPublicAliases` bound array methods to the raw target, so `for…of`, destructuring, spread, `Array.from`, `map`, `filter`, `find`, `forEach` and `at` all handed back rows without their alias keys — `const [p] = result.data.payments` yielded a row with `paymentDate` but no aliases, while `result.data.payments[0]` worked. Methods now run with `this` bound to the proxy. This also makes `indexOf` / `includes` consistent: `arr.indexOf(arr[0])` returned `-1` before, since it compared wrapped items against raw ones.
+
+### Changed
+
+- `BoolishSchema` moved from `schemas/booking-shared.ts` to `schemas/common.ts`, next to `StringishSchema` — it is a cross-domain wire primitive, and `master-record` / `package-catalog` were already importing it out of the booking module. Internal only; it is not part of the published entry point.
+
+### Notes
+
+- Request roots are `BookingDataExport*`, not `ExportBookingData*`: the spec's section tables name the endpoint, while its index and both worked XML examples name the elements.
+- `limitRange` enforces the documented bounds (`skip` ≥ 0, `take` ≤ 1000) before the request leaves the SDK.
+- Wire misspellings are normalized on the way in: `PaumentNote` → `paymentNote`, `FirstConfemationDate` → `firstConfirmationDate`, `UsersList` → `userList`, `TOSubServiceType` → `toSubServiceType`.
+- `extraInfo.masterDataSet` rows validate as full master records, reusing the schema behind `master.search`.
+- `regimeType` and `customerPayAt` are the only response fields left as plain strings: Booking.txt:11312 documents no value list for the first, and the second appears nowhere in the response table — only in the example, as `OUR_AGENCY`. There is nothing to validate against; an enum built from one sample would reject every other value.
+- `Printable` values are rejoined from a spec table that hard-wraps identifiers mid-token. If a live response is ever rejected on that field, check the reconstruction against Booking.txt:11261-11289 first.
+
 <a id="v4.0.1"></a>
 ## [4.0.1] - 2026-08-06
 

@@ -9,11 +9,8 @@ import {
 } from "../utils/schema-transform.js";
 import { searchFileWire } from "../utils/wire-shapes.js";
 import { BookingFileDetailApiSchema } from "./booking-response.js";
-import {
-	BookingFileStatusWireSchema,
-	BoolishSchema,
-} from "./booking-shared.js";
-import { DateRangeSchema } from "./common.js";
+import { BookingFileStatusWireSchema } from "./booking-shared.js";
+import { BoolishSchema, DateRangeSchema } from "./common.js";
 import { SearchBookingFileType } from "./enums.js";
 
 const searchFileStatusSchema = valueFieldSchema(BookingFileStatusWireSchema, {

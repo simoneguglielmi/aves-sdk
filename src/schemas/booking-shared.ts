@@ -1,4 +1,4 @@
-import * as v from "valibot";
+import type * as v from "valibot";
 import {
 	BookingFileStatusSchema,
 	BookingFileStatusWire,
@@ -48,13 +48,6 @@ export {
 
 /** @deprecated Use {@link BookingFileStatusSchema} */
 export const BookingFileStatusRequestSchema = BookingFileStatusSchema;
-
-/** AVES bool-ish wire values */
-export const BoolishSchema = v.union([
-	v.literal("true"),
-	v.literal("false"),
-	v.boolean(),
-]);
 
 const statusAliasToCanonical = {
 	[BookingFileStatusWire.CONFIRM]: "CONFIRMED",
