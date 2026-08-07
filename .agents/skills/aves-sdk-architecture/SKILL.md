@@ -44,7 +44,7 @@ Import RQ/RS types from `src/types.ts` only — never define type aliases inside
 
 ## Ownership
 
-- Domains: `transport.ops.opName(params)` (or `invokeOp`) → `toFacadeEffect` / `facadeMethod`
+- Domains: `transport.ops.opName(params)` → `toFacadeEffect` / `facadeMethod`
 - Promise edge: `toPromiseFacade` in `createAvesClient`
 - `AVES_OPS` owns endpoint / roots / schemas / optional `bodyKey`
 - Transport owns orchestration; HTTP / envelope / reader are split modules

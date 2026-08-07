@@ -1,8 +1,8 @@
 import type { HttpClient } from "@effect/platform";
-import type { BookingService } from "./booking/types.js";
+import type { BookingService } from "./booking/service.js";
 import type { AvesHttpService } from "./http/types.js";
-import type { MasterRecordsService } from "./master/types.js";
-import type { PackageCatalogService } from "./packages/types.js";
+import type { MasterRecordsService } from "./master/service.js";
+import type { PackageCatalogService } from "./packages/service.js";
 import type { AvesTransportService } from "./transport/types.js";
 
 /** Optional Layer overrides — Effect services (not Promise facades). */

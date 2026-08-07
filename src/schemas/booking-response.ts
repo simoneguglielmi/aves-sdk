@@ -14,16 +14,19 @@ import {
 import { StringishSchema } from "./common.js";
 
 /** BookingFileStatus in BOOKEDFILE responses — aliases normalized to canonical values */
-export const BookingFileStatusApiSchema = mapSchema(Schema.Struct({
+export const BookingFileStatusApiSchema = mapSchema(
+	Schema.Struct({
 		"@Value": BookingFileStatusWireSchema,
 		"@ExpiredDate": Schema.optional(Schema.String),
 		"@ExpireDate": Schema.optional(Schema.String),
-	}), (status) => ({
+	}),
+	(status) => ({
 		...coalesceWireAliases(status, {
 			"@ExpiredDate": ["@ExpiredDate", "@ExpireDate"],
 		}),
 		"@Value": canonicalizeBookingFileStatus(status["@Value"]),
-	}));
+	}),
+);
 
 export const PricePerPaxDetailApiSchema = Schema.Struct({
 	"@PaxRef": Schema.String,
@@ -85,14 +88,16 @@ const BookedServiceDetailWireSchema = Schema.Struct({
 });
 
 /** BookedServiceDetail — single fromExternalProvider after normalize */
-export const BookedServiceDetailApiSchema = mapSchema(BookedServiceDetailWireSchema, (service) =>
+export const BookedServiceDetailApiSchema = mapSchema(
+	BookedServiceDetailWireSchema,
+	(service) =>
 		coalesceWireAliases(service, {
 			"@FromExternalProvider": [
 				"@FromExternalProvider",
 				"@isFromExternalProvider",
 			],
 		}),
-	);
+);
 
 export const BookedServiceListApiSchema = listDetailApiSchema(
 	"BookedServiceDetail",
@@ -142,13 +147,15 @@ const FinancialDeadlineDetailWireSchema = Schema.Struct({
 	TotalAmount: Schema.optional(StringishSchema),
 });
 
-export const FinancialDeadlineDetailApiSchema = mapSchema(FinancialDeadlineDetailWireSchema, (deadline) =>
+export const FinancialDeadlineDetailApiSchema = mapSchema(
+	FinancialDeadlineDetailWireSchema,
+	(deadline) =>
 		coalesceWireAliases(deadline, {
 			"@ReschedulingCode": ["@ReschedulingCode", "ReschedulingCode"],
 			"@ExpireDate": ["@ExpireDate", "ExpireDate"],
 			"@TotalAmount": ["@TotalAmount", "TotalAmount"],
 		}),
-	);
+);
 
 export const FinancialDeadlineListApiSchema = listDetailApiSchema(
 	"DeadlineDetail",
@@ -211,8 +218,10 @@ const BookingFileDetailWireSchema = Schema.Struct({
  * Accepts wire dialects, normalizes to a single PascalCase/@attr shape for camelCase mapping.
  * Nested `*List` fields are already flat Detail arrays.
  */
-export const BookingFileDetailApiSchema = mapSchema(BookingFileDetailWireSchema, (detail) =>
+export const BookingFileDetailApiSchema = mapSchema(
+	BookingFileDetailWireSchema,
+	(detail) =>
 		coalesceWireAliases(detail, {
 			"@BookingFileCode": ["@BookingFileCode", "BookingFileCode"],
 		}),
-	);
+);

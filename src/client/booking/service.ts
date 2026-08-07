@@ -1,12 +1,10 @@
+import type { PromiseFacade } from "../../effect/run-result.js";
 import { toPromiseFacade } from "../../effect/run-result.js";
 import { facadeMethod } from "../../utils/facade-transform.js";
 import type { AvesTransportService } from "../transport/types.js";
-import type { BookingClient, BookingService } from "./types.js";
 
 /** Effect-native booking domain. */
-export function makeBookingService(
-	transport: AvesTransportService,
-): BookingService {
+export function makeBookingService(transport: AvesTransportService) {
 	const { ops } = transport;
 	return {
 		create: facadeMethod(ops.create),
@@ -20,6 +18,9 @@ export function makeBookingService(
 		exportData: facadeMethod(ops.exportData),
 	};
 }
+
+export type BookingService = ReturnType<typeof makeBookingService>;
+export type BookingClient = PromiseFacade<BookingService>;
 
 /** Promise<Result> booking facade over {@link makeBookingService}. */
 export function makeBookingClient(

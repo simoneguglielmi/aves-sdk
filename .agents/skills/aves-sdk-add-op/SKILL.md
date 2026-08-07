@@ -14,7 +14,7 @@ Task Progress:
 - [ ] WireShape in wire-shapes.ts (attrs / preserveCamel) — see aves-sdk-wire
 - [ ] Input schema + createApiSchema / createWireSchemaPair (+ facadeObject if dual keys)
 - [ ] Response: flatten detail and/or listDetailApiSchema + createListResponseSchema
-- [ ] Domain method: ops.op / invokeOp → toFacadeEffect (types from types.ts only)
+- [ ] Domain method: ops.op → toFacadeEffect (types from types.ts only)
 - [ ] Export InferInput/InferOutput / convenience aliases from types.ts / index.ts if public
 - [ ] Enums via enumSchema if new picklists — re-export from index
 - [ ] Tests: schema unit + client mock (Promise + Effect DX + facade aliases + error.kind/_tag)

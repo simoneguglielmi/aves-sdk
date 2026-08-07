@@ -23,11 +23,7 @@ export type AvesAppServices =
 	| AvesMaster
 	| AvesPackages;
 
-export {
-	layerFromDep,
-	layerFromEffect,
-	layerOrSucceed,
-} from "./layer-utils.js";
+export { layerFromDep, layerOrSucceed } from "./layer-utils.js";
 
 /**
  * Application layer: domains + transport (fully resolved).

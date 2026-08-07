@@ -8,8 +8,8 @@ import { Effect } from "effect";
 import { afterEach, describe, expect, it } from "vitest";
 import { AvesBooking } from "./client/booking/index.js";
 import type { AvesHttpService } from "./client/http/types.js";
+import type { MasterRecordsService } from "./client/master/index.js";
 import { AvesMaster } from "./client/master/index.js";
-import type { MasterRecordsService } from "./client/master/types.js";
 import { AvesPackages } from "./client/packages/index.js";
 import { AvesTransport } from "./client/transport/index.js";
 import {

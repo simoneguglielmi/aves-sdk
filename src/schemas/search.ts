@@ -131,17 +131,20 @@ export const SearchMasterRecordApiSchema = createApiSchema(
  * Complete search request schema with header
  * Flattens SearchMasterRecord fields to root level
  */
-export const SearchMasterRecordRequestSchema = mapSchema(Schema.Struct({
+export const SearchMasterRecordRequestSchema = mapSchema(
+	Schema.Struct({
 		RqHeader: RqHeaderSchema,
 		SearchMasterRecord: SearchMasterRecordApiSchema,
-	}), (input) => {
+	}),
+	(input) => {
 		const { SearchMasterRecord: searchFields, RqHeader, ...rest } = input;
 		return {
 			RqHeader,
 			...searchFields,
 			...rest,
 		};
-	});
+	},
+);
 
 const MasterRecordListApiSchema = listDetailApiSchema(
 	"MasterRecordDetail",

@@ -11,8 +11,8 @@ import {
 	createApiSchema,
 	createFlattenedResponseSchema,
 	facadeObject,
-	valueFieldSchema,
 	mapSchema,
+	valueFieldSchema,
 } from "../utils/schema-transform.js";
 import { bookingFileWire } from "../utils/wire-shapes.js";
 import {
@@ -106,7 +106,9 @@ const InfoDocumentToPrintInputSchema = Schema.Struct({
 export const BookingFileDocumentInputSchema = Schema.Struct({
 	printDoc: Schema.optional(BoolishSchema),
 	sendDocViaEmail: Schema.optional(BoolishSchema),
-	infoDocumentsToPrint: Schema.optional(Schema.Array(InfoDocumentToPrintInputSchema)),
+	infoDocumentsToPrint: Schema.optional(
+		Schema.Array(InfoDocumentToPrintInputSchema),
+	),
 });
 
 // ---------------------------------------------------------------------------
@@ -184,7 +186,10 @@ export const SelectedServiceDetailInputSchema = facadeObject(
 		qty: Schema.String,
 		pax: Schema.String,
 		paxAssociated: Schema.optional(
-			Schema.Union(Schema.Array(Schema.String), Schema.Array(Schema.Struct({ pax: Schema.String }))),
+			Schema.Union(
+				Schema.Array(Schema.String),
+				Schema.Array(Schema.Struct({ pax: Schema.String })),
+			),
 		),
 		avesSession: Schema.String,
 		avesServiceInfo: Schema.optional(AvesServiceInfoInputSchema),
@@ -358,7 +363,9 @@ export const BookingFileResponseSchema = createFlattenedResponseSchema(
 		RsStatus: RsStatusSchema,
 		BookingFileDetail: Schema.optional(BookingFileDetailApiSchema),
 		PrintableDocumentsList: Schema.optional(PrintableDocumentsListApiSchema),
-		TotalAmountDetailAfterCancellation: Schema.optional(TotalAmountDetailApiSchema),
+		TotalAmountDetailAfterCancellation: Schema.optional(
+			TotalAmountDetailApiSchema,
+		),
 		Base64DocContent: Schema.optional(Schema.String),
 	}),
 	"bookingFileDetail",

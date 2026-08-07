@@ -60,7 +60,7 @@ Import RQ/RS types from `src/types.ts` only — never define type aliases inside
 
 ### Ownership
 
-- Domains: `transport.ops.opName(params)` (or `invokeOp`) → `toFacadeEffect` / `facadeMethod`
+- Domains: `transport.ops.opName(params)` → `toFacadeEffect` / `facadeMethod`
 - Promise edge: `toPromiseFacade` in `createAvesClient`
 - `AVES_OPS` owns endpoint / roots / schemas / optional `bodyKey`
 - Transport owns orchestration; HTTP / envelope / reader are split modules
@@ -279,7 +279,7 @@ Task Progress:
 - [ ] WireShape in wire-shapes.ts (attrs / preserveCamel)
 - [ ] Input schema + createApiSchema / createWireSchemaPair (+ facadeObject if dual keys)
 - [ ] Response: flatten detail and/or listDetailApiSchema + createListResponseSchema
-- [ ] Domain method: ops.op / invokeOp → toFacadeEffect (types from types.ts only)
+- [ ] Domain method: ops.op → toFacadeEffect (types from types.ts only)
 - [ ] Export InferInput/InferOutput types from types.ts / index.ts if public
 - [ ] Enums via enumSchema if new picklists — re-export from index
 - [ ] Tests: schema unit + client mock (Promise + Effect DX + facade aliases + error.kind/_tag)

@@ -1,4 +1,4 @@
-import { Schema } from 'effect';
+import { Schema } from "effect";
 
 export type EnumValue<T extends Record<string, string>> = T[keyof T];
 
@@ -9,8 +9,8 @@ export type EnumValue<T extends Record<string, string>> = T[keyof T];
  * the literal union to `string`.
  */
 export function enumSchema<const T extends Record<string, string>>(
-  enumObject: T,
+	enumObject: T,
 ) {
-  const values = Object.values(enumObject) as [EnumValue<T>, ...EnumValue<T>[]];
-  return Schema.Literal(...values);
+	const values = Object.values(enumObject) as [EnumValue<T>, ...EnumValue<T>[]];
+	return Schema.Literal(...values);
 }

@@ -735,7 +735,7 @@ One outbound path for all ops:
 
 1. Effect Schema validates camelCase input  
 2. `createApiSchema(schema, shape, wrap?)` → `toWireBody` (optional list wrap + `paxAssociated` string[]/empty normalize + `camelToPascalKeys`)  
-3. `AvesTransport.invokeOp` adds `RqHeader`, optional `bodyKey` nest, POSTs XML  
+3. Transport `invoke` / `ops.*` adds `RqHeader`, optional `bodyKey` nest, POSTs XML  
 
 Inbound: `createResponseSchema` / `createFlattenedResponseSchema` / `createListResponseSchema` → camelCase + optional detail spread or typed list RS; `listDetailApiSchema` unwraps wire `*List`/`*Detail` to flat arrays; `coalesceWireAliases` normalizes dialect attrs. Input aliases: `valueFieldSchema`, `coalesceCustomerRecordCode`, `coalesceListHead`. Shared primitives: `LanguageCodeSchema`, `StringishSchema`, `DateRangeSchema`, `StatusOnlyResponseSchema`.
 

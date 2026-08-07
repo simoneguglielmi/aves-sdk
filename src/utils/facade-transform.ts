@@ -273,4 +273,3 @@ export function facadeMethod<Args extends readonly unknown[], A, E>(
 ): (...args: Args) => Effect.Effect<FacadeOutput<A>, E> {
 	return (...args) => toFacadeEffect(fn(...args));
 }
-

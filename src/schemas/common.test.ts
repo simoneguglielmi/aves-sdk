@@ -1,5 +1,5 @@
-import { parse } from "../effect/schema-parse.js";
 import { describe, expect, it } from "vitest";
+import { parse } from "../effect/schema-parse.js";
 import { RqHeaderSchema, RsStatusSchema } from "./common.js";
 
 describe("RqHeaderSchema", () => {

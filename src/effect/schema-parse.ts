@@ -1,4 +1,4 @@
-import { Either, Effect, type ParseResult, Schema } from "effect";
+import { Effect, Either, type ParseResult, Schema } from "effect";
 import { type AvesError, validationError } from "../error.js";
 import { formatParseError } from "./parse-error.js";
 

@@ -51,7 +51,9 @@ describe("url", () => {
 		});
 
 		it("should reject empty endpoint", () => {
-			expect(() => parseUrl("https://api.example.com", "")).toThrow(AvesValidationError);
+			expect(() => parseUrl("https://api.example.com", "")).toThrow(
+				AvesValidationError,
+			);
 			expect(() => parseUrl("https://api.example.com", "")).toThrow(
 				"Invalid endpoint: endpoint must start with '/' but got ''",
 			);
@@ -63,14 +65,18 @@ describe("url", () => {
 		});
 
 		it("should reject baseURL without protocol", () => {
-			expect(() => parseUrl("api.example.com", "/test")).toThrow(AvesValidationError);
+			expect(() => parseUrl("api.example.com", "/test")).toThrow(
+				AvesValidationError,
+			);
 			expect(() => parseUrl("api.example.com", "/test")).toThrow(
 				"Invalid baseURL",
 			);
 		});
 
 		it("should reject ftp protocol", () => {
-			expect(() => parseUrl("ftp://example.com", "/test")).toThrow(AvesValidationError);
+			expect(() => parseUrl("ftp://example.com", "/test")).toThrow(
+				AvesValidationError,
+			);
 			expect(() => parseUrl("ftp://example.com", "/test")).toThrow(
 				"Invalid protocol: baseURL must use http:// or https:// but got 'ftp:'",
 			);

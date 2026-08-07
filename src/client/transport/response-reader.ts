@@ -1,4 +1,4 @@
-import { Either, Effect, Schema } from "effect";
+import { Effect, Either, type Schema } from "effect";
 import { decodeUnknownAves } from "../../effect/schema-parse.js";
 import { type AvesError, apiError, validationError } from "../../error.js";
 import type { RsStatus } from "../../types.js";

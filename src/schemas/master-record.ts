@@ -116,11 +116,17 @@ export const AccountPoliciesApiValidationSchema =
  * Master record detail input schema (camelCase)
  */
 const masterRecordDetailEntries = {
-	recordCode: Schema.optional(Schema.String.pipe(Schema.minLength(6), Schema.maxLength(6))),
+	recordCode: Schema.optional(
+		Schema.String.pipe(Schema.minLength(6), Schema.maxLength(6)),
+	),
 	insertCriteria: Schema.optional(InsertCriteriaSchema),
 	createdDate: Schema.optional(Schema.String),
-	recordType: Schema.optionalWith(RecordTypeSchema, { default: () => RecordType.CUSTOMER }),
-	recordStatus: Schema.optionalWith(RecordStatusSchema, { default: () => RecordStatus.ENABLED }),
+	recordType: Schema.optionalWith(RecordTypeSchema, {
+		default: () => RecordType.CUSTOMER,
+	}),
+	recordStatus: Schema.optionalWith(RecordStatusSchema, {
+		default: () => RecordStatus.ENABLED,
+	}),
 	moniker: Schema.optional(Schema.String),
 	name: Schema.optional(Schema.String),
 	extraInfo: Schema.optional(Schema.String),
@@ -145,7 +151,9 @@ const masterRecordDetailEntries = {
 	accountPolicies: Schema.optional(AccountPoliciesInputSchema),
 	financialDetail: Schema.optional(FinancialDetailInputSchema),
 	dynamicFields: Schema.optional(Schema.Array(DynamicFieldsInputSchema)),
-	supplierRefMasterRecords: Schema.optional(SupplierRefMasterRecordsInputSchema),
+	supplierRefMasterRecords: Schema.optional(
+		SupplierRefMasterRecordsInputSchema,
+	),
 };
 
 export const MasterRecordDetailSchema = facadeObject(
@@ -168,24 +176,24 @@ export const MasterRecordDetailApiSchema = createApiSchema(
 export const MasterRecordDetailApiValidationSchema = Schema.asSchema(
 	Schema.partial(
 		createApiValidationSchema(
-		Schema.Struct(masterRecordDetailEntries),
-		masterRecordWire,
-		{
-			// Responses widen RecordType with NOT_SET; requests keep the strict set.
-			RecordType: Schema.optional(RecordTypeWireSchema),
-			ModifiedDate: Schema.optional(Schema.String),
-			// AVES misspells ModifiedDate on ExportBookingData MasterData rows.
-			ModifitedDate: Schema.optional(Schema.String),
-			LoginType: Schema.optional(Schema.String),
-			PromoterCode: Schema.optional(Schema.String),
-			EncryptedPassword: Schema.optional(BoolishSchema),
-			NewsletterDisabled: Schema.optional(BoolishSchema),
-			AreaCode: Schema.optional(Schema.String),
-			LastDateContact: Schema.optional(Schema.String),
-			UseSupplierDataOnTravelDoc: Schema.optional(BoolishSchema),
-			BookingEnabled: Schema.optional(BoolishSchema),
-			PrivacyPolicyAccepted: Schema.optional(BoolishSchema),
-		},
+			Schema.Struct(masterRecordDetailEntries),
+			masterRecordWire,
+			{
+				// Responses widen RecordType with NOT_SET; requests keep the strict set.
+				RecordType: Schema.optional(RecordTypeWireSchema),
+				ModifiedDate: Schema.optional(Schema.String),
+				// AVES misspells ModifiedDate on ExportBookingData MasterData rows.
+				ModifitedDate: Schema.optional(Schema.String),
+				LoginType: Schema.optional(Schema.String),
+				PromoterCode: Schema.optional(Schema.String),
+				EncryptedPassword: Schema.optional(BoolishSchema),
+				NewsletterDisabled: Schema.optional(BoolishSchema),
+				AreaCode: Schema.optional(Schema.String),
+				LastDateContact: Schema.optional(Schema.String),
+				UseSupplierDataOnTravelDoc: Schema.optional(BoolishSchema),
+				BookingEnabled: Schema.optional(BoolishSchema),
+				PrivacyPolicyAccepted: Schema.optional(BoolishSchema),
+			},
 		),
 	),
 );

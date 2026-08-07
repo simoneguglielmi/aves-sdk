@@ -4,9 +4,9 @@
  *   config/     tag + layer
  *   http/       types + tag + service + layer
  *   transport/  types + tag + service + layer + response-reader
- *   booking/    types + tag + service + layer
- *   master/     types + tag + service + layer
- *   packages/   types + tag + service + layer
+ *   booking/    tag + service + layer
+ *   master/     tag + service + layer
+ *   packages/   tag + service + layer
  *   layer.ts    app composition (avesClientLayer)
  *   ops.ts      AVES_OPS registry
  *   endpoints, envelope, rq-header, constants

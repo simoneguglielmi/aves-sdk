@@ -11,8 +11,8 @@ import {
 	coalesceListHead,
 	createApiSchema,
 	facadeObject,
-	valueFieldSchema,
 	mapSchema,
+	valueFieldSchema,
 } from "../utils/schema-transform.js";
 import {
 	elementOnlyWire,
@@ -75,7 +75,8 @@ export const CancellableBookedServiceDetailInputSchema = Schema.Struct({
  * `*List` fields are flat Detail arrays; wire wrap happens in ModFileServicesApiSchema.
  * `selectedPackageList` (len 1) is an alias for `selectedPackageDetail`.
  */
-export const ModFileServicesSchema = mapSchema(facadeObject(
+export const ModFileServicesSchema = mapSchema(
+	facadeObject(
 		{
 			...bookingFileRefEntries,
 			currencyCode: Schema.optional(Schema.String),
@@ -84,14 +85,20 @@ export const ModFileServicesSchema = mapSchema(facadeObject(
 			selectedPackageList: Schema.optional(
 				Schema.Array(SelectedPackageDetailInputSchema).pipe(Schema.maxItems(1)),
 			),
-			selectedServiceList: Schema.Array(SelectedServiceDetailInputSchema).pipe(Schema.minItems(1)),
+			selectedServiceList: Schema.Array(SelectedServiceDetailInputSchema).pipe(
+				Schema.minItems(1),
+			),
 			cancellableBookedServiceList: Schema.optional(
 				Schema.Array(CancellableBookedServiceDetailInputSchema),
 			),
-			passengerList: Schema.optional(Schema.Array(PassengerDetailPatchInputSchema)),
+			passengerList: Schema.optional(
+				Schema.Array(PassengerDetailPatchInputSchema),
+			),
 		},
 		modServicesFacades,
-	), coalesceListHead("selectedPackageList", "selectedPackageDetail"));
+	),
+	coalesceListHead("selectedPackageList", "selectedPackageDetail"),
+);
 
 export const ModFileServicesApiSchema = createApiSchema(
 	ModFileServicesSchema,
@@ -119,7 +126,9 @@ export const ModFileHeaderSchema = facadeObject(
 		cigCode: Schema.optional(Schema.String),
 		customerPromoterCode: Schema.optional(Schema.String),
 		bookingNote: Schema.optional(Schema.String),
-		passengerList: Schema.optional(Schema.Array(PassengerDetailPatchInputSchema)),
+		passengerList: Schema.optional(
+			Schema.Array(PassengerDetailPatchInputSchema),
+		),
 		statisticCodes: Schema.optional(StatisticCodesInputSchema),
 		bookingFinancialInfo: Schema.optional(BookingFinancialInfoInputSchema),
 		financialDeadlineList: Schema.optional(
@@ -231,7 +240,9 @@ const FilePaymentListEntriesSchema = facadeObject(
 		paymentUser: Schema.optional(Schema.String),
 		enableMultiplePayments: BoolishSchema,
 		operationType: FilePaymentOperationTypeSchema,
-		filePaymentList: Schema.Array(FilePaymentDetailInputSchema).pipe(Schema.minItems(1)),
+		filePaymentList: Schema.Array(FilePaymentDetailInputSchema).pipe(
+			Schema.minItems(1),
+		),
 	},
 	paymentListFacades,
 );

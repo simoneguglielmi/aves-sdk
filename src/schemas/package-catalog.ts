@@ -10,8 +10,8 @@ import {
 	createListResponseSchema,
 	facadeObject,
 	listDetailApiSchema,
-	toWireBody,
 	mapSchema,
+	toWireBody,
 } from "../utils/schema-transform.js";
 import {
 	avesSearchWire,
@@ -163,7 +163,9 @@ export const AvesSearchSchema = facadeObject(
 		startDate: Schema.String,
 		endDate: Schema.String,
 		earlyBookingDate: Schema.optional(Schema.String),
-		passengerList: Schema.Array(PassengerDetailCreateInputSchema).pipe(Schema.minItems(1)),
+		passengerList: Schema.Array(PassengerDetailCreateInputSchema).pipe(
+			Schema.minItems(1),
+		),
 		avesSearchType: Schema.optional(AvesSearchTypeSchema),
 		paxQty: Schema.optional(StringishSchema),
 		paxQtyCriteria: Schema.optional(PaxQtyCriteriaSchema),
@@ -242,7 +244,10 @@ function toAvesSearchApiBody(
 	};
 }
 
-export const AvesSearchApiSchema = mapSchema(AvesSearchResolvedSchema, toAvesSearchApiBody);
+export const AvesSearchApiSchema = mapSchema(
+	AvesSearchResolvedSchema,
+	toAvesSearchApiBody,
+);
 
 export const SearchPackageResponseSchema = createListResponseSchema(
 	"PackageList",
@@ -280,8 +285,12 @@ export const PackageDetailRequestSchema = facadeObject(
 		costListCode: Schema.optional(Schema.String),
 		markupCode: Schema.optional(Schema.String),
 		statisticCodes: Schema.optional(StatisticCodesInputSchema),
-		selectedServiceList: Schema.Array(PackagePrgServiceDetailInputSchema).pipe(Schema.minItems(1)),
-		passengerList: Schema.optional(Schema.Array(PassengerDetailCreateInputSchema)),
+		selectedServiceList: Schema.Array(PackagePrgServiceDetailInputSchema).pipe(
+			Schema.minItems(1),
+		),
+		passengerList: Schema.optional(
+			Schema.Array(PassengerDetailCreateInputSchema),
+		),
 	},
 	packageDetailFacades,
 );

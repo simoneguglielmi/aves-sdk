@@ -1,10 +1,9 @@
 import { Effect } from "effect";
 import { decodeUnknownAves } from "../../effect/schema-parse.js";
-import type { AvesError } from "../../error.js";
 import { jsonToXml } from "../../xml/client.js";
 import { buildOpEnvelope } from "../envelope.js";
 import type { AvesHttpService } from "../http/types.js";
-import { AVES_OPS, type AvesOp, type OpParams, type OpResult } from "../ops.js";
+import { AVES_OPS, type OpParams } from "../ops.js";
 import { createRqHeader } from "../rq-header.js";
 import { readAvesResponseEffect } from "./response-reader.js";
 import type {
@@ -12,19 +11,6 @@ import type {
 	MakeAvesTransportOptions,
 	OpInvokers,
 } from "./types.js";
-
-/**
- * Re-correlate `invokers[op]` with K.
- * TS widens mapped-table indexing under a generic key to a union of fns
- * (params collapse to `never`); this is the minimal fix.
- */
-function callOp<K extends AvesOp>(
-	invokers: OpInvokers,
-	op: K,
-	params: OpParams<K>,
-): Effect.Effect<OpResult<K>, AvesError> {
-	return (invokers[op] as OpInvokers[K])(params);
-}
 
 /** Build an {@link AvesTransportService}. */
 export function makeAvesTransport({
@@ -82,6 +68,5 @@ export function makeAvesTransport({
 		createRqHeader: () => rqHeader,
 		ops,
 		invoke,
-		invokeOp: (op, params) => callOp(ops, op, params),
 	};
 }

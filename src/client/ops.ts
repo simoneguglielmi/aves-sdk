@@ -60,8 +60,8 @@ function defineOp<
 }
 
 /**
- * Object enum of `invokeOp` / `AVES_OPS` keys.
- * Prefer `AvesOp.create` over string literals in domain clients.
+ * Object enum of `AVES_OPS` / `transport.ops` keys.
+ * Prefer `AvesOp.create` over string literals where a key token is needed.
  */
 export const AvesOp = {
 	search: "search",
@@ -85,7 +85,7 @@ export const AvesOpSchema = enumSchema(AvesOp);
 
 /**
  * Static descriptor per AVES operation: endpoint, XML roots, schemas, optional body nest.
- * Domains call `invokeOp(AvesOp.*, params)` — keys match public method names where unique;
+ * Domains call `transport.ops.*` — keys match public method names where unique;
  * collisions across namespaces use a short domain qualifier (`searchBookings`, `searchPackages`).
  */
 export const AVES_OPS = {
@@ -198,7 +198,9 @@ export const AVES_OPS = {
 } as const;
 
 /** Runtime input accepted by an op's API schema (facade + AVES dual keys). */
-export type OpParams<K extends AvesOp> = InferInput<(typeof AVES_OPS)[K]["apiSchema"]>;
+export type OpParams<K extends AvesOp> = InferInput<
+	(typeof AVES_OPS)[K]["apiSchema"]
+>;
 
 /** Parsed success payload for an op (before facade aliases). */
 export type OpResult<K extends AvesOp> = InferOutput<

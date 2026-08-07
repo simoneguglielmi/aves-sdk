@@ -56,7 +56,11 @@ import { MasterRecordDetailApiValidationSchema } from "./master-record.js";
 /** Paging window. Bounds are spec'd, not invented (Booking.txt:11104-11106). */
 export const LimitRangeSchema = Schema.Struct({
 	skip: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
-	take: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(1), Schema.lessThanOrEqualTo(1000)),
+	take: Schema.Number.pipe(
+		Schema.int(),
+		Schema.greaterThanOrEqualTo(1),
+		Schema.lessThanOrEqualTo(1000),
+	),
 });
 
 /**
@@ -131,12 +135,14 @@ const EInvoicingDetailWireSchema = Schema.Struct({
 });
 
 /** `@CUP`/`@CIG` normalize to the request-side `cupCode` / `cigCode` names. */
-export const EInvoicingDetailApiSchema = mapSchema(EInvoicingDetailWireSchema, (detail) =>
+export const EInvoicingDetailApiSchema = mapSchema(
+	EInvoicingDetailWireSchema,
+	(detail) =>
 		coalesceWireAliases(detail, {
 			"@CupCode": ["@CupCode", "@CUP"],
 			"@CigCode": ["@CigCode", "@CIG"],
 		}),
-	);
+);
 
 const ExportedPaymentDetailWireSchema = Schema.Struct({
 	"@PaymentDate": Schema.optional(Schema.String),
@@ -148,11 +154,13 @@ const ExportedPaymentDetailWireSchema = Schema.Struct({
 	"@PaymentUser": Schema.optional(Schema.String),
 });
 
-export const ExportedPaymentDetailApiSchema = mapSchema(ExportedPaymentDetailWireSchema, (payment) =>
+export const ExportedPaymentDetailApiSchema = mapSchema(
+	ExportedPaymentDetailWireSchema,
+	(payment) =>
 		coalesceWireAliases(payment, {
 			"@PaymentNote": ["@PaymentNote", "@PaumentNote"],
 		}),
-	);
+);
 
 export const ExportedPaymentListApiSchema = listDetailApiSchema(
 	"PaymentDetail",
@@ -299,12 +307,14 @@ const BookedServiceDataWireSchema = Schema.Struct({
  * `TOSubServiceType` normalizes to `ToSubServiceType` so it camelizes to
  * `toSubServiceType` rather than `tOSubServiceType`.
  */
-export const BookedServiceDataApiSchema = mapSchema(BookedServiceDataWireSchema, (service) =>
+export const BookedServiceDataApiSchema = mapSchema(
+	BookedServiceDataWireSchema,
+	(service) =>
 		coalesceWireAliases(service, {
 			ToSubServiceType: ["ToSubServiceType", "TOSubServiceType"],
 			AmountsDetail: ["AmountsDetail", "AmountDetail"],
 		}),
-	);
+);
 
 export const BookedServicesApiSchema = listDetailApiSchema(
 	"BookedServiceData",
@@ -395,7 +405,9 @@ const ExportedBookingFileWireSchema = Schema.Struct({
 	StatisticCodes: Schema.optional(ExportedStatisticCodesApiSchema),
 	CurrencyCode: Schema.optional(Schema.String),
 	EInvoicingDetail: Schema.optional(EInvoicingDetailApiSchema),
-	CustomerProcessedPrintList: Schema.optional(CustomerProcessedPrintListApiSchema),
+	CustomerProcessedPrintList: Schema.optional(
+		CustomerProcessedPrintListApiSchema,
+	),
 	PassengerList: Schema.optional(PassengerListApiSchema),
 	BookedServices: Schema.optional(BookedServicesApiSchema),
 	PaymentList: Schema.optional(ExportedPaymentListApiSchema),
@@ -418,12 +430,14 @@ const ExportedBookingFileWireSchema = Schema.Struct({
  * `BookingFileCode` is an attribute here (Booking.txt:11705) but an element in
  * BOOKEDFILE responses; both spellings coalesce onto the attribute.
  */
-export const ExportedBookingFileApiSchema = mapSchema(ExportedBookingFileWireSchema, (file) =>
+export const ExportedBookingFileApiSchema = mapSchema(
+	ExportedBookingFileWireSchema,
+	(file) =>
 		coalesceWireAliases(file, {
 			"@BookingFileCode": ["@BookingFileCode", "BookingFileCode"],
 			FirstConfirmationDate: ["FirstConfirmationDate", "FirstConfemationDate"],
 		}),
-	);
+);
 
 // ---------------------------------------------------------------------------
 // BookingDataExportRS — ExtraInfo lookup tables
@@ -503,7 +517,9 @@ const ExportExtraInfoWireSchema = Schema.Struct({
 		listDetailApiSchema("MasterData", ExportedMasterDataApiSchema),
 	),
 	CurrencyList: Schema.optional(codeDescriptionList("CurrencyDetail")),
-	VatList: Schema.optional(listDetailApiSchema("VatDetail", VatDetailApiSchema)),
+	VatList: Schema.optional(
+		listDetailApiSchema("VatDetail", VatDetailApiSchema),
+	),
 	NationList: Schema.optional(
 		listDetailApiSchema("NationDetail", NationDetailApiSchema),
 	),
@@ -518,8 +534,12 @@ const ExportExtraInfoWireSchema = Schema.Struct({
 	),
 	PriceOffertList: Schema.optional(codeDescriptionList("PriceOffertDetail")),
 	// Documented as UserList, sent as UsersList (Booking.txt:11600, :11955).
-	UserList: Schema.optional(listDetailApiSchema("UserDetail", UserDetailApiSchema)),
-	UsersList: Schema.optional(listDetailApiSchema("UserDetail", UserDetailApiSchema)),
+	UserList: Schema.optional(
+		listDetailApiSchema("UserDetail", UserDetailApiSchema),
+	),
+	UsersList: Schema.optional(
+		listDetailApiSchema("UserDetail", UserDetailApiSchema),
+	),
 	PassengerCategoryList: Schema.optional(
 		codeDescriptionList("PassengerCategoryDetail"),
 	),
@@ -530,9 +550,10 @@ const ExportExtraInfoWireSchema = Schema.Struct({
  * ExtraInfo — the lookup tables the exported codes resolve against.
  * `nationList[].territoriality` is what decides a booking's VAT regime.
  */
-export const ExportExtraInfoApiSchema = mapSchema(ExportExtraInfoWireSchema, (info) =>
-		coalesceWireAliases(info, { UserList: ["UserList", "UsersList"] }),
-	);
+export const ExportExtraInfoApiSchema = mapSchema(
+	ExportExtraInfoWireSchema,
+	(info) => coalesceWireAliases(info, { UserList: ["UserList", "UsersList"] }),
+);
 
 export const ExportBookingDataResponseSchema = createResponseSchema(
 	Schema.Struct({
