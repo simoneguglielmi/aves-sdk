@@ -14,10 +14,10 @@ Task Progress:
 - [ ] WireShape in wire-shapes.ts (attrs / preserveCamel) — see aves-sdk-wire
 - [ ] Input schema + createApiSchema / createWireSchemaPair (+ facadeObject if dual keys)
 - [ ] Response: flatten detail and/or listDetailApiSchema + createListResponseSchema
-- [ ] Domain method: invokeOp(AvesOp.opName, params) → toFacadeResult (types from types.ts only)
+- [ ] Domain method: ops.op / invokeOp → toFacadeEffect (types from types.ts only)
 - [ ] Export InferInput/InferOutput / convenience aliases from types.ts / index.ts if public
 - [ ] Enums via enumSchema if new picklists — re-export from index
-- [ ] Tests: schema unit + client mock (success DX + facade aliases + error.kind)
+- [ ] Tests: schema unit + client mock (Promise + Effect DX + facade aliases + error.kind/_tag)
 - [ ] yarn typecheck && yarn test && yarn check
 - [ ] CHANGELOG under the next version section (+ README if DX / alias map changes); bump semver if breaking
 ```
@@ -27,15 +27,11 @@ Do not invent a parallel transform path — extend helpers (`aves-sdk-schemas` /
 ## Client sketch
 
 ```ts
-async create(
-  params: BookingFileRQ,
-): Promise<Result<FacadeOutput<BookingFileRS>, AvesError>> {
-  const result = await this.transport.invokeOp(AvesOp.create, params);
-  return toFacadeResult(result);
-}
+create: (params) =>
+  facadeMethod(transport.ops.create(params)),
 ```
 
-Register static metadata only in `AVES_OPS` — do not pass endpoint/schema bags into `invokeOp`. Use `bodyKey` on the op def when the RQ nests the payload (master upsert).
+Register static metadata only in `AVES_OPS` — do not pass endpoint/schema bags into invoke. Use `bodyKey` on the op def when the RQ nests the payload (master upsert).
 
 ## Placement
 
@@ -43,7 +39,7 @@ Register static metadata only in `AVES_OPS` — do not pass endpoint/schema bags
 | ----- | ---- |
 | URL | `src/client/endpoints.ts` |
 | Op registry | `src/client/ops.ts` |
-| Domain method | `src/client/{booking,master-records,packages}.ts` |
+| Domain method | `src/client/{booking,master,packages}/service.ts` |
 | Schemas | `src/schemas/<domain>.ts` (+ tests) |
 | WireShape | `src/utils/wire-shapes.ts` |
 | Facade inbound keys | `src/utils/facade-aliases.ts` (+ `facadeObject` on schema) |

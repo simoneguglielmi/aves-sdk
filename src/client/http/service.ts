@@ -7,7 +7,12 @@ import {
 	type HttpClientResponse,
 } from "@effect/platform";
 import { Duration, Effect, Layer } from "effect";
-import { AvesError, apiError, isErrorStatus } from "../../error.js";
+import {
+	type AvesError,
+	apiError,
+	isAvesError,
+	isErrorStatus,
+} from "../../error.js";
 import { DEFAULT_TIMEOUT_MS, MAX_ERROR_BODY } from "../constants.js";
 import type { AvesHttpService, HttpClientOptions } from "./types.js";
 
@@ -15,8 +20,7 @@ const timedOut = apiError("Request timed out", "TIMEOUT");
 
 const toAvesHttpError = (
 	error: AvesError | HttpClientError.HttpClientError,
-): AvesError =>
-	error instanceof AvesError ? error : apiError(error.message, "ERROR");
+): AvesError => (isAvesError(error) ? error : apiError(error.message, "ERROR"));
 
 /** Decode body text; non-2xx → {@link apiError}. */
 const readOkText = (

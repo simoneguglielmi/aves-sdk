@@ -1,13 +1,13 @@
 ---
 name: aves-sdk-schemas
-description: Valibot schema helpers for aves-sdk — createApiSchema, listDetailApiSchema, flattened/list responses, facade dual keys, shared primitives. Use when editing src/schemas, schema-transform.ts, or facade-aliases.
+description: Effect Schema helpers for aves-sdk — createApiSchema, listDetailApiSchema, flattened/list responses, facade dual keys, shared primitives. Use when editing src/schemas, schema-transform.ts, or facade-aliases.
 ---
 
 # aves-sdk schemas
 
 Source: `src/utils/schema-transform.ts`, `booking-transform.ts`, `facade-aliases.ts`, `facade-transform.ts`, `src/schemas/common.ts`.
 
-Before changing Valibot APIs, check Context7.
+Before changing Effect Schema APIs, check Context7.
 
 ## DX contract (1.9+)
 
@@ -19,7 +19,7 @@ Facade concise names (`customerCode`, `bookingCode`, `services`, …) are also a
 
 | Helper | Use when |
 | ------ | -------- |
-| `createResponseSchema` | camelCase via **in-place** `pascalToCamelKeysInPlace` after parse |
+| `createResponseSchema` | camelCase via **in-place** `pascalToCamelKeysInPlace` after decode |
 | `createFlattenedResponseSchema(api, detailKey)` | spread one `*Detail` onto `data` |
 | `createListResponseSchema(listKey, listSchema)` | typed list RS (`PackageList` → `packageList`) |
 | `listDetailApiSchema(DetailKey, item)` | wire `{ Detail }` → flat `Detail[]` |
@@ -49,18 +49,18 @@ createWireSchemaPair(MasterRecordDetailSchema, masterRecordWire);
 // → { api, validation }
 
 valueFieldSchema(BookingFileStatusSchema, {
-  expiredDate: v.optional(v.string()),
+  expiredDate: Schema.optional(Schema.String),
 });
 ```
 
-`createApiSchema` takes `GenericSchema<object, object>` — no `as Record<string, unknown>` on `toWireBody`.
+Prefer Effect Schema types at the boundary; keep fused `toWireBody` for outbound wire.
 
 ## Facade dual keys
 
 | Direction | Mechanism |
 | --------- | --------- |
 | **Inbound** | Scoped maps in `facade-aliases.ts` + `facadeObject` / `coalesceAliases` on the owning schema |
-| **Outbound** | `withPublicAliases` / `toFacadeResult` — hardened lazy **Proxy** (`publicKeyAliases`); zero deep-copy |
+| **Outbound** | `withPublicAliases` / `toFacadeEffect` — hardened lazy **Proxy** (`publicKeyAliases`); zero deep-copy |
 
 Do **not** invent a global AliasShape walker. Colliding facade names (`services`, `status`, `passengerCount`) resolve by schema scope (in) / existing AVES key on target (out).
 
@@ -90,6 +90,6 @@ Enums: object enum + `*Schema` in `schemas/enums.ts` → re-export from `index.t
 ## Related
 
 - WireShape / list wrap → `aves-sdk-wire`
-- Result / parse vs safeParse → `aves-sdk-validation`
+- Result / tagged errors → `aves-sdk-validation`
 - Enums / Infer types / tests → `aves-sdk-style`
 - New op checklist → `aves-sdk-add-op`

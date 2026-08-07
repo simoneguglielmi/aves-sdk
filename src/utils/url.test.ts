@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AvesError } from "../error.js";
+import { AvesValidationError } from "../error.js";
 import { parseUrl } from "./url.js";
 
 describe("url", () => {
@@ -42,7 +42,7 @@ describe("url", () => {
 		it("should reject endpoint without leading slash", () => {
 			expect(() =>
 				parseUrl("https://api.example.com", "test/endpoint"),
-			).toThrow(AvesError);
+			).toThrow(AvesValidationError);
 			expect(() =>
 				parseUrl("https://api.example.com", "test/endpoint"),
 			).toThrow(
@@ -51,26 +51,26 @@ describe("url", () => {
 		});
 
 		it("should reject empty endpoint", () => {
-			expect(() => parseUrl("https://api.example.com", "")).toThrow(AvesError);
+			expect(() => parseUrl("https://api.example.com", "")).toThrow(AvesValidationError);
 			expect(() => parseUrl("https://api.example.com", "")).toThrow(
 				"Invalid endpoint: endpoint must start with '/' but got ''",
 			);
 		});
 
 		it("should reject invalid baseURL format", () => {
-			expect(() => parseUrl("not-a-url", "/test")).toThrow(AvesError);
+			expect(() => parseUrl("not-a-url", "/test")).toThrow(AvesValidationError);
 			expect(() => parseUrl("not-a-url", "/test")).toThrow("Invalid baseURL");
 		});
 
 		it("should reject baseURL without protocol", () => {
-			expect(() => parseUrl("api.example.com", "/test")).toThrow(AvesError);
+			expect(() => parseUrl("api.example.com", "/test")).toThrow(AvesValidationError);
 			expect(() => parseUrl("api.example.com", "/test")).toThrow(
 				"Invalid baseURL",
 			);
 		});
 
 		it("should reject ftp protocol", () => {
-			expect(() => parseUrl("ftp://example.com", "/test")).toThrow(AvesError);
+			expect(() => parseUrl("ftp://example.com", "/test")).toThrow(AvesValidationError);
 			expect(() => parseUrl("ftp://example.com", "/test")).toThrow(
 				"Invalid protocol: baseURL must use http:// or https:// but got 'ftp:'",
 			);
@@ -78,7 +78,7 @@ describe("url", () => {
 
 		it("should reject file protocol", () => {
 			expect(() => parseUrl("file:///path/to/file", "/test")).toThrow(
-				AvesError,
+				AvesValidationError,
 			);
 			expect(() => parseUrl("file:///path/to/file", "/test")).toThrow(
 				"Invalid protocol: baseURL must use http:// or https:// but got 'file:'",

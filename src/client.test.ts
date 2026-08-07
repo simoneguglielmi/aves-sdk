@@ -6,7 +6,13 @@ import {
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it } from "vitest";
 import { AvesClient } from "./client.js";
-import { AvesError, apiError } from "./error.js";
+import {
+	AvesApiError,
+	apiError,
+	isAvesError,
+	unknownError,
+	validationError,
+} from "./error.js";
 
 type MockReply = { status?: number; body: string };
 type MockRequest = { method: string; path: string; body: string };
@@ -94,7 +100,7 @@ describe("AvesClient", () => {
 			});
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 			}
 		});
 
@@ -116,7 +122,7 @@ describe("AvesClient", () => {
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 				expect(result.error.kind).toBe("api");
 				expect(result.error.code).toBe(1001);
 				expect(result.error.status).toBe("ERROR");
@@ -133,7 +139,7 @@ describe("AvesClient", () => {
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 				expect(result.error.kind).toBe("api");
 				expect(result.error.status).toBe("ERROR");
 				expect(result.error.code).toBe(500);
@@ -283,7 +289,7 @@ describe("AvesClient", () => {
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 				expect(result.error.kind).toBe("api");
 				expect(result.error.code).toBe(1002);
 				expect(result.error.status).toBe("ERROR");
@@ -354,7 +360,7 @@ describe("AvesClient", () => {
 			});
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 			}
 		});
 
@@ -373,7 +379,7 @@ describe("AvesClient", () => {
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 				expect(result.error.kind).toBe("api");
 				expect(result.error.code).toBe(2001);
 				expect(result.error.status).toBe("ERROR");
@@ -560,7 +566,7 @@ describe("AvesClient", () => {
 				fileStatus: { value: "INVALID" as "CANCELED" },
 			});
 			expect(result.success).toBe(false);
-			if (!result.success) expect(result.error).toBeInstanceOf(AvesError);
+			if (!result.success) expect(isAvesError(result.error)).toBe(true);
 		});
 	});
 
@@ -639,7 +645,7 @@ describe("AvesClient", () => {
 				],
 			} as Parameters<typeof client.booking.addPayments>[0]);
 			expect(result.success).toBe(false);
-			if (!result.success) expect(result.error).toBeInstanceOf(AvesError);
+			if (!result.success) expect(isAvesError(result.error)).toBe(true);
 		});
 	});
 
@@ -900,7 +906,7 @@ describe("AvesClient", () => {
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 				expect(result.error.kind).toBe("validation");
 			}
 		});
@@ -930,10 +936,12 @@ describe("AvesClient", () => {
 
 	describe("AvesError", () => {
 		it("should create error with correct properties", () => {
-			const error = new AvesError("api", "Test error message", "ERROR", 1001);
+			const error = apiError("Test error message", "ERROR", 1001);
 
 			expect(error).toBeInstanceOf(Error);
-			expect(error).toBeInstanceOf(AvesError);
+			expect(error).toBeInstanceOf(AvesApiError);
+			expect(isAvesError(error)).toBe(true);
+			expect(error._tag).toBe("AvesApiError");
 			expect(error.kind).toBe("api");
 			expect(error.message).toBe("Test error message");
 			expect(error.status).toBe("ERROR");
@@ -948,17 +956,19 @@ describe("AvesClient", () => {
 		});
 
 		it("should create validation error", () => {
-			const error = new AvesError("validation", "Validation failed");
+			const error = validationError("Validation failed");
 
-			expect(error).toBeInstanceOf(AvesError);
+			expect(isAvesError(error)).toBe(true);
+			expect(error._tag).toBe("AvesValidationError");
 			expect(error.kind).toBe("validation");
 			expect(error.message).toBe("Validation failed");
 		});
 
 		it("should create unknown error", () => {
-			const error = new AvesError("unknown", "Unknown error occurred");
+			const error = unknownError("Unknown error occurred");
 
-			expect(error).toBeInstanceOf(AvesError);
+			expect(isAvesError(error)).toBe(true);
+			expect(error._tag).toBe("AvesUnknownError");
 			expect(error.kind).toBe("unknown");
 			expect(error.message).toBe("Unknown error occurred");
 		});

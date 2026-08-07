@@ -1,6 +1,6 @@
 # AVES SDK
 
-Type-safe TypeScript SDK for the AVES XML REST API. Handles XML parsing, Valibot validation, camelCase ↔ PascalCase / `@` attrs, and returns `Result` instead of throwing.
+Type-safe TypeScript SDK for the AVES XML REST API. Handles XML parsing, **Effect Schema** validation, camelCase ↔ PascalCase / `@` attrs, and `@effect/platform` HTTP. Public domain methods return `Result` (they do not throw). Effect apps can also `yield*` domain Tags via Layers / `makeAvesRuntime`.
 
 ## Installation
 
@@ -14,40 +14,76 @@ pnpm add aves-sdk
 bun add aves-sdk
 ```
 
-## Quick start
+`aves-sdk` depends on `effect` and `@effect/platform`.
+
+## Quick start (Promise facade)
 
 ```typescript
-import { AvesClient } from 'aves-sdk';
+import { AvesClient, isAvesError, type Result } from "aves-sdk";
 
 const client = new AvesClient({
-  baseURL: 'https://api.example.com',
-  hostID: '000000', // 6 digits
-  xtoken: 'TOKEN',
-  languageCode: '02', // optional: 01=Italian, 02=English
+  baseURL: "https://api.example.com",
+  hostID: "000000", // 6 digits
+  xtoken: "TOKEN",
+  languageCode: "02", // optional: 01=Italian, 02=English
   timeoutMs: 30_000, // optional
 });
 
-const result = await client.master.search({
-  searchType: 'CODE',
-  recordCode: '508558',
+const result: Result<unknown> = await client.master.search({
+  searchType: "CODE",
+  recordCode: "508558",
 });
 
 if (result.success) {
   const [record] = result.data;
   console.log(record?.recordCode);
-} else {
+} else if (isAvesError(result.error)) {
   console.error(result.error.kind, result.error.message, result.error.code);
 }
 ```
 
+`createAvesClient(options, deps?)` returns the same Promise API as a plain object.
+
+## Quick start (Effect)
+
+```typescript
+import { Effect } from "effect";
+import { AvesMaster, makeAvesRuntime } from "aves-sdk";
+
+const runtime = makeAvesRuntime({
+  baseURL: "https://api.example.com",
+  hostID: "000000",
+  xtoken: "TOKEN",
+});
+
+const records = await runtime.runPromise(
+  Effect.gen(function* () {
+    const master = yield* AvesMaster;
+    return yield* master.search({
+      searchType: "CODE",
+      recordCode: "508558",
+    });
+  }).pipe(
+    Effect.catchTag("AvesApiError", (e) =>
+      Effect.succeed({ failed: true as const, code: e.code }),
+    ),
+  ),
+);
+
+await runtime.dispose();
+```
+
+Also: `Effect.provide(avesClientLayer(options, deps))` or `AvesClientLive(options)` for the full stack including `AvesConfig` / `AvesHttp`.
+
 ## Client shape
 
-`AvesClient` is a facade over domain clients. Operations are namespaced by domain.
+`AvesClient` / `createAvesClient` expose **Promise** domain namespaces only (`master`, `booking`, `packages`). There is no `client.transport` on the Promise facade — use `AvesTransport` with Layers for Effect programs.
 
 ```typescript
 await client.booking.create(params);
+await client.booking.exportData(params);
 await client.packages.search(params);
-await client.master.search({ searchType: 'CODE', recordCode: '508558' });
+await client.master.search({ searchType: "CODE", recordCode: "508558" });
 ```
 
 Migration from 1.x: insert the appropriate domain namespace (for example,
@@ -59,16 +95,21 @@ Migration from 2.x: `master.search` success is a flat array — see the
 Migration from 3.x: domain method names were shortened — see the
 [4.0.0 migration notes](https://github.com/simoneguglielmi/aves-sdk/blob/main/CHANGELOG.md#v4.0.0).
 
+Migration from 4.x: Effect Schema + platform HTTP + tagged errors — see the
+[5.0.0 migration notes](https://github.com/simoneguglielmi/aves-sdk/blob/main/CHANGELOG.md#v5.0.0).
+
 | Namespace | Methods |
 | --------- | ------- |
 | `master` | `search`, `upsert` |
-| `booking` | `create`, `updateServices`, `updateHeader`, `cancel`, `setStatus`, `setServiceStatus`, `addPayments`, `search` |
+| `booking` | `create`, `updateServices`, `updateHeader`, `cancel`, `setStatus`, `setServiceStatus`, `addPayments`, `search`, `exportData` |
 | `packages` | `search`, `searchServices`, `get`, `commit` |
 
 ### Constructor
 
 ```typescript
 new AvesClient(options: AvesClientOptions, deps?: AvesClientDeps)
+// or
+createAvesClient(options, deps?)
 ```
 
 | Option | Description |
@@ -79,28 +120,36 @@ new AvesClient(options: AvesClientOptions, deps?: AvesClientDeps)
 | `languageCode` | Optional 2-digit language code |
 | `timeoutMs` | Optional request timeout (default 30000) |
 
-Optional DI (tests / custom transport):
+Optional DI (tests / custom HTTP):
 
 ```typescript
-import {
-  AvesClient,
-  AvesTransport,
-  BookingClient,
-} from 'aves-sdk';
+import { HttpClient, HttpClientResponse } from "@effect/platform";
+import { Effect } from "effect";
+import { AvesClient } from "aves-sdk";
 
-const transport = new AvesTransport(options);
+const httpClient = HttpClient.make((request, url) =>
+  Effect.succeed(
+    HttpClientResponse.fromWeb(
+      request,
+      new Response(xmlBody, { status: 200 }),
+    ),
+  ),
+);
+
 new AvesClient(options, {
-  transport,
-  booking: new BookingClient(transport),
+  httpClient,
+  // or: http, transport, master, booking, packages service overrides
 });
 ```
 
 ### Result type
 
-All methods return `Result<T, AvesError>` — they do **not** throw.
+Promise domain methods return `Result<T, AvesError>` — they do **not** throw. `Result` is exported from `aves-sdk`.
 
 ```typescript
-type Result<T, E> =
+import type { Result } from "aves-sdk";
+
+type Result<T, E = Error> =
   | { success: true; data: T }
   | { success: false; error: E };
 ```
@@ -108,7 +157,7 @@ type Result<T, E> =
 ## Simple facade names
 
 The facade exposes concise aliases for the AVES payload vocabulary. Inbound
-dual keys are owned by Valibot input schemas (`facadeObject` / `coalesceAliases`)
+dual keys are owned by Effect Schema input schemas (`facadeObject` / `coalesceAliases`)
 and coalesced to AVES camelCase before wire encoding. Outbound success payloads
 keep AVES names and add concise compatibility aliases. XML shapes are unchanged.
 
@@ -646,19 +695,28 @@ if (detail.success) console.log(detail.data.pCode, detail.data.serviceList?.[0])
 
 ## Errors
 
+`AvesError` is a tagged union: `AvesValidationError` | `AvesApiError` | `AvesUnknownError`.
+Each has `_tag` (for `Effect.catchTag`) and Promise-friendly `kind` (`validation` | `api` | `unknown`).
+
 ```typescript
-import { AvesClient, AvesError } from 'aves-sdk';
+import { AvesClient, AvesApiError, isAvesError } from "aves-sdk";
 
 const result = await client.master.search({
-  searchType: 'CODE',
-  recordCode: '508558',
+  searchType: "CODE",
+  recordCode: "508558",
 });
 
 if (!result.success) {
-  // kind: 'validation' | 'api' | 'unknown'
-  console.error(result.error.kind, result.error.message, result.error.code);
+  if (isAvesError(result.error)) {
+    console.error(result.error.kind, result.error.message, result.error.code);
+  }
+  if (result.error instanceof AvesApiError) {
+    console.error(result.error._tag, result.error.status);
+  }
 }
 ```
+
+Effect programs recover with `Effect.catchTag("AvesApiError", …)` (also `"AvesValidationError"`, `"AvesUnknownError"`).
 
 ---
 
@@ -675,7 +733,7 @@ You do not handle XML attribute prefixes yourself. Attr vs element is decided by
 
 One outbound path for all ops:
 
-1. Valibot validates camelCase input  
+1. Effect Schema validates camelCase input  
 2. `createApiSchema(schema, shape, wrap?)` → `toWireBody` (optional list wrap + `paxAssociated` string[]/empty normalize + `camelToPascalKeys`)  
 3. `AvesTransport.invokeOp` adds `RqHeader`, optional `bodyKey` nest, POSTs XML  
 
@@ -702,18 +760,23 @@ Editing CreateBooking shapes does not affect SearchFile or AvesSearch.
 
 ## Architecture
 
-`AvesClient` (`src/client.ts`) is a thin facade over DI-friendly domain clients:
+Promise edge: `createAvesClient` / `AvesClient` → `toPromiseFacade` on domain services.
+Effect edge: `makeAvesRuntime` / `avesClientLayer` / `AvesClientLive` → `yield*` Tags.
 
 | Module | Role |
 | ------ | ---- |
-| `AvesTransport` | HTTP + XML encode/decode + `invokeOp` (optional `bodyKey`) |
-| `MasterRecordsClient` | search / upsert |
-| `BookingClient` | booking file ops + search practices |
-| `PackageCatalogClient` | package/program catalog |
-| `client/types.ts` | `AvesClientDeps` |
+| `src/client.ts` | Promise facade + `makeAvesRuntime` |
+| `src/client/layer.ts` | `avesClientLayer` / `AvesClientLive` composition |
+| `src/client/booking/` | Booking Tag / service / layer |
+| `src/client/master/` | Master-records Tag / service / layer |
+| `src/client/packages/` | Package catalog Tag / service / layer |
+| `src/client/transport/` | `invoke` / `ops` / response reader |
+| `src/client/http/` | XML POST via `@effect/platform` HttpClient |
+| `src/client/config/` | `AvesConfig` |
+| `src/schemas/` | Effect Schema RQ/RS |
 | `src/xml/` | XML root helpers + JSON ↔ XML |
 
-Outbound path: validate → `createApiSchema` / `toWireBody` → `invokeOp` → XML POST.
+Outbound path: Schema decode → `createApiSchema` / `toWireBody` → transport → HTTP POST.
 
 ---
 
@@ -728,18 +791,24 @@ See the [CHANGELOG migration notes](https://github.com/simoneguglielmi/aves-sdk/
 import type {
   AvesClientOptions,
   AvesClientDeps,
+  AvesError,
   AvesSearchRQ,
   BookingFileRQ,
+  Result,
   SearchMasterRecord,
-} from 'aves-sdk';
+} from "aves-sdk";
 
 import {
   AvesClient,
+  createAvesClient,
+  makeAvesRuntime,
+  AvesMaster,
+  AvesBooking,
+  AvesPackages,
   AvesTransport,
-  MasterRecordsClient,
-  BookingClient,
-  PackageCatalogClient,
-  AvesError,
+  avesClientLayer,
+  isAvesError,
+  AvesApiError,
   // object enums
   AvesSearchType,
   BookingFileStatus,
@@ -748,7 +817,7 @@ import {
   PaxQtyCriteria,
   PaymentType,
   SearchMasterType,
-} from 'aves-sdk';
+} from "aves-sdk";
 
 PaxQtyCriteria.GREATER_OR_EQUAL
 AvesSearchType.PACKAGE

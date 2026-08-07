@@ -4,7 +4,7 @@ import type { Result } from "./result.js";
 
 /**
  * User-facing names for AVES-specific response properties (compat window).
- * Inbound dual keys live on Valibot schemas via {@link facadeObject}.
+ * Inbound dual keys live on schemas via {@link facadeObject}.
  */
 export const publicKeyAliases = {
 	rsStatus: "response",

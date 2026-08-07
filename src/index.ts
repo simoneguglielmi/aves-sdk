@@ -54,10 +54,19 @@ export {
 	type AvesClientServices,
 	avesClientLayer,
 	createAvesClient,
+	makeAvesRuntime,
 } from "./client.js";
-export { AvesError } from "./error.js";
-
-// Shared object enums (+ Valibot schemas)
+export {
+	AvesApiError,
+	type AvesError,
+	AvesUnknownError,
+	AvesValidationError,
+	apiError,
+	isAvesError,
+	unknownError,
+	validationError,
+} from "./error.js";
+// Shared object enums (+ Effect Schema picklists)
 export {
 	AvesSearchType,
 	AvesSearchTypeSchema,
@@ -144,7 +153,6 @@ export {
 	TypeDownloadFile,
 	TypeDownloadFileSchema,
 } from "./schemas/enums.js";
-
 // Types
 export type {
 	AccountPolicies,
@@ -212,3 +220,4 @@ export type {
 	SetFileServiceStatusRQ,
 	SetFileStatusRQ,
 } from "./types.js";
+export { err, ok, type Result } from "./utils/result.js";
