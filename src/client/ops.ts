@@ -1,4 +1,5 @@
-import type { BaseIssue, BaseSchema, InferInput, InferOutput } from "valibot";
+import type { Schema } from "effect";
+import type { InferInput, InferOutput } from "../effect/infer.js";
 import {
 	ExportBookingDataApiSchema,
 	ExportBookingDataResponseSchema,
@@ -42,26 +43,19 @@ import { type EnumValue, enumSchema } from "../utils/enum.js";
 import { XML_ROOT_ELEMENTS, type XMLRootElementValues } from "../xml/root.js";
 import { AVES_ENDPOINTS } from "./endpoints.js";
 
-type RsStatus = InferOutput<typeof RsStatusSchema>;
-
-type OpConfig<
-	TIn,
-	TApiBody extends Record<string, unknown>,
-	TOut extends { rsStatus: RsStatus },
-> = {
+function defineOp<
+	A extends object,
+	I,
+	B extends { rsStatus: InferOutput<typeof RsStatusSchema> },
+	J,
+>(config: {
 	endpoint: string;
 	requestRoot: XMLRootElementValues;
 	responseRoot: string;
-	apiSchema: BaseSchema<TIn, TApiBody, BaseIssue<unknown>>;
-	responseSchema: BaseSchema<unknown, TOut, BaseIssue<unknown>>;
+	apiSchema: Schema.Schema<A, I, never>;
+	responseSchema: Schema.Schema<B, J, never>;
 	bodyKey?: OpBodyKey;
-};
-
-function defineOp<
-	TIn,
-	TApiBody extends Record<string, unknown>,
-	TOut extends { rsStatus: RsStatus },
->(config: OpConfig<TIn, TApiBody, TOut>) {
+}) {
 	return config;
 }
 
@@ -204,9 +198,7 @@ export const AVES_OPS = {
 } as const;
 
 /** Runtime input accepted by an op's API schema (facade + AVES dual keys). */
-export type OpParams<K extends AvesOp> = InferInput<
-	(typeof AVES_OPS)[K]["apiSchema"]
->;
+export type OpParams<K extends AvesOp> = InferInput<(typeof AVES_OPS)[K]["apiSchema"]>;
 
 /** Parsed success payload for an op (before facade aliases). */
 export type OpResult<K extends AvesOp> = InferOutput<

@@ -1,18 +1,59 @@
 // Main client
 
-export { BookingClient } from "./client/booking.js";
-export { MasterRecordsClient } from "./client/master-records.js";
+export {
+	AvesBooking,
+	AvesBookingLive,
+	type BookingClient,
+	type BookingService,
+	makeBookingClient,
+	makeBookingService,
+} from "./client/booking/index.js";
+export { AvesConfig, AvesConfigLive } from "./client/config/index.js";
+export {
+	AvesHttp,
+	AvesHttpLive,
+	type AvesHttpService,
+	fetchHttpLayer,
+	httpClientLayer,
+	makeAvesHttp,
+} from "./client/http/index.js";
+export {
+	AvesMaster,
+	AvesMasterLive,
+	type MasterRecordsClient,
+	type MasterRecordsService,
+	makeMasterRecordsClient,
+	makeMasterRecordsService,
+} from "./client/master/index.js";
 export {
 	AvesOp,
 	AvesOpSchema,
 	type OpParams,
 	type OpResult,
 } from "./client/ops.js";
-export { PackageCatalogClient } from "./client/packages.js";
-export { AvesTransport } from "./client/transport.js";
+export {
+	AvesPackages,
+	AvesPackagesLive,
+	makePackageCatalogClient,
+	makePackageCatalogService,
+	type PackageCatalogClient,
+	type PackageCatalogService,
+} from "./client/packages/index.js";
+export {
+	type AvesOpDef,
+	AvesTransport,
+	AvesTransportLive,
+	type AvesTransportService,
+	makeAvesTransport,
+} from "./client/transport/index.js";
 export {
 	AvesClient,
+	type AvesClientApi,
 	type AvesClientDeps,
+	AvesClientLive,
+	type AvesClientServices,
+	avesClientLayer,
+	createAvesClient,
 } from "./client.js";
 export { AvesError } from "./error.js";
 

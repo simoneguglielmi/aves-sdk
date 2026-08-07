@@ -1,4 +1,4 @@
-import type { InferInput, InferOutput } from "valibot";
+import type { InferInput, InferOutput } from "./effect/infer.js";
 import type {
 	ExportBookingDataSchema,
 	ExportExtraInfoApiSchema,

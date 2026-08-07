@@ -1,4 +1,4 @@
-import * as v from "valibot";
+import { Schema } from "effect";
 import {
 	bookingRefFacades,
 	modHeaderFacades,
@@ -12,6 +12,7 @@ import {
 	createApiSchema,
 	facadeObject,
 	valueFieldSchema,
+	mapSchema,
 } from "../utils/schema-transform.js";
 import {
 	elementOnlyWire,
@@ -43,8 +44,8 @@ export const BookingStatusOnlyResponseSchema = StatusOnlyResponseSchema;
 
 /** Shared booking file identity fields */
 export const bookingFileRefEntries = {
-	customerRecordCode: v.string(),
-	bookingFileCode: v.string(),
+	customerRecordCode: Schema.String,
+	bookingFileCode: Schema.String,
 } as const;
 
 /**
@@ -57,16 +58,16 @@ export const BookingFileDetailResponseSchema = BookingFileResponseSchema;
 // ModBookingFileServices — ModFileServicesRQ
 // ---------------------------------------------------------------------------
 
-const ModDeadlineDetailInputSchema = v.object({
-	reschedulingCode: v.string(),
-	description: v.optional(v.string()),
-	expireDate: v.optional(v.string()),
+const ModDeadlineDetailInputSchema = Schema.Struct({
+	reschedulingCode: Schema.String,
+	description: Schema.optional(Schema.String),
+	expireDate: Schema.optional(Schema.String),
 });
 
-export const CancellableBookedServiceDetailInputSchema = v.object({
+export const CancellableBookedServiceDetailInputSchema = Schema.Struct({
 	cancelOperationType: CancelOperationTypeSchema,
 	serviceRefType: ServiceRefTypeSchema,
-	serviceRefValue: v.string(),
+	serviceRefValue: Schema.String,
 });
 
 /**
@@ -74,29 +75,23 @@ export const CancellableBookedServiceDetailInputSchema = v.object({
  * `*List` fields are flat Detail arrays; wire wrap happens in ModFileServicesApiSchema.
  * `selectedPackageList` (len 1) is an alias for `selectedPackageDetail`.
  */
-export const ModFileServicesSchema = v.pipe(
-	facadeObject(
+export const ModFileServicesSchema = mapSchema(facadeObject(
 		{
 			...bookingFileRefEntries,
-			currencyCode: v.optional(v.string()),
-			deadlineList: v.optional(v.array(ModDeadlineDetailInputSchema)),
-			selectedPackageDetail: v.optional(SelectedPackageDetailInputSchema),
-			selectedPackageList: v.optional(
-				v.pipe(v.array(SelectedPackageDetailInputSchema), v.maxLength(1)),
+			currencyCode: Schema.optional(Schema.String),
+			deadlineList: Schema.optional(Schema.Array(ModDeadlineDetailInputSchema)),
+			selectedPackageDetail: Schema.optional(SelectedPackageDetailInputSchema),
+			selectedPackageList: Schema.optional(
+				Schema.Array(SelectedPackageDetailInputSchema).pipe(Schema.maxItems(1)),
 			),
-			selectedServiceList: v.pipe(
-				v.array(SelectedServiceDetailInputSchema),
-				v.minLength(1),
+			selectedServiceList: Schema.Array(SelectedServiceDetailInputSchema).pipe(Schema.minItems(1)),
+			cancellableBookedServiceList: Schema.optional(
+				Schema.Array(CancellableBookedServiceDetailInputSchema),
 			),
-			cancellableBookedServiceList: v.optional(
-				v.array(CancellableBookedServiceDetailInputSchema),
-			),
-			passengerList: v.optional(v.array(PassengerDetailPatchInputSchema)),
+			passengerList: Schema.optional(Schema.Array(PassengerDetailPatchInputSchema)),
 		},
 		modServicesFacades,
-	),
-	v.transform(coalesceListHead("selectedPackageList", "selectedPackageDetail")),
-);
+	), coalesceListHead("selectedPackageList", "selectedPackageDetail"));
 
 export const ModFileServicesApiSchema = createApiSchema(
 	ModFileServicesSchema,
@@ -114,25 +109,25 @@ export const ModFileServicesApiSchema = createApiSchema(
 export const ModFileHeaderSchema = facadeObject(
 	{
 		...bookingFileRefEntries,
-		bookingFileStartDate: v.string(),
-		newCustomerRecordCode: v.optional(v.string()),
-		bookingFileReferenceName: v.optional(v.string()),
-		travelAgentCode: v.optional(v.string()),
-		billingReferenceCode: v.optional(v.string()),
-		paymentReferenceCode: v.optional(v.string()),
-		cupCode: v.optional(v.string()),
-		cigCode: v.optional(v.string()),
-		customerPromoterCode: v.optional(v.string()),
-		bookingNote: v.optional(v.string()),
-		passengerList: v.optional(v.array(PassengerDetailPatchInputSchema)),
-		statisticCodes: v.optional(StatisticCodesInputSchema),
-		bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
-		financialDeadlineList: v.optional(
-			v.array(
-				v.object({
-					reschedulingCode: v.string(),
-					expireDate: v.string(),
-					totalAmount: v.string(),
+		bookingFileStartDate: Schema.String,
+		newCustomerRecordCode: Schema.optional(Schema.String),
+		bookingFileReferenceName: Schema.optional(Schema.String),
+		travelAgentCode: Schema.optional(Schema.String),
+		billingReferenceCode: Schema.optional(Schema.String),
+		paymentReferenceCode: Schema.optional(Schema.String),
+		cupCode: Schema.optional(Schema.String),
+		cigCode: Schema.optional(Schema.String),
+		customerPromoterCode: Schema.optional(Schema.String),
+		bookingNote: Schema.optional(Schema.String),
+		passengerList: Schema.optional(Schema.Array(PassengerDetailPatchInputSchema)),
+		statisticCodes: Schema.optional(StatisticCodesInputSchema),
+		bookingFinancialInfo: Schema.optional(BookingFinancialInfoInputSchema),
+		financialDeadlineList: Schema.optional(
+			Schema.Array(
+				Schema.Struct({
+					reschedulingCode: Schema.String,
+					expireDate: Schema.String,
+					totalAmount: Schema.String,
 				}),
 			),
 		),
@@ -172,18 +167,18 @@ export const SetFileStatusSchema = facadeObject(
 	{
 		...bookingFileRefEntries,
 		fileStatus: valueFieldSchema(SetFileStatusValueSchema, {
-			expiredDate: v.optional(v.string()),
-			optionedFileExpireDatePolicy: v.optional(OptionedExpirePolicySchema),
+			expiredDate: Schema.optional(Schema.String),
+			optionedFileExpireDatePolicy: Schema.optional(OptionedExpirePolicySchema),
 		}),
-		backOfficeRequest: v.optional(BoolishSchema),
-		bookingFileDocument: v.optional(BookingFileDocumentInputSchema),
-		penalty: v.optional(
-			v.object({
-				apply: v.optional(BoolishSchema),
-				specificCode: v.optional(v.string()),
+		backOfficeRequest: Schema.optional(BoolishSchema),
+		bookingFileDocument: Schema.optional(BookingFileDocumentInputSchema),
+		penalty: Schema.optional(
+			Schema.Struct({
+				apply: Schema.optional(BoolishSchema),
+				specificCode: Schema.optional(Schema.String),
 			}),
 		),
-		simulateCancelAndGetPenaltyAmount: v.optional(BoolishSchema),
+		simulateCancelAndGetPenaltyAmount: Schema.optional(BoolishSchema),
 	},
 	setStatusFacades,
 );
@@ -200,9 +195,9 @@ export const SetFileStatusApiSchema = createApiSchema(
 export const SetFileServiceStatusSchema = facadeObject(
 	{
 		...bookingFileRefEntries,
-		bookingServiceRef: v.string(),
-		bookingFileServiceStatus: v.literal("NULLIFIED"),
-		bookingFileServiceStatusDate: v.optional(v.string()),
+		bookingServiceRef: Schema.String,
+		bookingFileServiceStatus: Schema.Literal("NULLIFIED"),
+		bookingFileServiceStatusDate: Schema.optional(Schema.String),
 	},
 	setServiceStatusFacades,
 );
@@ -216,12 +211,12 @@ export const SetFileServiceStatusApiSchema = createApiSchema(
 // InsertFilePaymentList — FilePaymentListRQ
 // ---------------------------------------------------------------------------
 
-export const FilePaymentDetailInputSchema = v.object({
-	paymentDate: v.string(),
-	paymentNote: v.optional(v.string()),
-	payerMasterCode: v.optional(v.string()),
-	payerName: v.optional(v.string()),
-	amount: v.string(),
+export const FilePaymentDetailInputSchema = Schema.Struct({
+	paymentDate: Schema.String,
+	paymentNote: Schema.optional(Schema.String),
+	payerMasterCode: Schema.optional(Schema.String),
+	payerName: Schema.optional(Schema.String),
+	amount: Schema.String,
 	paymentType: PaymentTypeSchema,
 });
 
@@ -229,24 +224,23 @@ export const FilePaymentDetailInputSchema = v.object({
  * FilePaymentListRQ body (camelCase).
  * `filePaymentList` is a flat Detail array; wire wrap happens in FilePaymentListApiSchema.
  */
-export const FilePaymentListSchema = v.pipe(
-	facadeObject(
-		{
-			bookingFileCode: v.optional(v.string()),
-			bookingFileRefCode: v.optional(v.string()),
-			paymentUser: v.optional(v.string()),
-			enableMultiplePayments: BoolishSchema,
-			operationType: FilePaymentOperationTypeSchema,
-			filePaymentList: v.pipe(
-				v.array(FilePaymentDetailInputSchema),
-				v.minLength(1),
-			),
-		},
-		paymentListFacades,
-	),
-	v.check(
-		(input) => Boolean(input.bookingFileCode || input.bookingFileRefCode),
-		"bookingFileCode or bookingFileRefCode is required",
+const FilePaymentListEntriesSchema = facadeObject(
+	{
+		bookingFileCode: Schema.optional(Schema.String),
+		bookingFileRefCode: Schema.optional(Schema.String),
+		paymentUser: Schema.optional(Schema.String),
+		enableMultiplePayments: BoolishSchema,
+		operationType: FilePaymentOperationTypeSchema,
+		filePaymentList: Schema.Array(FilePaymentDetailInputSchema).pipe(Schema.minItems(1)),
+	},
+	paymentListFacades,
+);
+
+export const FilePaymentListSchema = FilePaymentListEntriesSchema.pipe(
+	Schema.filter(
+		(input: Schema.Schema.Type<typeof FilePaymentListEntriesSchema>) =>
+			Boolean(input.bookingFileCode || input.bookingFileRefCode),
+		{ message: () => "bookingFileCode or bookingFileRefCode is required" },
 	),
 );
 

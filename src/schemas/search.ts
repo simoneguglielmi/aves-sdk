@@ -1,8 +1,9 @@
-import * as v from "valibot";
+import { Schema } from "effect";
 import {
 	createApiSchema,
 	createListResponseSchema,
 	listDetailApiSchema,
+	mapSchema,
 } from "../utils/schema-transform.js";
 import { searchMasterWire } from "../utils/wire-shapes.js";
 import {
@@ -19,66 +20,66 @@ const languageCodeField = OptionalLanguageCodeSchema;
 /**
  * Search by CODE - requires recordCode
  */
-const CodeSearchSchema = v.object({
-	searchType: v.literal(SearchMasterType.CODE),
-	recordCode: v.pipe(v.string(), v.minLength(5), v.maxLength(6)),
+const CodeSearchSchema = Schema.Struct({
+	searchType: Schema.Literal(SearchMasterType.CODE),
+	recordCode: Schema.String.pipe(Schema.minLength(5), Schema.maxLength(6)),
 	languageCode: languageCodeField,
 });
 
 /**
  * Search by NAME - requires name, optionally city
  */
-const NameSearchSchema = v.object({
-	searchType: v.literal(SearchMasterType.NAME),
-	name: v.string(),
-	city: v.optional(v.string()),
+const NameSearchSchema = Schema.Struct({
+	searchType: Schema.Literal(SearchMasterType.NAME),
+	name: Schema.String,
+	city: Schema.optional(Schema.String),
 	languageCode: languageCodeField,
 });
 
 /**
  * Search by VATCODE - requires vatCode, optionally phoneNumber
  */
-const VatCodeSearchSchema = v.object({
-	searchType: v.literal(SearchMasterType.VATCODE),
-	vatCode: v.string(),
-	phoneNumber: v.optional(v.string()),
+const VatCodeSearchSchema = Schema.Struct({
+	searchType: Schema.Literal(SearchMasterType.VATCODE),
+	vatCode: Schema.String,
+	phoneNumber: Schema.optional(Schema.String),
 	languageCode: languageCodeField,
 });
 
 /**
  * Search by ZONE - requires zipCode and countyCode, optionally city
  */
-const ZoneSearchSchema = v.object({
-	searchType: v.literal(SearchMasterType.ZONE),
-	zipCode: v.string(),
-	countyCode: v.string(),
-	city: v.optional(v.string()),
+const ZoneSearchSchema = Schema.Struct({
+	searchType: Schema.Literal(SearchMasterType.ZONE),
+	zipCode: Schema.String,
+	countyCode: Schema.String,
+	city: Schema.optional(Schema.String),
 	languageCode: languageCodeField,
 });
 
 /**
  * Search by CATEGORY - requires categoryCode
  */
-const CategorySearchSchema = v.object({
-	searchType: v.literal(SearchMasterType.CATEGORY),
-	categoryCode: v.string(),
+const CategorySearchSchema = Schema.Struct({
+	searchType: Schema.Literal(SearchMasterType.CATEGORY),
+	categoryCode: Schema.String,
 	languageCode: languageCodeField,
 });
 
 /**
  * Search by EMAIL - requires email
  */
-const EmailSearchSchema = v.object({
-	searchType: v.literal(SearchMasterType.EMAIL),
-	email: v.string(),
+const EmailSearchSchema = Schema.Struct({
+	searchType: Schema.Literal(SearchMasterType.EMAIL),
+	email: Schema.String,
 	languageCode: languageCodeField,
 });
 
 /**
  * Search by LASTMODDATE - requires lastModificationDate
  */
-const LastModDateSearchSchema = v.object({
-	searchType: v.literal(SearchMasterType.LASTMODDATE),
+const LastModDateSearchSchema = Schema.Struct({
+	searchType: Schema.Literal(SearchMasterType.LASTMODDATE),
 	lastModificationDate: LastModificationDateInputSchema,
 	languageCode: languageCodeField,
 });
@@ -86,18 +87,18 @@ const LastModDateSearchSchema = v.object({
 /**
  * Search by SEARCH FIELD - requires searchFieldValue
  */
-const SearchFieldSearchSchema = v.object({
-	searchType: v.literal(SearchMasterType.SEARCH_FIELD),
-	searchFieldValue: v.string(),
+const SearchFieldSearchSchema = Schema.Struct({
+	searchType: Schema.Literal(SearchMasterType.SEARCH_FIELD),
+	searchFieldValue: Schema.String,
 	languageCode: languageCodeField,
 });
 
 /**
  * Search by EXTERNAL_REF_CODE - requires searchFieldValue
  */
-const ExternalRefCodeSearchSchema = v.object({
-	searchType: v.literal(SearchMasterType.EXTERNAL_REF_CODE),
-	searchFieldValue: v.string(),
+const ExternalRefCodeSearchSchema = Schema.Struct({
+	searchType: Schema.Literal(SearchMasterType.EXTERNAL_REF_CODE),
+	searchFieldValue: Schema.String,
 	languageCode: languageCodeField,
 });
 
@@ -105,7 +106,7 @@ const ExternalRefCodeSearchSchema = v.object({
  * Search master record input schema (camelCase)
  * Conditional fields based on searchType
  */
-export const SearchMasterRecordSchema = v.union([
+export const SearchMasterRecordSchema = Schema.Union(
 	CodeSearchSchema,
 	NameSearchSchema,
 	VatCodeSearchSchema,
@@ -115,7 +116,7 @@ export const SearchMasterRecordSchema = v.union([
 	LastModDateSearchSchema,
 	SearchFieldSearchSchema,
 	ExternalRefCodeSearchSchema,
-]);
+);
 
 /**
  * Search master record schema for API requests (transforms to PascalCase).
@@ -130,20 +131,17 @@ export const SearchMasterRecordApiSchema = createApiSchema(
  * Complete search request schema with header
  * Flattens SearchMasterRecord fields to root level
  */
-export const SearchMasterRecordRequestSchema = v.pipe(
-	v.object({
+export const SearchMasterRecordRequestSchema = mapSchema(Schema.Struct({
 		RqHeader: RqHeaderSchema,
 		SearchMasterRecord: SearchMasterRecordApiSchema,
-	}),
-	v.transform((input) => {
+	}), (input) => {
 		const { SearchMasterRecord: searchFields, RqHeader, ...rest } = input;
 		return {
 			RqHeader,
 			...searchFields,
 			...rest,
 		};
-	}),
-);
+	});
 
 const MasterRecordListApiSchema = listDetailApiSchema(
 	"MasterRecordDetail",

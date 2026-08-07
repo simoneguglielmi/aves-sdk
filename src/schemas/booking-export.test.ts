@@ -1,4 +1,4 @@
-import { parse, safeParse } from "valibot";
+import { parse, safeParse } from "../effect/schema-parse.js";
 import { describe, expect, it } from "vitest";
 import {
 	ExportBookingDataApiSchema,

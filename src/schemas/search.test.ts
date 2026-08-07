@@ -1,4 +1,4 @@
-import { parse } from "valibot";
+import { parse } from "../effect/schema-parse.js";
 import { describe, expect, it } from "vitest";
 import {
 	SearchMasterRecordApiSchema,

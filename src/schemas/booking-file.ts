@@ -1,4 +1,4 @@
-import * as v from "valibot";
+import { Schema } from "effect";
 import {
 	bookingRootFacades,
 	bookingServiceFacades,
@@ -12,6 +12,7 @@ import {
 	createFlattenedResponseSchema,
 	facadeObject,
 	valueFieldSchema,
+	mapSchema,
 } from "../utils/schema-transform.js";
 import { bookingFileWire } from "../utils/wire-shapes.js";
 import {
@@ -42,39 +43,39 @@ import { IdDocumentDetailInputSchema } from "./master-record.js";
 // ---------------------------------------------------------------------------
 
 const BookingFileStatusInputSchema = valueFieldSchema(BookingFileStatusSchema, {
-	expiredDate: v.optional(v.string()),
+	expiredDate: Schema.optional(Schema.String),
 });
 
 // ---------------------------------------------------------------------------
 // StatisticCodes (AvesStatisticCodes)
 // ---------------------------------------------------------------------------
 
-export const StatisticCodesInputSchema = v.object({
-	sCode1: v.optional(v.pipe(v.string(), v.maxLength(4))),
-	sCode2: v.optional(v.pipe(v.string(), v.maxLength(4))),
-	sCode3: v.optional(v.pipe(v.string(), v.maxLength(4))),
-	sCode4: v.optional(v.pipe(v.string(), v.maxLength(4))),
-	sCode5: v.optional(v.pipe(v.string(), v.maxLength(4))),
-	sCode6: v.optional(v.pipe(v.string(), v.maxLength(4))),
+export const StatisticCodesInputSchema = Schema.Struct({
+	sCode1: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
+	sCode2: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
+	sCode3: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
+	sCode4: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
+	sCode5: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
+	sCode6: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
 });
 
 // ---------------------------------------------------------------------------
 // Destination
 // ---------------------------------------------------------------------------
 
-export const DestinationInputSchema = v.object({
-	code: v.optional(v.string()),
-	iataCode: v.optional(v.string()),
-	nationCode: v.optional(v.string()),
-	type: v.optional(DestinationTypeSchema),
+export const DestinationInputSchema = Schema.Struct({
+	code: Schema.optional(Schema.String),
+	iataCode: Schema.optional(Schema.String),
+	nationCode: Schema.optional(Schema.String),
+	type: Schema.optional(DestinationTypeSchema),
 });
 
 // ---------------------------------------------------------------------------
 // CustomerDetail (record code only or full master record data)
 // ---------------------------------------------------------------------------
 
-const CustomerDetailInputSchema = v.object({
-	recordCode: v.optional(v.string()),
+const CustomerDetailInputSchema = Schema.Struct({
+	recordCode: Schema.optional(Schema.String),
 	// When inserting new record, master record fields can be provided (see Common Structures)
 });
 
@@ -82,54 +83,54 @@ const CustomerDetailInputSchema = v.object({
 // BookingFileDocument
 // ---------------------------------------------------------------------------
 
-const ReservationFormCustomizablePrintParametersInputSchema = v.object({
-	makeDocumentTo: v.optional(MakeDocumentToSchema),
+const ReservationFormCustomizablePrintParametersInputSchema = Schema.Struct({
+	makeDocumentTo: Schema.optional(MakeDocumentToSchema),
 });
 
-const TravelInformationCustomizablePrintParametersInputSchema = v.object({
-	fillInCode: v.optional(v.string()),
+const TravelInformationCustomizablePrintParametersInputSchema = Schema.Struct({
+	fillInCode: Schema.optional(Schema.String),
 });
 
-const DocumentCustomizablePrintParametersInputSchema = v.union([
+const DocumentCustomizablePrintParametersInputSchema = Schema.Union(
 	ReservationFormCustomizablePrintParametersInputSchema,
 	TravelInformationCustomizablePrintParametersInputSchema,
-]);
+);
 
-const InfoDocumentToPrintInputSchema = v.object({
+const InfoDocumentToPrintInputSchema = Schema.Struct({
 	documentType: DocumentTypeSchema,
-	documentCustomizablePrintParameters: v.optional(
+	documentCustomizablePrintParameters: Schema.optional(
 		DocumentCustomizablePrintParametersInputSchema,
 	),
 });
 
-export const BookingFileDocumentInputSchema = v.object({
-	printDoc: v.optional(BoolishSchema),
-	sendDocViaEmail: v.optional(BoolishSchema),
-	infoDocumentsToPrint: v.optional(v.array(InfoDocumentToPrintInputSchema)),
+export const BookingFileDocumentInputSchema = Schema.Struct({
+	printDoc: Schema.optional(BoolishSchema),
+	sendDocViaEmail: Schema.optional(BoolishSchema),
+	infoDocumentsToPrint: Schema.optional(Schema.Array(InfoDocumentToPrintInputSchema)),
 });
 
 // ---------------------------------------------------------------------------
 // FinancialDeadlineList / DeadlineList / PaymentList
 // ---------------------------------------------------------------------------
 
-const FinancialDeadlineDetailInputSchema = v.object({
-	reschedulingCode: v.optional(v.string()),
-	expireDate: v.optional(v.string()),
-	totalAmount: v.optional(v.string()),
+const FinancialDeadlineDetailInputSchema = Schema.Struct({
+	reschedulingCode: Schema.optional(Schema.String),
+	expireDate: Schema.optional(Schema.String),
+	totalAmount: Schema.optional(Schema.String),
 });
 
-const DeadlineDetailInputSchema = v.object({
-	deadlineCode: v.optional(v.string()),
-	description: v.optional(v.string()),
-	expireDate: v.optional(v.string()),
+const DeadlineDetailInputSchema = Schema.Struct({
+	deadlineCode: Schema.optional(Schema.String),
+	description: Schema.optional(Schema.String),
+	expireDate: Schema.optional(Schema.String),
 });
 
-const PaymentDetailInputSchema = v.object({
-	paymentDate: v.optional(v.string()),
-	paymentNote: v.optional(v.string()),
-	amount: v.optional(v.string()),
-	paymentUser: v.optional(v.string()),
-	paymentType: v.optional(PaymentTypeSchema),
+const PaymentDetailInputSchema = Schema.Struct({
+	paymentDate: Schema.optional(Schema.String),
+	paymentNote: Schema.optional(Schema.String),
+	amount: Schema.optional(Schema.String),
+	paymentUser: Schema.optional(Schema.String),
+	paymentType: Schema.optional(PaymentTypeSchema),
 });
 
 // ---------------------------------------------------------------------------
@@ -138,81 +139,81 @@ const PaymentDetailInputSchema = v.object({
 
 const NoteDetailInputSchema = facadeObject(
 	{
-		nType: v.optional(v.string()),
-		title: v.optional(v.string()),
-		text: v.optional(v.string()),
+		nType: Schema.optional(Schema.String),
+		title: Schema.optional(Schema.String),
+		text: Schema.optional(Schema.String),
 	},
 	noteFacades,
 );
 
 /** ServiceFare — cost/price of a selected or booked service */
-export const ServiceFareInputSchema = v.object({
-	currencyCode: v.optional(v.string()),
-	exchangeRate: v.optional(v.string()),
-	cost: v.optional(v.string()),
-	costTax: v.optional(v.string()),
-	costType: v.optional(CostPriceTypeSchema),
-	vatCostCurrencyCode: v.optional(v.string()),
-	price: v.optional(v.string()),
-	priceTax: v.optional(v.string()),
-	priceType: v.optional(CostPriceTypeSchema),
+export const ServiceFareInputSchema = Schema.Struct({
+	currencyCode: Schema.optional(Schema.String),
+	exchangeRate: Schema.optional(Schema.String),
+	cost: Schema.optional(Schema.String),
+	costTax: Schema.optional(Schema.String),
+	costType: Schema.optional(CostPriceTypeSchema),
+	vatCostCurrencyCode: Schema.optional(Schema.String),
+	price: Schema.optional(Schema.String),
+	priceTax: Schema.optional(Schema.String),
+	priceType: Schema.optional(CostPriceTypeSchema),
 });
 
-export const AvesServiceInfoInputSchema = v.object({
-	packageCode: v.optional(v.string()),
-	packageReference: v.optional(v.string()),
-	suballotmentCode: v.optional(v.string()),
-	priceListCode: v.optional(v.string()),
-	costListCode: v.optional(v.string()),
-	externalFileCode: v.optional(v.string()),
-	externalReference: v.optional(v.string()),
-	serviceStatus: v.optional(v.string()),
-	serviceStatisticCode: v.optional(v.string()),
-	serviceFare: v.optional(ServiceFareInputSchema),
+export const AvesServiceInfoInputSchema = Schema.Struct({
+	packageCode: Schema.optional(Schema.String),
+	packageReference: Schema.optional(Schema.String),
+	suballotmentCode: Schema.optional(Schema.String),
+	priceListCode: Schema.optional(Schema.String),
+	costListCode: Schema.optional(Schema.String),
+	externalFileCode: Schema.optional(Schema.String),
+	externalReference: Schema.optional(Schema.String),
+	serviceStatus: Schema.optional(Schema.String),
+	serviceStatisticCode: Schema.optional(Schema.String),
+	serviceFare: Schema.optional(ServiceFareInputSchema),
 });
 
 export const SelectedServiceDetailInputSchema = facadeObject(
 	{
-		sCode: v.string(),
-		ssCode: v.optional(v.string()),
+		sCode: Schema.String,
+		ssCode: Schema.optional(Schema.String),
 		avesServiceType: AvesServiceTypeSchema,
-		toServiceType: v.optional(ToServiceTypeSchema),
-		subServiceDesc: v.optional(v.string()),
-		startDate: v.string(),
-		endDate: v.string(),
-		qty: v.string(),
-		pax: v.string(),
-		paxAssociated: v.optional(
-			v.union([v.array(v.string()), v.array(v.object({ pax: v.string() }))]),
+		toServiceType: Schema.optional(ToServiceTypeSchema),
+		subServiceDesc: Schema.optional(Schema.String),
+		startDate: Schema.String,
+		endDate: Schema.String,
+		qty: Schema.String,
+		pax: Schema.String,
+		paxAssociated: Schema.optional(
+			Schema.Union(Schema.Array(Schema.String), Schema.Array(Schema.Struct({ pax: Schema.String }))),
 		),
-		avesSession: v.string(),
-		avesServiceInfo: v.optional(AvesServiceInfoInputSchema),
-		serviceFare: v.optional(ServiceFareInputSchema),
-		bookedServiceRef: v.optional(v.string()),
-		supplierMasterCode: v.optional(v.string()),
-		voucherMasterCode: v.optional(v.string()),
+		avesSession: Schema.String,
+		avesServiceInfo: Schema.optional(AvesServiceInfoInputSchema),
+		serviceFare: Schema.optional(ServiceFareInputSchema),
+		bookedServiceRef: Schema.optional(Schema.String),
+		supplierMasterCode: Schema.optional(Schema.String),
+		voucherMasterCode: Schema.optional(Schema.String),
 		// Known gaps: AVES service-info variants remain unmodeled raw strings.
-		hotelServiceInfo: v.optional(v.string()),
-		carRentalServiceInfo: v.optional(v.string()),
-		flightServiceInfo: v.optional(v.string()),
-		shipServiceInfo: v.optional(v.string()),
-		ticketServiceInfo: v.optional(v.string()),
-		commission: v.optional(v.string()),
-		noteList: v.optional(v.array(NoteDetailInputSchema)),
+		hotelServiceInfo: Schema.optional(Schema.String),
+		carRentalServiceInfo: Schema.optional(Schema.String),
+		flightServiceInfo: Schema.optional(Schema.String),
+		shipServiceInfo: Schema.optional(Schema.String),
+		ticketServiceInfo: Schema.optional(Schema.String),
+		commission: Schema.optional(Schema.String),
+		noteList: Schema.optional(Schema.Array(NoteDetailInputSchema)),
 		// Known gap: AVES voucher info remains an unmodeled raw string.
-		voucherInfo: v.optional(v.string()),
-		firstDescription: v.optional(v.string()),
-		secondDescription: v.optional(v.string()),
+		voucherInfo: Schema.optional(Schema.String),
+		firstDescription: Schema.optional(Schema.String),
+		secondDescription: Schema.optional(Schema.String),
 	},
 	bookingServiceFacades,
 );
 
 export const SelectedPackageDetailInputSchema = facadeObject(
 	{
-		pCode: v.string(),
-		startDate: v.string(),
-		endDate: v.string(),
-		getServicesFromPackage: v.optional(BoolishSchema),
+		pCode: Schema.String,
+		startDate: Schema.String,
+		endDate: Schema.String,
+		getServicesFromPackage: Schema.optional(BoolishSchema),
 	},
 	selectedPackageFacades,
 );
@@ -222,23 +223,23 @@ export const SelectedPackageDetailInputSchema = facadeObject(
 // ---------------------------------------------------------------------------
 
 const passengerDetailBase = {
-	rph: v.string(),
-	roomRph: v.optional(v.string()),
-	billingHolder: v.optional(BoolishSchema),
-	masterRecordCode: v.optional(v.string()),
-	name: v.string(),
+	rph: Schema.String,
+	roomRph: Schema.optional(Schema.String),
+	billingHolder: Schema.optional(BoolishSchema),
+	masterRecordCode: Schema.optional(Schema.String),
+	name: Schema.String,
 	sex: GenderSchema,
-	birthDate: v.optional(v.string()),
-	birthPlace: v.optional(v.string()),
-	nationCode: v.optional(v.string()),
-	citizenshipCode: v.optional(v.string()),
-	fiscalCode: v.optional(v.string()),
-	phoneNumber: v.optional(v.string()),
-	eMail: v.optional(v.string()),
-	notes: v.optional(v.array(NoteDetailInputSchema)),
-	flagStatus: v.optional(v.string()),
-	offerCode: v.optional(v.string()),
-	idDocInfo: v.optional(IdDocumentDetailInputSchema),
+	birthDate: Schema.optional(Schema.String),
+	birthPlace: Schema.optional(Schema.String),
+	nationCode: Schema.optional(Schema.String),
+	citizenshipCode: Schema.optional(Schema.String),
+	fiscalCode: Schema.optional(Schema.String),
+	phoneNumber: Schema.optional(Schema.String),
+	eMail: Schema.optional(Schema.String),
+	notes: Schema.optional(Schema.Array(NoteDetailInputSchema)),
+	flagStatus: Schema.optional(Schema.String),
+	offerCode: Schema.optional(Schema.String),
+	idDocInfo: Schema.optional(IdDocumentDetailInputSchema),
 };
 
 /** Passenger on CreateBookingFile — categoryCode required per AVES */
@@ -254,7 +255,7 @@ export const PassengerDetailCreateInputSchema = facadeObject(
 export const PassengerDetailPatchInputSchema = facadeObject(
 	{
 		...passengerDetailBase,
-		categoryCode: v.optional(PassengerCategorySchema),
+		categoryCode: Schema.optional(PassengerCategorySchema),
 	},
 	passengerFacades,
 );
@@ -263,9 +264,9 @@ export const PassengerDetailPatchInputSchema = facadeObject(
 // BookingFinancialInfo
 // ---------------------------------------------------------------------------
 
-export const BookingFinancialInfoInputSchema = v.object({
-	customer_PaymentType: v.optional(CustomerPaymentTypeSchema),
-	customer_SpecPaymentTypeCode: v.optional(v.string()),
+export const BookingFinancialInfoInputSchema = Schema.Struct({
+	customer_PaymentType: Schema.optional(CustomerPaymentTypeSchema),
+	customer_SpecPaymentTypeCode: Schema.optional(Schema.String),
 });
 
 // ---------------------------------------------------------------------------
@@ -278,60 +279,66 @@ export const BookingFinancialInfoInputSchema = v.object({
  * `*List` fields are flat Detail arrays; wire wrap happens in BookingFileApiSchema.
  * Accepts `customerRecordCode` / `customerCode` and other facade aliases.
  */
-export const BookingFileSchema = v.pipe(
-	facadeObject(
-		{
-			createDate: v.optional(v.string()),
-			bookingFileRefCode: v.optional(v.string()),
-			travelAgentCode: v.optional(v.string()),
-			clerkName: v.optional(v.string()),
-			customerDetail: v.optional(CustomerDetailInputSchema),
-			customerRecordCode: v.optional(v.string()),
-			currencyCode: v.optional(v.string()),
-			markupCode: v.optional(v.string()),
-			bookingFileStatus: BookingFileStatusInputSchema,
-			statisticCodes: v.optional(StatisticCodesInputSchema),
-			destination: v.optional(DestinationInputSchema),
-			bookingFileDescription: v.optional(v.string()),
-			startDate: v.string(),
-			endDate: v.string(),
-			earlyBookingDate: v.optional(v.string()),
-			cupCode: v.optional(v.string()),
-			cigCode: v.optional(v.string()),
-			customerPromoterCode: v.optional(v.string()),
-			billingReferenceCode: v.optional(v.string()),
-			paymentReferenceCode: v.optional(v.string()),
-			bookingFileDocument: v.optional(BookingFileDocumentInputSchema),
-			financialDeadlineList: v.optional(
-				v.array(FinancialDeadlineDetailInputSchema),
-			),
-			deadlineList: v.optional(v.array(DeadlineDetailInputSchema)),
-			paymentList: v.optional(v.array(PaymentDetailInputSchema)),
-			selectedPackageList: v.optional(
-				v.array(SelectedPackageDetailInputSchema),
-			),
-			selectedServiceList: v.array(SelectedServiceDetailInputSchema),
-			extraQuotaRefCode: v.optional(v.string()),
-			extraQuoteServiceList: v.optional(
-				v.array(SelectedServiceDetailInputSchema),
-			),
-			getExtraQuoteFromSystem: v.optional(BoolishSchema),
-			passengerList: v.array(PassengerDetailCreateInputSchema),
-			noteList: v.optional(v.array(NoteDetailInputSchema)),
-			bookingFinancialInfo: v.optional(BookingFinancialInfoInputSchema),
-			bookingFileCode: v.optional(v.string()),
-			groupingPaxPolicy: v.optional(GroupingPaxPolicySchema),
-			groupBookingFile: v.optional(BoolishSchema),
-			typeDownloadFile: v.optional(TypeDownloadFileSchema),
-			setBookingFileCodeFromStartDate: v.optional(BoolishSchema),
-		},
-		bookingRootFacades,
+const BookingFileEntriesSchema = facadeObject(
+	{
+		createDate: Schema.optional(Schema.String),
+		bookingFileRefCode: Schema.optional(Schema.String),
+		travelAgentCode: Schema.optional(Schema.String),
+		clerkName: Schema.optional(Schema.String),
+		customerDetail: Schema.optional(CustomerDetailInputSchema),
+		customerRecordCode: Schema.optional(Schema.String),
+		currencyCode: Schema.optional(Schema.String),
+		markupCode: Schema.optional(Schema.String),
+		bookingFileStatus: BookingFileStatusInputSchema,
+		statisticCodes: Schema.optional(StatisticCodesInputSchema),
+		destination: Schema.optional(DestinationInputSchema),
+		bookingFileDescription: Schema.optional(Schema.String),
+		startDate: Schema.String,
+		endDate: Schema.String,
+		earlyBookingDate: Schema.optional(Schema.String),
+		cupCode: Schema.optional(Schema.String),
+		cigCode: Schema.optional(Schema.String),
+		customerPromoterCode: Schema.optional(Schema.String),
+		billingReferenceCode: Schema.optional(Schema.String),
+		paymentReferenceCode: Schema.optional(Schema.String),
+		bookingFileDocument: Schema.optional(BookingFileDocumentInputSchema),
+		financialDeadlineList: Schema.optional(
+			Schema.Array(FinancialDeadlineDetailInputSchema),
+		),
+		deadlineList: Schema.optional(Schema.Array(DeadlineDetailInputSchema)),
+		paymentList: Schema.optional(Schema.Array(PaymentDetailInputSchema)),
+		selectedPackageList: Schema.optional(
+			Schema.Array(SelectedPackageDetailInputSchema),
+		),
+		selectedServiceList: Schema.Array(SelectedServiceDetailInputSchema),
+		extraQuotaRefCode: Schema.optional(Schema.String),
+		extraQuoteServiceList: Schema.optional(
+			Schema.Array(SelectedServiceDetailInputSchema),
+		),
+		getExtraQuoteFromSystem: Schema.optional(BoolishSchema),
+		passengerList: Schema.Array(PassengerDetailCreateInputSchema),
+		noteList: Schema.optional(Schema.Array(NoteDetailInputSchema)),
+		bookingFinancialInfo: Schema.optional(BookingFinancialInfoInputSchema),
+		bookingFileCode: Schema.optional(Schema.String),
+		groupingPaxPolicy: Schema.optional(GroupingPaxPolicySchema),
+		groupBookingFile: Schema.optional(BoolishSchema),
+		typeDownloadFile: Schema.optional(TypeDownloadFileSchema),
+		setBookingFileCodeFromStartDate: Schema.optional(BoolishSchema),
+	},
+	bookingRootFacades,
+);
+
+export const BookingFileSchema = mapSchema(
+	BookingFileEntriesSchema.pipe(
+		Schema.filter(
+			(input: Schema.Schema.Type<typeof BookingFileEntriesSchema>) =>
+				!!(input.customerDetail || input.customerRecordCode),
+			{
+				message: () => "customerDetail or customerRecordCode is required",
+			},
+		),
 	),
-	v.check(
-		(input) => !!(input.customerDetail || input.customerRecordCode),
-		"customerDetail or customerRecordCode is required",
-	),
-	v.transform(coalesceCustomerRecordCode),
+	coalesceCustomerRecordCode,
 );
 
 /**
@@ -347,12 +354,12 @@ export const BookingFileApiSchema = createApiSchema(
  * Spreads `BookingFileDetail` onto the root; cancel extras stay sibling fields.
  */
 export const BookingFileResponseSchema = createFlattenedResponseSchema(
-	v.object({
+	Schema.Struct({
 		RsStatus: RsStatusSchema,
-		BookingFileDetail: v.optional(BookingFileDetailApiSchema),
-		PrintableDocumentsList: v.optional(PrintableDocumentsListApiSchema),
-		TotalAmountDetailAfterCancellation: v.optional(TotalAmountDetailApiSchema),
-		Base64DocContent: v.optional(v.string()),
+		BookingFileDetail: Schema.optional(BookingFileDetailApiSchema),
+		PrintableDocumentsList: Schema.optional(PrintableDocumentsListApiSchema),
+		TotalAmountDetailAfterCancellation: Schema.optional(TotalAmountDetailApiSchema),
+		Base64DocContent: Schema.optional(Schema.String),
 	}),
 	"bookingFileDetail",
 );

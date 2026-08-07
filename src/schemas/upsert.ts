@@ -1,4 +1,4 @@
-import * as v from "valibot";
+import { Schema } from "effect";
 import { createFlattenedResponseSchema } from "../utils/schema-transform.js";
 import { RqHeaderSchema, RsStatusSchema } from "./common.js";
 import { MasterRecordDetailApiValidationSchema } from "./master-record.js";
@@ -6,7 +6,7 @@ import { MasterRecordDetailApiValidationSchema } from "./master-record.js";
 /**
  * Complete upsert request schema with header and required InsertCriteria
  */
-export const ManageMasterRecordRequestSchema = v.object({
+export const ManageMasterRecordRequestSchema = Schema.Struct({
 	RqHeader: RqHeaderSchema,
 	MasterRecordDetail: MasterRecordDetailApiValidationSchema,
 });
@@ -16,9 +16,9 @@ export const ManageMasterRecordRequestSchema = v.object({
  * Callers use `data.recordCode` instead of `data.masterRecordDetail.recordCode`.
  */
 export const ManageMasterRecordResponseSchema = createFlattenedResponseSchema(
-	v.object({
+	Schema.Struct({
 		RsStatus: RsStatusSchema,
-		MasterRecordDetail: v.optional(MasterRecordDetailApiValidationSchema),
+		MasterRecordDetail: Schema.optional(MasterRecordDetailApiValidationSchema),
 	}),
 	"masterRecordDetail",
 );

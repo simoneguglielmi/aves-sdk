@@ -14,7 +14,7 @@ export type OpEnvelopeDef = {
  */
 export function buildOpEnvelope(
 	def: OpEnvelopeDef,
-	apiBody: Record<string, unknown>,
+	apiBody: object,
 	rqHeader: RqHeader,
 ): Record<string, unknown> {
 	const payload = def.bodyKey ? { [def.bodyKey]: apiBody } : apiBody;

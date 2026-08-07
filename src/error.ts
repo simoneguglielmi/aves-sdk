@@ -1,5 +1,8 @@
-import type { BaseIssue } from "valibot";
-import { ValiError } from "valibot";
+import type { ParseResult } from "effect";
+import {
+	formatParseError,
+	isParseError,
+} from "./effect/parse-error.js";
 import type { RsStatusValue } from "./schemas/enums.js";
 
 export const ERROR_KINDS = {
@@ -44,43 +47,24 @@ export function unknownError(message: string): AvesError {
 /** Map unknown thrown values to a typed {@link AvesError}. */
 export function toAvesError(error: unknown, defaultMessage: string): AvesError {
 	if (error instanceof AvesError) return error;
-	if (error instanceof ValiError)
-		return validationError(`Validation error: ${buildDetails(error.issues)}`);
-	if (error instanceof Error) return unknownError(error.message);
+	if (isParseError(error))
+		return validationError(`Validation error: ${formatParseError(error)}`);
+	if (error instanceof Error) {
+		if (error.name === "ParseError")
+			return validationError(`Validation error: ${error.message}`);
+		return unknownError(error.message);
+	}
 	return unknownError(defaultMessage);
 }
 
-export function buildDetails(issues: readonly BaseIssue<unknown>[]): string {
-	return issues.map(formatIssue).join("; ");
-}
-
-function formatIssue(issue: BaseIssue<unknown>): string {
-	const path = formatPath(issue.path);
-	const message = issue.message ?? "Invalid value";
-
-	return path ? `${path}: ${message}` : message;
-}
-
-function formatPath(path?: readonly unknown[]): string | undefined {
-	if (!path || path.length === 0) return;
-
-	const segments = path
-		.map(extractSegment)
-		.filter((segment): segment is string => segment !== undefined);
-
-	return segments.length > 0 ? segments.join(".") : undefined;
-}
-
-function extractSegment(segment: unknown): string | undefined {
-	if (typeof segment === "string" || typeof segment === "number") {
-		return String(segment);
-	}
-
-	if (typeof segment === "object" && segment !== null && "key" in segment) {
-		return String(segment.key);
-	}
-
-	return;
+/** Format issue lists or ParseError for response-reader messages. */
+export function buildDetails(
+	issues: readonly { message?: string }[] | ParseResult.ParseError,
+): string {
+	if (isParseError(issues)) return formatParseError(issues);
+	if (Array.isArray(issues))
+		return issues.map((i) => i.message ?? "Invalid value").join("; ");
+	return String(issues);
 }
 
 export function isAbortError(error: unknown): boolean {
