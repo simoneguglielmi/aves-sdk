@@ -28,6 +28,7 @@ Effect-native core: **Effect Schema** + **`@effect/platform` HttpClient**, Promi
 - **Breaking:** `AvesError` is a **tagged union**, not a single constructible class. Prefer `isAvesError(e)`, `e instanceof AvesApiError`, or `Effect.catchTag("AvesApiError", …)`. Promise `error.kind` (`validation` | `api` | `unknown`) is unchanged.
 - **Breaking:** DI no longer uses `new AvesTransport(options)` / `new BookingClient(transport)`. Use `AvesClientDeps`: `{ httpClient?, http?, transport?, master?, booking?, packages? }`.
 - Internal layout: `src/client/{booking,master,packages,http,transport,config}/` (types / tag / service / layer).
+- Published types shrank from 1.21 MB to 404 kB (npm tarball 115 kB → 72 kB): op params/results and the domain service types are now written against named types instead of inferred, so the declaration bundle references `BookingInput` & co. instead of inlining every schema structure. The public API is unchanged — `src/client/{ops,services}.test-d.ts` pin each op and domain method against the schema the transport actually uses.
 
 ### Migration (4.x → 5.x)
 

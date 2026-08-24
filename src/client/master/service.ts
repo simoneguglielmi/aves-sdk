@@ -1,15 +1,34 @@
 import { Effect } from "effect";
 import type { PromiseFacade } from "../../effect/run-result.js";
 import { toPromiseFacade } from "../../effect/run-result.js";
-import type { SearchMasterRecordRS } from "../../types.js";
+import type { AvesError } from "../../error.js";
+import type {
+	MasterSearchInput,
+	MasterSearchResult,
+	SearchMasterRecordRS,
+} from "../../types.js";
 import { toFacadeEffect } from "../../utils/facade-transform.js";
-import type { AvesTransportService } from "../transport/types.js";
+import type { AvesTransportService, FacadeOp } from "../transport/types.js";
 
 /** Effect-native master-records domain. */
-export function makeMasterRecordsService(transport: AvesTransportService) {
+export type MasterRecordsService = {
+	/**
+	 * Unlike the other domains this does not reuse `FacadeOp`: the transport
+	 * returns a `{ masterRecordList, rsStatus }` envelope and `search` flattens
+	 * it to the public array contract before the facade runs.
+	 */
+	search: (
+		params: MasterSearchInput,
+	) => Effect.Effect<MasterSearchResult, AvesError>;
+	upsert: FacadeOp<"upsert">;
+};
+
+export function makeMasterRecordsService(
+	transport: AvesTransportService,
+): MasterRecordsService {
 	const { ops } = transport;
 	return {
-		search: (params: Parameters<typeof ops.search>[0]) =>
+		search: (params: MasterSearchInput) =>
 			toFacadeEffect(
 				ops
 					.search(params)
@@ -19,12 +38,10 @@ export function makeMasterRecordsService(transport: AvesTransportService) {
 						),
 					),
 			),
-		upsert: (record: Parameters<typeof ops.upsert>[0]) =>
-			toFacadeEffect(ops.upsert(record)),
+		upsert: (record) => toFacadeEffect(ops.upsert(record)),
 	};
 }
 
-export type MasterRecordsService = ReturnType<typeof makeMasterRecordsService>;
 export type MasterRecordsClient = PromiseFacade<MasterRecordsService>;
 
 /** Promise<Result> facade over {@link makeMasterRecordsService}. */

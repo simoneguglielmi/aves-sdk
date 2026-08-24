@@ -1,5 +1,5 @@
 import type { Schema } from "effect";
-import type { InferInput, InferOutput } from "../effect/infer.js";
+import type { InferOutput } from "../effect/infer.js";
 import {
 	ExportBookingDataApiSchema,
 	ExportBookingDataResponseSchema,
@@ -39,6 +39,32 @@ import {
 	SearchBookingFileResponseSchema,
 } from "../schemas/search-booking-file.js";
 import { ManageMasterRecordResponseSchema } from "../schemas/upsert.js";
+import type {
+	AvesSearchRQ,
+	BookingFileDetailRS,
+	BookingFileRQ,
+	BookingFileRS,
+	BookingStatusOnlyRS,
+	CancelFileRQ,
+	CommitPackageRQ,
+	CommitPackageRS,
+	ExportBookingDataRQ,
+	ExportBookingDataRS,
+	FilePaymentListRQ,
+	ManageMasterRecordRS,
+	MasterRecordDetail,
+	ModFileHeaderRQ,
+	ModFileServicesRQ,
+	PackageDetailRQ,
+	PackageDetailRS,
+	SearchBookingFileRQ,
+	SearchBookingFileRS,
+	SearchMasterRecord,
+	SearchPackageRS,
+	SearchServicesRS,
+	SetFileServiceStatusRQ,
+	SetFileStatusRQ,
+} from "../types.js";
 import { type EnumValue, enumSchema } from "../utils/enum.js";
 import { XML_ROOT_ELEMENTS, type XMLRootElementValues } from "../xml/root.js";
 import { AVES_ENDPOINTS } from "./endpoints.js";
@@ -197,12 +223,94 @@ export const AVES_OPS = {
 	}),
 } as const;
 
-/** Runtime input accepted by an op's API schema (facade + AVES dual keys). */
-export type OpParams<K extends AvesOp> = InferInput<
-	(typeof AVES_OPS)[K]["apiSchema"]
+/**
+ * Transport-level master search response, before the facade flattens it to the
+ * public {@link SearchMasterRecordRS} array. Internal: the flat array is the
+ * contract callers see.
+ */
+type SearchMasterRecordEnvelope = InferOutput<
+	typeof SearchMasterRecordResponseSchema
 >;
 
+/**
+ * Per-op request/response types, written out against named types on purpose.
+ *
+ * Deriving these from `typeof AVES_OPS` was true by construction, but it forced
+ * the declaration emitter to inline every schema's full structure into the
+ * published `.d.ts` — ~500 KB of the 1.2 MB it used to weigh, and unreadable
+ * anonymous blobs in consumer type errors. The contract is identical; only the
+ * emitted form changes, from a copied structure to a reference.
+ *
+ * Two things keep this map honest: `ops.test-d.ts` pins every entry against the
+ * schema pair `AVES_OPS` actually passes to the transport, and the `invoke`
+ * calls in `transport/service.ts` reject a params type the schema will not
+ * accept. Indexing by `AvesOp` below also makes a missing key a compile error.
+ */
+type OpTypes = {
+	readonly search: {
+		readonly params: SearchMasterRecord;
+		readonly result: SearchMasterRecordEnvelope;
+	};
+	readonly upsert: {
+		readonly params: MasterRecordDetail;
+		readonly result: ManageMasterRecordRS;
+	};
+	readonly create: {
+		readonly params: BookingFileRQ;
+		readonly result: BookingFileRS;
+	};
+	readonly updateServices: {
+		readonly params: ModFileServicesRQ;
+		readonly result: BookingFileDetailRS;
+	};
+	readonly updateHeader: {
+		readonly params: ModFileHeaderRQ;
+		readonly result: BookingStatusOnlyRS;
+	};
+	readonly cancel: {
+		readonly params: CancelFileRQ;
+		readonly result: BookingStatusOnlyRS;
+	};
+	readonly setStatus: {
+		readonly params: SetFileStatusRQ;
+		readonly result: BookingFileDetailRS;
+	};
+	readonly setServiceStatus: {
+		readonly params: SetFileServiceStatusRQ;
+		readonly result: BookingFileDetailRS;
+	};
+	readonly addPayments: {
+		readonly params: FilePaymentListRQ;
+		readonly result: BookingStatusOnlyRS;
+	};
+	readonly searchBookings: {
+		readonly params: SearchBookingFileRQ;
+		readonly result: SearchBookingFileRS;
+	};
+	readonly exportData: {
+		readonly params: ExportBookingDataRQ;
+		readonly result: ExportBookingDataRS;
+	};
+	readonly searchPackages: {
+		readonly params: AvesSearchRQ;
+		readonly result: SearchPackageRS;
+	};
+	readonly searchServices: {
+		readonly params: AvesSearchRQ;
+		readonly result: SearchServicesRS;
+	};
+	readonly get: {
+		readonly params: PackageDetailRQ;
+		readonly result: PackageDetailRS;
+	};
+	readonly commit: {
+		readonly params: CommitPackageRQ;
+		readonly result: CommitPackageRS;
+	};
+};
+
+/** Runtime input accepted by an op's API schema (facade + AVES dual keys). */
+export type OpParams<K extends AvesOp> = OpTypes[K]["params"];
+
 /** Parsed success payload for an op (before facade aliases). */
-export type OpResult<K extends AvesOp> = InferOutput<
-	(typeof AVES_OPS)[K]["responseSchema"]
->;
+export type OpResult<K extends AvesOp> = OpTypes[K]["result"];

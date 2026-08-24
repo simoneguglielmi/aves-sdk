@@ -3,7 +3,7 @@ import { toPromiseFacade } from "../../effect/run-result.js";
 import { AvesSearchType } from "../../schemas/enums.js";
 import type { AvesSearchRQ } from "../../types.js";
 import { facadeMethod, toFacadeEffect } from "../../utils/facade-transform.js";
-import type { AvesTransportService } from "../transport/types.js";
+import type { AvesTransportService, FacadeOp } from "../transport/types.js";
 
 function prepareSearch(
 	languageCode: string | undefined,
@@ -18,7 +18,16 @@ function prepareSearch(
 }
 
 /** Effect-native package-catalog domain. */
-export function makePackageCatalogService(transport: AvesTransportService) {
+export type PackageCatalogService = {
+	search: FacadeOp<"searchPackages">;
+	searchServices: FacadeOp<"searchServices">;
+	get: FacadeOp<"get">;
+	commit: FacadeOp<"commit">;
+};
+
+export function makePackageCatalogService(
+	transport: AvesTransportService,
+): PackageCatalogService {
 	const { ops, languageCode } = transport;
 	return {
 		search: (params: AvesSearchRQ) =>
@@ -38,9 +47,6 @@ export function makePackageCatalogService(transport: AvesTransportService) {
 	};
 }
 
-export type PackageCatalogService = ReturnType<
-	typeof makePackageCatalogService
->;
 export type PackageCatalogClient = PromiseFacade<PackageCatalogService>;
 
 /** Promise<Result> facade over {@link makePackageCatalogService}. */
