@@ -437,10 +437,20 @@ function isArraySchema(
 
 function omitUndefinedUnion(ast: SchemaAST.AST): SchemaAST.AST {
 	if (ast._tag !== "Union") return ast;
-	const parts = ast.types.filter(
+	const [only, ...rest] = ast.types.filter(
 		(t: SchemaAST.AST) => t._tag !== "UndefinedKeyword",
 	);
-	return parts.length === 1 ? parts[0]! : ast;
+	return only && rest.length === 0 ? only : ast;
+}
+
+/**
+ * Element AST of an array-shaped tuple (no fixed elements, exactly one rest),
+ * or `undefined` for anything else. AST-level twin of {@link isArraySchema}.
+ */
+function arrayElementAst(ast: SchemaAST.AST): SchemaAST.AST | undefined {
+	if (!SchemaAST.isTupleType(ast) || ast.elements.length > 0) return undefined;
+	const [element, ...extra] = ast.rest;
+	return extra.length === 0 ? element?.type : undefined;
 }
 
 /** Rebuild a usable Schema from AST (Struct.fields / Array.value must exist). */
@@ -455,14 +465,9 @@ function schemaFromAst(ast: SchemaAST.AST): Schema.Schema.AnyNoContext {
 		}
 		return syncSchema(Schema.asSchema(Schema.Struct(fields)));
 	}
-	if (
-		SchemaAST.isTupleType(core) &&
-		core.elements.length === 0 &&
-		core.rest.length === 1
-	) {
-		return syncSchema(
-			Schema.asSchema(Schema.Array(schemaFromAst(core.rest[0]!.type))),
-		);
+	const elementAst = arrayElementAst(core);
+	if (elementAst) {
+		return syncSchema(Schema.asSchema(Schema.Array(schemaFromAst(elementAst))));
 	}
 	return syncSchema(Schema.asSchema(Schema.make(core)));
 }
@@ -510,9 +515,8 @@ function buildApiValidationObject<TFields extends StructFields>(
 ): Schema.Schema.AnyNoContext {
 	const validationEntries: Record<string, StructField> = {};
 
-	for (const key of Object.keys(inputSchema.fields)) {
+	for (const [key, field] of Object.entries(inputSchema.fields)) {
 		const childShape = shape.children?.[key] ?? {};
-		const field = inputSchema.fields[key]!;
 		// Wire validation uses Encoded (no defaults / request transforms).
 		const forWire =
 			Schema.isSchema(field) && field.ast._tag === "Transformation"

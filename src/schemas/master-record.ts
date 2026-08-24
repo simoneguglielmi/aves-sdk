@@ -6,7 +6,6 @@ import {
 	createResponseSchema,
 	createWireSchemaPair,
 	facadeObject,
-	mapSchema,
 } from "../utils/schema-transform.js";
 import {
 	accountPoliciesWire,
