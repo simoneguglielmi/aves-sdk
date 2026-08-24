@@ -10,7 +10,7 @@
  * there is nothing to be strict against — see their field comments.
  */
 
-import * as v from "valibot";
+import { Schema } from "effect";
 import { exportBookingDataFacades } from "../utils/facade-aliases.js";
 import {
 	coalesceWireAliases,
@@ -18,6 +18,7 @@ import {
 	createResponseSchema,
 	facadeObject,
 	listDetailApiSchema,
+	mapSchema,
 } from "../utils/schema-transform.js";
 import { exportBookingDataWire } from "../utils/wire-shapes.js";
 import {
@@ -53,9 +54,13 @@ import { MasterRecordDetailApiValidationSchema } from "./master-record.js";
 // ---------------------------------------------------------------------------
 
 /** Paging window. Bounds are spec'd, not invented (Booking.txt:11104-11106). */
-export const LimitRangeSchema = v.object({
-	skip: v.pipe(v.number(), v.integer(), v.minValue(0)),
-	take: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000)),
+export const LimitRangeSchema = Schema.Struct({
+	skip: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
+	take: Schema.Number.pipe(
+		Schema.int(),
+		Schema.greaterThanOrEqualTo(1),
+		Schema.lessThanOrEqualTo(1000),
+	),
 });
 
 /**
@@ -65,27 +70,27 @@ export const LimitRangeSchema = v.object({
  */
 export const ExportBookingDataSchema = facadeObject(
 	{
-		bookingFileCode: v.optional(v.string()),
-		startDate: v.optional(DateRangeSchema),
-		endDate: v.optional(DateRangeSchema),
-		createdDate: v.optional(DateRangeSchema),
-		lastModificationDate: v.optional(DateRangeSchema),
-		lastModificationDateTime: v.optional(DateRangeSchema),
-		supplierRecordCode: v.optional(v.string()),
-		supplierVatCode: v.optional(v.string()),
-		supplierReference: v.optional(v.string()),
-		statusLists: v.optional(v.array(BookingFileStatusSchema)),
-		featureCodeList: v.optional(v.array(v.string())),
-		packageCodeList: v.optional(v.array(v.string())),
-		exportType: v.optional(ExportTypeSchema),
+		bookingFileCode: Schema.optional(Schema.String),
+		startDate: Schema.optional(DateRangeSchema),
+		endDate: Schema.optional(DateRangeSchema),
+		createdDate: Schema.optional(DateRangeSchema),
+		lastModificationDate: Schema.optional(DateRangeSchema),
+		lastModificationDateTime: Schema.optional(DateRangeSchema),
+		supplierRecordCode: Schema.optional(Schema.String),
+		supplierVatCode: Schema.optional(Schema.String),
+		supplierReference: Schema.optional(Schema.String),
+		statusLists: Schema.optional(Schema.Array(BookingFileStatusSchema)),
+		featureCodeList: Schema.optional(Schema.Array(Schema.String)),
+		packageCodeList: Schema.optional(Schema.Array(Schema.String)),
+		exportType: Schema.optional(ExportTypeSchema),
 		/** Marks exported services undeletable — they can then only be cancelled. */
-		markBookedServiceExported: v.optional(BoolishSchema),
-		customerRecordCode: v.optional(v.string()),
-		customerReference: v.optional(v.string()),
-		customerPromoterCode: v.optional(v.string()),
-		firstPassengerName: v.optional(v.string()),
-		user: v.optional(v.string()),
-		limitRange: v.optional(LimitRangeSchema),
+		markBookedServiceExported: Schema.optional(BoolishSchema),
+		customerRecordCode: Schema.optional(Schema.String),
+		customerReference: Schema.optional(Schema.String),
+		customerPromoterCode: Schema.optional(Schema.String),
+		firstPassengerName: Schema.optional(Schema.String),
+		user: Schema.optional(Schema.String),
+		limitRange: Schema.optional(LimitRangeSchema),
 	},
 	exportBookingDataFacades,
 );
@@ -99,10 +104,10 @@ export const ExportBookingDataApiSchema = createApiSchema(
 // BookingDataExportRS — booking file
 // ---------------------------------------------------------------------------
 
-const ExportedNoteDetailApiSchema = v.object({
-	"@nType": v.optional(v.string()),
-	"@Title": v.optional(v.string()),
-	"#text": v.optional(StringishSchema),
+const ExportedNoteDetailApiSchema = Schema.Struct({
+	"@nType": Schema.optional(Schema.String),
+	"@Title": Schema.optional(Schema.String),
+	"#text": Schema.optional(StringishSchema),
 });
 
 const ExportedNoteListApiSchema = listDetailApiSchema(
@@ -110,53 +115,51 @@ const ExportedNoteListApiSchema = listDetailApiSchema(
 	ExportedNoteDetailApiSchema,
 );
 
-const ExportedStatisticCodesApiSchema = v.object({
-	"@sCode1": v.optional(v.string()),
-	"@sCode2": v.optional(v.string()),
-	"@sCode3": v.optional(v.string()),
-	"@sCode4": v.optional(v.string()),
-	"@sCode5": v.optional(v.string()),
-	"@sCode6": v.optional(v.string()),
+const ExportedStatisticCodesApiSchema = Schema.Struct({
+	"@sCode1": Schema.optional(Schema.String),
+	"@sCode2": Schema.optional(Schema.String),
+	"@sCode3": Schema.optional(Schema.String),
+	"@sCode4": Schema.optional(Schema.String),
+	"@sCode5": Schema.optional(Schema.String),
+	"@sCode6": Schema.optional(Schema.String),
 });
 
-const EInvoicingDetailWireSchema = v.object({
-	"@CUP": v.optional(v.string()),
-	"@CupCode": v.optional(v.string()),
-	"@CIG": v.optional(v.string()),
-	"@CigCode": v.optional(v.string()),
-	"@SupplyReferenceType": v.optional(v.string()),
-	"@DocumentNumber": v.optional(StringishSchema),
-	"@DocumentDate": v.optional(v.string()),
+const EInvoicingDetailWireSchema = Schema.Struct({
+	"@CUP": Schema.optional(Schema.String),
+	"@CupCode": Schema.optional(Schema.String),
+	"@CIG": Schema.optional(Schema.String),
+	"@CigCode": Schema.optional(Schema.String),
+	"@SupplyReferenceType": Schema.optional(Schema.String),
+	"@DocumentNumber": Schema.optional(StringishSchema),
+	"@DocumentDate": Schema.optional(Schema.String),
 });
 
 /** `@CUP`/`@CIG` normalize to the request-side `cupCode` / `cigCode` names. */
-export const EInvoicingDetailApiSchema = v.pipe(
+export const EInvoicingDetailApiSchema = mapSchema(
 	EInvoicingDetailWireSchema,
-	v.transform((detail) =>
+	(detail) =>
 		coalesceWireAliases(detail, {
 			"@CupCode": ["@CupCode", "@CUP"],
 			"@CigCode": ["@CigCode", "@CIG"],
 		}),
-	),
 );
 
-const ExportedPaymentDetailWireSchema = v.object({
-	"@PaymentDate": v.optional(v.string()),
-	"@PaymentNote": v.optional(v.string()),
+const ExportedPaymentDetailWireSchema = Schema.Struct({
+	"@PaymentDate": Schema.optional(Schema.String),
+	"@PaymentNote": Schema.optional(Schema.String),
 	// InsertFilePaymentList misspells this attribute; tolerate it on the way back.
-	"@PaumentNote": v.optional(v.string()),
-	"@Amount": v.optional(StringishSchema),
-	"@PaymentType": v.optional(v.string()),
-	"@PaymentUser": v.optional(v.string()),
+	"@PaumentNote": Schema.optional(Schema.String),
+	"@Amount": Schema.optional(StringishSchema),
+	"@PaymentType": Schema.optional(Schema.String),
+	"@PaymentUser": Schema.optional(Schema.String),
 });
 
-export const ExportedPaymentDetailApiSchema = v.pipe(
+export const ExportedPaymentDetailApiSchema = mapSchema(
 	ExportedPaymentDetailWireSchema,
-	v.transform((payment) =>
+	(payment) =>
 		coalesceWireAliases(payment, {
 			"@PaymentNote": ["@PaymentNote", "@PaumentNote"],
 		}),
-	),
 );
 
 export const ExportedPaymentListApiSchema = listDetailApiSchema(
@@ -165,44 +168,44 @@ export const ExportedPaymentListApiSchema = listDetailApiSchema(
 );
 
 /** Per-service money. Documented as `AmountDetail`, sent as `AmountsDetail`. */
-export const BookedServiceAmountsApiSchema = v.object({
-	"@ReceiptsWithTax": v.optional(StringishSchema),
-	"@ReceiptWithTaxAndVat": v.optional(StringishSchema),
-	"@ReceiptTax": v.optional(StringishSchema),
-	"@CostWithTax": v.optional(StringishSchema),
-	"@CostWithTaxAndVat": v.optional(StringishSchema),
-	"@CostTax": v.optional(StringishSchema),
-	"@DiscountEarned": v.optional(StringishSchema),
-	"@DiscountPaid": v.optional(StringishSchema),
-	"@CommissionIncome": v.optional(StringishSchema),
-	"@CommissionIncomeWithVat": v.optional(StringishSchema),
-	"@CommissionOwed": v.optional(StringishSchema),
-	"@CommissionOwedWithVat": v.optional(StringishSchema),
-	"@InvoicingCostAmount": v.optional(StringishSchema),
-	"@InvoicedCostAmount": v.optional(StringishSchema),
-	"@InvoicingPriceAmount": v.optional(StringishSchema),
-	"@InvoicedPriceAmount": v.optional(StringishSchema),
-	"@DueToSupplier": v.optional(StringishSchema),
-	"@Paid": v.optional(StringishSchema),
-	"@PaidWithCreditCard": v.optional(StringishSchema),
-	"@DueByCustomer": v.optional(StringishSchema),
-	"@Cashed": v.optional(StringishSchema),
+export const BookedServiceAmountsApiSchema = Schema.Struct({
+	"@ReceiptsWithTax": Schema.optional(StringishSchema),
+	"@ReceiptWithTaxAndVat": Schema.optional(StringishSchema),
+	"@ReceiptTax": Schema.optional(StringishSchema),
+	"@CostWithTax": Schema.optional(StringishSchema),
+	"@CostWithTaxAndVat": Schema.optional(StringishSchema),
+	"@CostTax": Schema.optional(StringishSchema),
+	"@DiscountEarned": Schema.optional(StringishSchema),
+	"@DiscountPaid": Schema.optional(StringishSchema),
+	"@CommissionIncome": Schema.optional(StringishSchema),
+	"@CommissionIncomeWithVat": Schema.optional(StringishSchema),
+	"@CommissionOwed": Schema.optional(StringishSchema),
+	"@CommissionOwedWithVat": Schema.optional(StringishSchema),
+	"@InvoicingCostAmount": Schema.optional(StringishSchema),
+	"@InvoicedCostAmount": Schema.optional(StringishSchema),
+	"@InvoicingPriceAmount": Schema.optional(StringishSchema),
+	"@InvoicedPriceAmount": Schema.optional(StringishSchema),
+	"@DueToSupplier": Schema.optional(StringishSchema),
+	"@Paid": Schema.optional(StringishSchema),
+	"@PaidWithCreditCard": Schema.optional(StringishSchema),
+	"@DueByCustomer": Schema.optional(StringishSchema),
+	"@Cashed": Schema.optional(StringishSchema),
 });
 
 /** Deadline rows attached to a booked service (Booking.txt:11442-11456). */
-const ExportedDeadlineDetailApiSchema = v.object({
-	"@Code": v.optional(v.string()),
-	"@Description": v.optional(v.string()),
-	"@ExpireDate": v.optional(v.string()),
-	"@Status": v.optional(DeadlineStatusSchema),
-	"@User": v.optional(v.string()),
-	"@Notes": v.optional(v.string()),
-	"@MasterDataSetExtraInfo": v.optional(v.string()),
+const ExportedDeadlineDetailApiSchema = Schema.Struct({
+	"@Code": Schema.optional(Schema.String),
+	"@Description": Schema.optional(Schema.String),
+	"@ExpireDate": Schema.optional(Schema.String),
+	"@Status": Schema.optional(DeadlineStatusSchema),
+	"@User": Schema.optional(Schema.String),
+	"@Notes": Schema.optional(Schema.String),
+	"@MasterDataSetExtraInfo": Schema.optional(Schema.String),
 });
 
-const ExportedDeadlineDataApiSchema = v.object({
-	KeyValue: v.optional(StringishSchema),
-	DeadlineDetail: v.optional(ExportedDeadlineDetailApiSchema),
+const ExportedDeadlineDataApiSchema = Schema.Struct({
+	KeyValue: Schema.optional(StringishSchema),
+	DeadlineDetail: Schema.optional(ExportedDeadlineDetailApiSchema),
 });
 
 const ExportedDeadlineListApiSchema = listDetailApiSchema(
@@ -211,12 +214,12 @@ const ExportedDeadlineListApiSchema = listDetailApiSchema(
 );
 
 const commissionEntries = {
-	"@Percentage": v.optional(StringishSchema),
-	"@IsVatExcluded": v.optional(BoolishSchema),
-	"@VatCode": v.optional(v.string()),
-	"@ServiceAmountVatCode": v.optional(v.string()),
-	"@ApplyToVatExcludedService": v.optional(BoolishSchema),
-	Amount: v.optional(StringishSchema),
+	"@Percentage": Schema.optional(StringishSchema),
+	"@IsVatExcluded": Schema.optional(BoolishSchema),
+	"@VatCode": Schema.optional(Schema.String),
+	"@ServiceAmountVatCode": Schema.optional(Schema.String),
+	"@ApplyToVatExcludedService": Schema.optional(BoolishSchema),
+	Amount: Schema.optional(StringishSchema),
 } as const;
 
 /**
@@ -224,79 +227,79 @@ const commissionEntries = {
  * attribute table `CommissionIncomeDetail`. Both shapes are accepted: attributes
  * on the wrapper, or a nested singular detail.
  */
-export const CommissionIncomeDetailsApiSchema = v.object({
+export const CommissionIncomeDetailsApiSchema = Schema.Struct({
 	...commissionEntries,
-	"@Type": v.optional(CommissionIncomeTypeSchema),
-	CommissionIncomeDetail: v.optional(
-		v.object({
+	"@Type": Schema.optional(CommissionIncomeTypeSchema),
+	CommissionIncomeDetail: Schema.optional(
+		Schema.Struct({
 			...commissionEntries,
-			"@Type": v.optional(CommissionIncomeTypeSchema),
+			"@Type": Schema.optional(CommissionIncomeTypeSchema),
 		}),
 	),
 });
 
-export const CommissionOwedDetailsApiSchema = v.object({
+export const CommissionOwedDetailsApiSchema = Schema.Struct({
 	...commissionEntries,
-	"@Type": v.optional(CommissionOwedTypeSchema),
-	CommissionOwedDetail: v.optional(
-		v.object({
+	"@Type": Schema.optional(CommissionOwedTypeSchema),
+	CommissionOwedDetail: Schema.optional(
+		Schema.Struct({
 			...commissionEntries,
-			"@Type": v.optional(CommissionOwedTypeSchema),
+			"@Type": Schema.optional(CommissionOwedTypeSchema),
 		}),
 	),
 });
 
-const BookedServiceDataWireSchema = v.object({
-	"@RPH": v.string(),
-	"@ServiceCode": v.optional(v.string()),
-	AvesServiceType: v.optional(AvesServiceTypeSchema),
-	TOServiceType: v.optional(ToServiceTypeSchema),
-	TOSubServiceType: v.optional(ToSubServiceTypeSchema),
-	ToSubServiceType: v.optional(ToSubServiceTypeSchema),
-	FirstDescription: v.optional(v.string()),
-	SecondDescription: v.optional(v.string()),
-	StartDate: v.optional(v.string()),
-	EndDate: v.optional(v.string()),
-	CreationDate: v.optional(v.string()),
-	SellingType: v.optional(SellingTypeSchema),
-	Printable: v.optional(PrintableSchema),
-	Qty: v.optional(StringishSchema),
-	Pax: v.optional(StringishSchema),
-	ServiceStatus: v.optional(BookedServiceStatusSchema),
-	StatusDateTime: v.optional(v.string()),
-	CausalAccountingCode: v.optional(v.string()),
+const BookedServiceDataWireSchema = Schema.Struct({
+	"@RPH": Schema.String,
+	"@ServiceCode": Schema.optional(Schema.String),
+	AvesServiceType: Schema.optional(AvesServiceTypeSchema),
+	TOServiceType: Schema.optional(ToServiceTypeSchema),
+	TOSubServiceType: Schema.optional(ToSubServiceTypeSchema),
+	ToSubServiceType: Schema.optional(ToSubServiceTypeSchema),
+	FirstDescription: Schema.optional(Schema.String),
+	SecondDescription: Schema.optional(Schema.String),
+	StartDate: Schema.optional(Schema.String),
+	EndDate: Schema.optional(Schema.String),
+	CreationDate: Schema.optional(Schema.String),
+	SellingType: Schema.optional(SellingTypeSchema),
+	Printable: Schema.optional(PrintableSchema),
+	Qty: Schema.optional(StringishSchema),
+	Pax: Schema.optional(StringishSchema),
+	ServiceStatus: Schema.optional(BookedServiceStatusSchema),
+	StatusDateTime: Schema.optional(Schema.String),
+	CausalAccountingCode: Schema.optional(Schema.String),
 	/** Booking.txt:11312 documents no value list — the example shows `O`. */
-	RegimeType: v.optional(v.string()),
-	AgentCode: v.optional(v.string()),
-	BillingSubjectCode: v.optional(v.string()),
-	CollectionSubjectCode: v.optional(v.string()),
-	VoucherRegistryCode: v.optional(v.string()),
-	ServiceStatisticCode: v.optional(v.string()),
-	Referent: v.optional(v.string()),
-	Reference: v.optional(v.string()),
-	ReceiptOffertCode: v.optional(v.string()),
-	Exported: v.optional(BoolishSchema),
-	ReceiptVatCode: v.optional(v.string()),
-	CostVatCode: v.optional(v.string()),
-	CommissionOwedVatCode: v.optional(v.string()),
+	RegimeType: Schema.optional(Schema.String),
+	AgentCode: Schema.optional(Schema.String),
+	BillingSubjectCode: Schema.optional(Schema.String),
+	CollectionSubjectCode: Schema.optional(Schema.String),
+	VoucherRegistryCode: Schema.optional(Schema.String),
+	ServiceStatisticCode: Schema.optional(Schema.String),
+	Referent: Schema.optional(Schema.String),
+	Reference: Schema.optional(Schema.String),
+	ReceiptOffertCode: Schema.optional(Schema.String),
+	Exported: Schema.optional(BoolishSchema),
+	ReceiptVatCode: Schema.optional(Schema.String),
+	CostVatCode: Schema.optional(Schema.String),
+	CommissionOwedVatCode: Schema.optional(Schema.String),
 	/** Absent from the RS table; only ever seen as `OUR_AGENCY` in the example. */
-	CustomerPayAt: v.optional(v.string()),
-	PaidByCreditCardCompany: v.optional(v.string()),
-	LinkedServiceForCancellation: v.optional(v.string()),
-	AccommodationReference: v.optional(v.string()),
-	PolicySerial: v.optional(v.string()),
-	PolicyNumber: v.optional(StringishSchema),
-	FullTotalVolumeCost: v.optional(StringishSchema),
-	EstimatedTotalVolumeCost: v.optional(StringishSchema),
-	FinalTotalVolumeCost: v.optional(StringishSchema),
-	ReceiptsCurrencyCode: v.optional(v.string()),
-	CostsCurrencyCode: v.optional(v.string()),
-	AmountsDetail: v.optional(BookedServiceAmountsApiSchema),
-	AmountDetail: v.optional(BookedServiceAmountsApiSchema),
-	DeadlineList: v.optional(ExportedDeadlineListApiSchema),
-	CommissionIncomeDetails: v.optional(CommissionIncomeDetailsApiSchema),
-	CommissionOwedDetails: v.optional(CommissionOwedDetailsApiSchema),
-	NoteList: v.optional(ExportedNoteListApiSchema),
+	CustomerPayAt: Schema.optional(Schema.String),
+	PaidByCreditCardCompany: Schema.optional(Schema.String),
+	LinkedServiceForCancellation: Schema.optional(Schema.String),
+	AccommodationReference: Schema.optional(Schema.String),
+	PolicySerial: Schema.optional(Schema.String),
+	PolicyNumber: Schema.optional(StringishSchema),
+	FullTotalVolumeCost: Schema.optional(StringishSchema),
+	EstimatedTotalVolumeCost: Schema.optional(StringishSchema),
+	FinalTotalVolumeCost: Schema.optional(StringishSchema),
+	ReceiptsCurrencyCode: Schema.optional(Schema.String),
+	CostsCurrencyCode: Schema.optional(Schema.String),
+	AmountsDetail: Schema.optional(BookedServiceAmountsApiSchema),
+	AmountDetail: Schema.optional(BookedServiceAmountsApiSchema),
+	DeadlineList: Schema.optional(ExportedDeadlineListApiSchema),
+	CommissionIncomeDetails: Schema.optional(CommissionIncomeDetailsApiSchema),
+	CommissionOwedDetails: Schema.optional(CommissionOwedDetailsApiSchema),
+	NoteList: Schema.optional(ExportedNoteListApiSchema),
 });
 
 /**
@@ -304,14 +307,13 @@ const BookedServiceDataWireSchema = v.object({
  * `TOSubServiceType` normalizes to `ToSubServiceType` so it camelizes to
  * `toSubServiceType` rather than `tOSubServiceType`.
  */
-export const BookedServiceDataApiSchema = v.pipe(
+export const BookedServiceDataApiSchema = mapSchema(
 	BookedServiceDataWireSchema,
-	v.transform((service) =>
+	(service) =>
 		coalesceWireAliases(service, {
 			ToSubServiceType: ["ToSubServiceType", "TOSubServiceType"],
 			AmountsDetail: ["AmountsDetail", "AmountDetail"],
 		}),
-	),
 );
 
 export const BookedServicesApiSchema = listDetailApiSchema(
@@ -320,29 +322,29 @@ export const BookedServicesApiSchema = listDetailApiSchema(
 );
 
 /** File-level totals (Booking.txt:11500-11524). */
-export const BookedFileAmountsApiSchema = v.object({
-	"@CustomerTotalAmount": v.optional(StringishSchema),
-	"@CustomerTotalAmountWithVat": v.optional(StringishSchema),
-	"@CustomerDueAmount": v.optional(StringishSchema),
-	"@CustomerCommission": v.optional(StringishSchema),
-	"@CustomerCommissionWithVat": v.optional(StringishSchema),
-	"@CustomerDiscount": v.optional(StringishSchema),
-	"@CustomerBalanceAmount": v.optional(StringishSchema),
-	"@SupplierTotalAmount": v.optional(StringishSchema),
-	"@SupplierTotalAmountWithVat": v.optional(StringishSchema),
-	"@SupplierDueAmount": v.optional(StringishSchema),
-	"@SupplierCommission": v.optional(StringishSchema),
-	"@SupplierCommissionWithVat": v.optional(StringishSchema),
-	"@SupplierBalanceAmount": v.optional(StringishSchema),
-	"@TotalGainAmount": v.optional(StringishSchema),
-	"@TotalGainPercentage": v.optional(StringishSchema),
+export const BookedFileAmountsApiSchema = Schema.Struct({
+	"@CustomerTotalAmount": Schema.optional(StringishSchema),
+	"@CustomerTotalAmountWithVat": Schema.optional(StringishSchema),
+	"@CustomerDueAmount": Schema.optional(StringishSchema),
+	"@CustomerCommission": Schema.optional(StringishSchema),
+	"@CustomerCommissionWithVat": Schema.optional(StringishSchema),
+	"@CustomerDiscount": Schema.optional(StringishSchema),
+	"@CustomerBalanceAmount": Schema.optional(StringishSchema),
+	"@SupplierTotalAmount": Schema.optional(StringishSchema),
+	"@SupplierTotalAmountWithVat": Schema.optional(StringishSchema),
+	"@SupplierDueAmount": Schema.optional(StringishSchema),
+	"@SupplierCommission": Schema.optional(StringishSchema),
+	"@SupplierCommissionWithVat": Schema.optional(StringishSchema),
+	"@SupplierBalanceAmount": Schema.optional(StringishSchema),
+	"@TotalGainAmount": Schema.optional(StringishSchema),
+	"@TotalGainPercentage": Schema.optional(StringishSchema),
 });
 
 /** Customer print history (Booking.txt:11197-11207). */
-const ProcessedPrintDetailApiSchema = v.object({
-	"@PrintType": v.optional(PrintTypeSchema),
-	"@PrintProtocol": v.optional(StringishSchema),
-	"@PrintDate": v.optional(v.string()),
+const ProcessedPrintDetailApiSchema = Schema.Struct({
+	"@PrintType": Schema.optional(PrintTypeSchema),
+	"@PrintProtocol": Schema.optional(StringishSchema),
+	"@PrintDate": Schema.optional(Schema.String),
 });
 
 const CustomerProcessedPrintListApiSchema = listDetailApiSchema(
@@ -351,74 +353,76 @@ const CustomerProcessedPrintListApiSchema = listDetailApiSchema(
 );
 
 const instalmentEntries = {
-	"@ExpiryDate": v.optional(v.string()),
-	"@Amount": v.optional(StringishSchema),
-	"@CashedDate": v.optional(v.string()),
-	"@CashedAmount": v.optional(StringishSchema),
+	"@ExpiryDate": Schema.optional(Schema.String),
+	"@Amount": Schema.optional(StringishSchema),
+	"@CashedDate": Schema.optional(Schema.String),
+	"@CashedAmount": Schema.optional(StringishSchema),
 } as const;
 
 /** Customer instalment plans (Booking.txt:11387-11405). */
-const InstalmentPlanApiSchema = v.object({
-	"@Code": v.optional(v.string()),
-	Instalments: v.optional(
-		listDetailApiSchema("Instalment", v.object(instalmentEntries)),
+const InstalmentPlanApiSchema = Schema.Struct({
+	"@Code": Schema.optional(Schema.String),
+	Instalments: Schema.optional(
+		listDetailApiSchema("Instalment", Schema.Struct(instalmentEntries)),
 	),
 });
 
 /** Supplier instalment plans (Booking.txt:11409-11437). */
-const SupplierInstalmentPlanApiSchema = v.object({
-	"@Code": v.optional(v.string()),
-	"@SupplierMasterCode": v.optional(v.string()),
-	"@PaymentRefMasterCode": v.optional(v.string()),
-	"@CurrencyCode": v.optional(v.string()),
-	SupplierInstalments: v.optional(
-		listDetailApiSchema("SupplierInstalment", v.object(instalmentEntries)),
+const SupplierInstalmentPlanApiSchema = Schema.Struct({
+	"@Code": Schema.optional(Schema.String),
+	"@SupplierMasterCode": Schema.optional(Schema.String),
+	"@PaymentRefMasterCode": Schema.optional(Schema.String),
+	"@CurrencyCode": Schema.optional(Schema.String),
+	SupplierInstalments: Schema.optional(
+		listDetailApiSchema("SupplierInstalment", Schema.Struct(instalmentEntries)),
 	),
 });
 
-const ExportedBookingFileWireSchema = v.object({
-	"@BookingFileCode": v.optional(v.string()),
-	BookingFileCode: v.optional(v.string()),
-	Description: v.optional(v.string()),
-	BookingFileStatus: v.optional(BookingFileStatusApiSchema),
-	LastModificationDate: v.optional(v.string()),
-	CreationDate: v.optional(v.string()),
-	StartDate: v.optional(v.string()),
-	EndDate: v.optional(v.string()),
-	CustomerRecordCode: v.optional(v.string()),
+const ExportedBookingFileWireSchema = Schema.Struct({
+	"@BookingFileCode": Schema.optional(Schema.String),
+	BookingFileCode: Schema.optional(Schema.String),
+	Description: Schema.optional(Schema.String),
+	BookingFileStatus: Schema.optional(BookingFileStatusApiSchema),
+	LastModificationDate: Schema.optional(Schema.String),
+	CreationDate: Schema.optional(Schema.String),
+	StartDate: Schema.optional(Schema.String),
+	EndDate: Schema.optional(Schema.String),
+	CustomerRecordCode: Schema.optional(Schema.String),
 	// AVES spells this "FirstConfemationDate" on the wire.
-	FirstConfemationDate: v.optional(v.string()),
-	FirstConfirmationDate: v.optional(v.string()),
-	BillingSubjectCode: v.optional(v.string()),
-	CollectionSubjectCode: v.optional(v.string()),
-	PaxNumber: v.optional(StringishSchema),
-	User: v.optional(v.string()),
-	TravelAgencyCode: v.optional(v.string()),
-	Applicant: v.optional(v.string()),
-	Reference: v.optional(v.string()),
-	CustomerPromoterCode: v.optional(v.string()),
-	PackageCode: v.optional(v.string()),
-	Nation: v.optional(v.string()),
-	Destination: v.optional(v.string()),
-	StatisticCodes: v.optional(ExportedStatisticCodesApiSchema),
-	CurrencyCode: v.optional(v.string()),
-	EInvoicingDetail: v.optional(EInvoicingDetailApiSchema),
-	CustomerProcessedPrintList: v.optional(CustomerProcessedPrintListApiSchema),
-	PassengerList: v.optional(PassengerListApiSchema),
-	BookedServices: v.optional(BookedServicesApiSchema),
-	PaymentList: v.optional(ExportedPaymentListApiSchema),
-	NoteList: v.optional(ExportedNoteListApiSchema),
-	InstalmentPlanList: v.optional(
+	FirstConfemationDate: Schema.optional(Schema.String),
+	FirstConfirmationDate: Schema.optional(Schema.String),
+	BillingSubjectCode: Schema.optional(Schema.String),
+	CollectionSubjectCode: Schema.optional(Schema.String),
+	PaxNumber: Schema.optional(StringishSchema),
+	User: Schema.optional(Schema.String),
+	TravelAgencyCode: Schema.optional(Schema.String),
+	Applicant: Schema.optional(Schema.String),
+	Reference: Schema.optional(Schema.String),
+	CustomerPromoterCode: Schema.optional(Schema.String),
+	PackageCode: Schema.optional(Schema.String),
+	Nation: Schema.optional(Schema.String),
+	Destination: Schema.optional(Schema.String),
+	StatisticCodes: Schema.optional(ExportedStatisticCodesApiSchema),
+	CurrencyCode: Schema.optional(Schema.String),
+	EInvoicingDetail: Schema.optional(EInvoicingDetailApiSchema),
+	CustomerProcessedPrintList: Schema.optional(
+		CustomerProcessedPrintListApiSchema,
+	),
+	PassengerList: Schema.optional(PassengerListApiSchema),
+	BookedServices: Schema.optional(BookedServicesApiSchema),
+	PaymentList: Schema.optional(ExportedPaymentListApiSchema),
+	NoteList: Schema.optional(ExportedNoteListApiSchema),
+	InstalmentPlanList: Schema.optional(
 		listDetailApiSchema("InstalmentPlan", InstalmentPlanApiSchema),
 	),
-	SupplierInstalmentPlanList: v.optional(
+	SupplierInstalmentPlanList: Schema.optional(
 		listDetailApiSchema(
 			"SupplierInstalmentPlan",
 			SupplierInstalmentPlanApiSchema,
 		),
 	),
-	DeadlineList: v.optional(ExportedDeadlineListApiSchema),
-	BookedFileAmounts: v.optional(BookedFileAmountsApiSchema),
+	DeadlineList: Schema.optional(ExportedDeadlineListApiSchema),
+	BookedFileAmounts: Schema.optional(BookedFileAmountsApiSchema),
 });
 
 /**
@@ -426,14 +430,13 @@ const ExportedBookingFileWireSchema = v.object({
  * `BookingFileCode` is an attribute here (Booking.txt:11705) but an element in
  * BOOKEDFILE responses; both spellings coalesce onto the attribute.
  */
-export const ExportedBookingFileApiSchema = v.pipe(
+export const ExportedBookingFileApiSchema = mapSchema(
 	ExportedBookingFileWireSchema,
-	v.transform((file) =>
+	(file) =>
 		coalesceWireAliases(file, {
 			"@BookingFileCode": ["@BookingFileCode", "BookingFileCode"],
 			FirstConfirmationDate: ["FirstConfirmationDate", "FirstConfemationDate"],
 		}),
-	),
 );
 
 // ---------------------------------------------------------------------------
@@ -441,53 +444,53 @@ export const ExportedBookingFileApiSchema = v.pipe(
 // ---------------------------------------------------------------------------
 
 const codeDescriptionEntries = {
-	"@Code": v.optional(v.string()),
-	"@Description": v.optional(v.string()),
+	"@Code": Schema.optional(Schema.String),
+	"@Description": Schema.optional(Schema.String),
 } as const;
 
-const CodeDescriptionApiSchema = v.object(codeDescriptionEntries);
+const CodeDescriptionApiSchema = Schema.Struct(codeDescriptionEntries);
 
 const codeDescriptionList = (detailKey: string) =>
 	listDetailApiSchema(detailKey, CodeDescriptionApiSchema);
 
-const VatDetailApiSchema = v.object({
+const VatDetailApiSchema = Schema.Struct({
 	...codeDescriptionEntries,
-	"@Rate": v.optional(StringishSchema),
-	"@ExtendedDescription": v.optional(v.string()),
+	"@Rate": Schema.optional(StringishSchema),
+	"@ExtendedDescription": Schema.optional(Schema.String),
 });
 
-const NationDetailApiSchema = v.object({
-	"@Code": v.optional(v.string()),
-	"@Name": v.optional(v.string()),
-	"@IsoCode": v.optional(v.string()),
-	"@Territoriality": v.optional(TerritorialitySchema),
+const NationDetailApiSchema = Schema.Struct({
+	"@Code": Schema.optional(Schema.String),
+	"@Name": Schema.optional(Schema.String),
+	"@IsoCode": Schema.optional(Schema.String),
+	"@Territoriality": Schema.optional(TerritorialitySchema),
 });
 
-const TravelAgentDetailApiSchema = v.object({
-	"@Code": v.optional(v.string()),
-	"@Name": v.optional(v.string()),
-	"@BirthDate": v.optional(v.string()),
-	"@ExtendedDescription": v.optional(v.string()),
-	"@ReferenceAgencyCode": v.optional(v.string()),
-	"@Enabled": v.optional(BoolishSchema),
+const TravelAgentDetailApiSchema = Schema.Struct({
+	"@Code": Schema.optional(Schema.String),
+	"@Name": Schema.optional(Schema.String),
+	"@BirthDate": Schema.optional(Schema.String),
+	"@ExtendedDescription": Schema.optional(Schema.String),
+	"@ReferenceAgencyCode": Schema.optional(Schema.String),
+	"@Enabled": Schema.optional(BoolishSchema),
 });
 
-const ProgramDetailApiSchema = v.object({
+const ProgramDetailApiSchema = Schema.Struct({
 	...codeDescriptionEntries,
-	"@ExtendedDescription": v.optional(v.string()),
+	"@ExtendedDescription": Schema.optional(Schema.String),
 });
 
-const StatisticDetailApiSchema = v.object({
+const StatisticDetailApiSchema = Schema.Struct({
 	...codeDescriptionEntries,
-	"@Type": v.optional(StatisticTypeSchema),
+	"@Type": Schema.optional(StatisticTypeSchema),
 });
 
-const UserDetailApiSchema = v.object({
+const UserDetailApiSchema = Schema.Struct({
 	...codeDescriptionEntries,
-	"@OfficeCode": v.optional(v.string()),
-	"@OfficeDescription": v.optional(v.string()),
-	"@SectorCode": v.optional(v.string()),
-	"@SectorDescription": v.optional(v.string()),
+	"@OfficeCode": Schema.optional(Schema.String),
+	"@OfficeDescription": Schema.optional(Schema.String),
+	"@SectorCode": Schema.optional(Schema.String),
+	"@SectorDescription": Schema.optional(Schema.String),
 });
 
 /**
@@ -497,63 +500,67 @@ const UserDetailApiSchema = v.object({
  */
 const ExportedMasterDataApiSchema = MasterRecordDetailApiValidationSchema;
 
-const MasterDataSetExtraInfoApiSchema = v.object({
-	CategoryList: v.optional(codeDescriptionList("CategoryDetail")),
-	NetworkList: v.optional(codeDescriptionList("NetworkDetail")),
-	LanguageList: v.optional(codeDescriptionList("LanguageDetail")),
-	DiscountList: v.optional(codeDescriptionList("DiscountDetail")),
-	ActivityList: v.optional(codeDescriptionList("ActivityDetail")),
-	ZoneList: v.optional(codeDescriptionList("ZoneDetail")),
-	BookingPayConditionList: v.optional(
+const MasterDataSetExtraInfoApiSchema = Schema.Struct({
+	CategoryList: Schema.optional(codeDescriptionList("CategoryDetail")),
+	NetworkList: Schema.optional(codeDescriptionList("NetworkDetail")),
+	LanguageList: Schema.optional(codeDescriptionList("LanguageDetail")),
+	DiscountList: Schema.optional(codeDescriptionList("DiscountDetail")),
+	ActivityList: Schema.optional(codeDescriptionList("ActivityDetail")),
+	ZoneList: Schema.optional(codeDescriptionList("ZoneDetail")),
+	BookingPayConditionList: Schema.optional(
 		codeDescriptionList("BookingPayConditionDetail"),
 	),
 });
 
-const ExportExtraInfoWireSchema = v.object({
-	MasterDataSet: v.optional(
+const ExportExtraInfoWireSchema = Schema.Struct({
+	MasterDataSet: Schema.optional(
 		listDetailApiSchema("MasterData", ExportedMasterDataApiSchema),
 	),
-	CurrencyList: v.optional(codeDescriptionList("CurrencyDetail")),
-	VatList: v.optional(listDetailApiSchema("VatDetail", VatDetailApiSchema)),
-	NationList: v.optional(
+	CurrencyList: Schema.optional(codeDescriptionList("CurrencyDetail")),
+	VatList: Schema.optional(
+		listDetailApiSchema("VatDetail", VatDetailApiSchema),
+	),
+	NationList: Schema.optional(
 		listDetailApiSchema("NationDetail", NationDetailApiSchema),
 	),
-	TravelAgentList: v.optional(
+	TravelAgentList: Schema.optional(
 		listDetailApiSchema("TravelAgentDetail", TravelAgentDetailApiSchema),
 	),
-	ProgramList: v.optional(
+	ProgramList: Schema.optional(
 		listDetailApiSchema("ProgramDetail", ProgramDetailApiSchema),
 	),
-	StatisticList: v.optional(
+	StatisticList: Schema.optional(
 		listDetailApiSchema("StatisticDetail", StatisticDetailApiSchema),
 	),
-	PriceOffertList: v.optional(codeDescriptionList("PriceOffertDetail")),
+	PriceOffertList: Schema.optional(codeDescriptionList("PriceOffertDetail")),
 	// Documented as UserList, sent as UsersList (Booking.txt:11600, :11955).
-	UserList: v.optional(listDetailApiSchema("UserDetail", UserDetailApiSchema)),
-	UsersList: v.optional(listDetailApiSchema("UserDetail", UserDetailApiSchema)),
-	PassengerCategoryList: v.optional(
+	UserList: Schema.optional(
+		listDetailApiSchema("UserDetail", UserDetailApiSchema),
+	),
+	UsersList: Schema.optional(
+		listDetailApiSchema("UserDetail", UserDetailApiSchema),
+	),
+	PassengerCategoryList: Schema.optional(
 		codeDescriptionList("PassengerCategoryDetail"),
 	),
-	MasterDataSetExtraInfo: v.optional(MasterDataSetExtraInfoApiSchema),
+	MasterDataSetExtraInfo: Schema.optional(MasterDataSetExtraInfoApiSchema),
 });
 
 /**
  * ExtraInfo — the lookup tables the exported codes resolve against.
  * `nationList[].territoriality` is what decides a booking's VAT regime.
  */
-export const ExportExtraInfoApiSchema = v.pipe(
+export const ExportExtraInfoApiSchema = mapSchema(
 	ExportExtraInfoWireSchema,
-	v.transform((info) =>
-		coalesceWireAliases(info, { UserList: ["UserList", "UsersList"] }),
-	),
+	(info) => coalesceWireAliases(info, { UserList: ["UserList", "UsersList"] }),
 );
 
 export const ExportBookingDataResponseSchema = createResponseSchema(
-	v.object({
+	Schema.Struct({
 		RsStatus: RsStatusSchema,
-		BookingFileList: v.optional(
+		BookingFileList: Schema.optional(
 			listDetailApiSchema("BookingFileData", ExportedBookingFileApiSchema),
 		),
-		ExtraInfo: v.optional(ExportExtraInfoApiSchema),
+		ExtraInfo: Schema.optional(ExportExtraInfoApiSchema),
 	}),
 );

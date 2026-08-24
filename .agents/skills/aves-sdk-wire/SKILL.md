@@ -17,9 +17,9 @@ description: AVES XML wire encoding for aves-sdk — WireShape attrs, PascalCase
 
 ## Outbound path
 
-1. Valibot validates camelCase input (after schema-owned facade coalesce)
+1. Effect Schema validates camelCase input (after schema-owned facade coalesce)
 2. `createApiSchema(schema, shape)` → **`toWireBody`** — **single** shape-driven walk (list wrap + `paxAssociated` normalize + Pascal/`@` keys)
-3. `invokeOp` looks up `AVES_OPS`, adds `RqHeader`, optional `bodyKey`, POSTs XML
+3. Transport looks up `AVES_OPS`, adds `RqHeader`, optional `bodyKey`, POSTs XML
 
 Prefer `createWireSchemaPair(inputSchema, shape)` when you need both `api` + PascalCase `validation` schemas.
 
@@ -71,5 +71,5 @@ Attrs/children describe each item; encode synthesizes the Detail wrapper so `Wir
 ## Related
 
 - Response flatten / facade aliases → `aves-sdk-schemas`
-- parse/safeParse / Result → `aves-sdk-validation`
+- Result / tagged errors → `aves-sdk-validation`
 - New op → `aves-sdk-add-op`

@@ -9,9 +9,9 @@ description: Index for aves-sdk project skills. Use when starting work in this r
 
 Skills live in **`.agents/skills/`** (symlinked for Cursor / Claude Code / Codex).
 
-TypeScript SDK for AVES XML REST. **yarn** · Valibot · `tsdown` · Biome.
+TypeScript SDK for AVES XML REST. **yarn** · **Effect Schema** · **`@effect/platform`** · `tsdown` · Biome.
 
-Before changing Valibot APIs, check Context7.
+Before changing Effect Schema / `@effect/platform` APIs, check Context7.
 
 ## Optional skills (mirrors of AGENTS.md sections)
 
@@ -19,8 +19,8 @@ Before changing Valibot APIs, check Context7.
 | ----- | ---- |
 | `aves-sdk-architecture` | Client layers, domains, DI, `AVES_OPS`, transport split |
 | `aves-sdk-wire` | WireShape, PascalCase/@attrs, fused `toWireBody` |
-| `aves-sdk-schemas` | Valibot helpers, flatten DX, facade aliases |
-| `aves-sdk-validation` | Result, AvesError, parse/safeParse, rsStatus |
+| `aves-sdk-schemas` | Effect Schema helpers, flatten DX, facade aliases |
+| `aves-sdk-validation` | Result, tagged `AvesError`, `decodeUnknownAves`, rsStatus |
 | `aves-sdk-style` | Biome, ESM, enums, Infer types, Vitest / bench |
 | `aves-sdk-add-op` | Adding an API op end-to-end + verify/release |
 

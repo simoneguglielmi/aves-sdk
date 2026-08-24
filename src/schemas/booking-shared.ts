@@ -1,4 +1,4 @@
-import type * as v from "valibot";
+import type { InferOutput } from "../effect/infer.js";
 import {
 	BookingFileStatusSchema,
 	BookingFileStatusWire,
@@ -57,14 +57,14 @@ const statusAliasToCanonical = {
 
 export type CanonicalBookingFileStatus =
 	| Exclude<
-			v.InferOutput<typeof BookingFileStatusWireSchema>,
+			InferOutput<typeof BookingFileStatusWireSchema>,
 			keyof typeof statusAliasToCanonical
 	  >
 	| (typeof statusAliasToCanonical)[keyof typeof statusAliasToCanonical];
 
 /** Normalize BOOKEDFILE status wire aliases to canonical SDK values. */
 export function canonicalizeBookingFileStatus(
-	value: v.InferOutput<typeof BookingFileStatusWireSchema>,
+	value: InferOutput<typeof BookingFileStatusWireSchema>,
 ): CanonicalBookingFileStatus {
 	if (value in statusAliasToCanonical)
 		return statusAliasToCanonical[value as keyof typeof statusAliasToCanonical];

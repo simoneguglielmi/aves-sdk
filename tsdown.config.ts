@@ -13,8 +13,8 @@ export default defineConfig({
 	copy: ["CHANGELOG.md"],
 	deps: {
 		neverBundle: [
-			"valibot",
-			"undici",
+			"effect",
+			"@effect/platform",
 			"fast-xml-parser",
 			"fast-xml-builder",
 		],

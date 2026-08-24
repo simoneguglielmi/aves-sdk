@@ -1,5 +1,6 @@
-import * as v from "valibot";
+import { Schema } from "effect";
 import { describe, expect, expectTypeOf, it } from "vitest";
+import { parse } from "../effect/schema-parse.js";
 import {
 	type Camelize,
 	camelToPascalKeys,
@@ -363,15 +364,19 @@ describe("wireKey", () => {
 describe("createApiSchema / createApiValidationSchema key agreement (finding #8)", () => {
 	it("agree on rph's wire key instead of drifting (@RPH vs @Rph)", () => {
 		const shape = attrsWire("rph");
-		const RphInputSchema = v.object({ rph: v.string() });
+		const RphInputSchema = Schema.Struct({ rph: Schema.String });
 
-		const encoded = v.parse(createApiSchema(RphInputSchema, shape), {
+		const encoded = parse(createApiSchema(RphInputSchema, shape), {
 			rph: "001",
 		});
 		const validationSchema = createApiValidationSchema(RphInputSchema, shape);
 
 		const encodedKeys = Object.keys(encoded as object);
-		const validationKeys = Object.keys(validationSchema.entries);
+		const fields =
+			"fields" in validationSchema
+				? (validationSchema.fields as Record<string, unknown>)
+				: {};
+		const validationKeys = Object.keys(fields);
 
 		expect(validationKeys).toEqual(encodedKeys);
 		expect(encodedKeys).toEqual(["@RPH"]);

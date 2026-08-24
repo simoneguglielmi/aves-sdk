@@ -1,7 +1,8 @@
-import * as v from "valibot";
+import { Schema } from "effect";
 import {
 	coalesceWireAliases,
 	listDetailApiSchema,
+	mapSchema,
 } from "../utils/schema-transform.js";
 import {
 	AvesServiceTypeSchema,
@@ -13,22 +14,22 @@ import {
 import { StringishSchema } from "./common.js";
 
 /** BookingFileStatus in BOOKEDFILE responses — aliases normalized to canonical values */
-export const BookingFileStatusApiSchema = v.pipe(
-	v.object({
+export const BookingFileStatusApiSchema = mapSchema(
+	Schema.Struct({
 		"@Value": BookingFileStatusWireSchema,
-		"@ExpiredDate": v.optional(v.string()),
-		"@ExpireDate": v.optional(v.string()),
+		"@ExpiredDate": Schema.optional(Schema.String),
+		"@ExpireDate": Schema.optional(Schema.String),
 	}),
-	v.transform((status) => ({
+	(status) => ({
 		...coalesceWireAliases(status, {
 			"@ExpiredDate": ["@ExpiredDate", "@ExpireDate"],
 		}),
 		"@Value": canonicalizeBookingFileStatus(status["@Value"]),
-	})),
+	}),
 );
 
-export const PricePerPaxDetailApiSchema = v.object({
-	"@PaxRef": v.string(),
+export const PricePerPaxDetailApiSchema = Schema.Struct({
+	"@PaxRef": Schema.String,
 	"@Price": StringishSchema,
 });
 
@@ -37,66 +38,65 @@ export const PaxPriceListApiSchema = listDetailApiSchema(
 	PricePerPaxDetailApiSchema,
 );
 
-export const ServiceTotalAmountDetailApiSchema = v.object({
-	"@CommissionCode": v.optional(v.string()),
-	"@CommissionPercentage": v.optional(StringishSchema),
-	"@CommissionAmount": v.optional(StringishSchema),
-	"@PriceListCode": v.optional(v.string()),
-	"@CostListCode": v.optional(v.string()),
-	"@ServiceTotalPrice": v.optional(StringishSchema),
-	PaxPriceList: v.optional(PaxPriceListApiSchema),
+export const ServiceTotalAmountDetailApiSchema = Schema.Struct({
+	"@CommissionCode": Schema.optional(Schema.String),
+	"@CommissionPercentage": Schema.optional(StringishSchema),
+	"@CommissionAmount": Schema.optional(StringishSchema),
+	"@PriceListCode": Schema.optional(Schema.String),
+	"@CostListCode": Schema.optional(Schema.String),
+	"@ServiceTotalPrice": Schema.optional(StringishSchema),
+	PaxPriceList: Schema.optional(PaxPriceListApiSchema),
 });
 
-export const SupplierInfoApiSchema = v.object({
-	"@Code": v.optional(v.string()),
-	"@Name": v.optional(v.string()),
-	"@Email": v.optional(v.string()),
-	"@LanguageCode": v.optional(v.string()),
+export const SupplierInfoApiSchema = Schema.Struct({
+	"@Code": Schema.optional(Schema.String),
+	"@Name": Schema.optional(Schema.String),
+	"@Email": Schema.optional(Schema.String),
+	"@LanguageCode": Schema.optional(Schema.String),
 });
 
-export const WebStatisticApiSchema = v.object({
-	"@Code": v.optional(v.string()),
-	"@Description": v.optional(v.string()),
+export const WebStatisticApiSchema = Schema.Struct({
+	"@Code": Schema.optional(Schema.String),
+	"@Description": Schema.optional(Schema.String),
 });
 
 /** Wire schema — accepts AVES dialect aliases, then normalizes */
-const BookedServiceDetailWireSchema = v.object({
-	"@RPH": v.string(),
-	"@ServiceCode": v.optional(v.string()),
-	"@FromExternalProvider": v.optional(StringishSchema),
-	"@isFromExternalProvider": v.optional(StringishSchema),
-	AvesServiceType: v.optional(AvesServiceTypeSchema),
-	TOServiceType: v.optional(ToServiceTypeSchema),
-	FirstDescription: v.optional(v.string()),
-	SecondDescription: v.optional(v.string()),
-	ThirdDescription: v.optional(v.string()),
-	FourthDescription: v.optional(v.string()),
-	ServiceStatus: v.optional(BookedServiceStatusSchema),
-	StartDate: v.optional(v.string()),
-	EndDate: v.optional(v.string()),
-	Qty: v.optional(StringishSchema),
-	Pax: v.optional(StringishSchema),
-	PeriodType: v.optional(v.string()),
-	PaxMultiplier: v.optional(v.string()),
-	ExternalProviderCode: v.optional(v.string()),
-	WebStatisticCode: v.optional(v.string()),
-	WebStatisticDescription: v.optional(v.string()),
-	WebStatistic: v.optional(WebStatisticApiSchema),
-	SupplierInfo: v.optional(SupplierInfoApiSchema),
-	ServiceTotalAmountDetail: v.optional(ServiceTotalAmountDetailApiSchema),
+const BookedServiceDetailWireSchema = Schema.Struct({
+	"@RPH": Schema.String,
+	"@ServiceCode": Schema.optional(Schema.String),
+	"@FromExternalProvider": Schema.optional(StringishSchema),
+	"@isFromExternalProvider": Schema.optional(StringishSchema),
+	AvesServiceType: Schema.optional(AvesServiceTypeSchema),
+	TOServiceType: Schema.optional(ToServiceTypeSchema),
+	FirstDescription: Schema.optional(Schema.String),
+	SecondDescription: Schema.optional(Schema.String),
+	ThirdDescription: Schema.optional(Schema.String),
+	FourthDescription: Schema.optional(Schema.String),
+	ServiceStatus: Schema.optional(BookedServiceStatusSchema),
+	StartDate: Schema.optional(Schema.String),
+	EndDate: Schema.optional(Schema.String),
+	Qty: Schema.optional(StringishSchema),
+	Pax: Schema.optional(StringishSchema),
+	PeriodType: Schema.optional(Schema.String),
+	PaxMultiplier: Schema.optional(Schema.String),
+	ExternalProviderCode: Schema.optional(Schema.String),
+	WebStatisticCode: Schema.optional(Schema.String),
+	WebStatisticDescription: Schema.optional(Schema.String),
+	WebStatistic: Schema.optional(WebStatisticApiSchema),
+	SupplierInfo: Schema.optional(SupplierInfoApiSchema),
+	ServiceTotalAmountDetail: Schema.optional(ServiceTotalAmountDetailApiSchema),
 });
 
 /** BookedServiceDetail — single fromExternalProvider after normalize */
-export const BookedServiceDetailApiSchema = v.pipe(
+export const BookedServiceDetailApiSchema = mapSchema(
 	BookedServiceDetailWireSchema,
-	v.transform((service) =>
+	(service) =>
 		coalesceWireAliases(service, {
 			"@FromExternalProvider": [
 				"@FromExternalProvider",
 				"@isFromExternalProvider",
 			],
 		}),
-	),
 );
 
 export const BookedServiceListApiSchema = listDetailApiSchema(
@@ -105,32 +105,32 @@ export const BookedServiceListApiSchema = listDetailApiSchema(
 );
 
 /** TotalAmountDetail — attributes on BOOKEDFILE */
-export const TotalAmountDetailApiSchema = v.object({
-	"@CurrencyCode": v.optional(v.string()),
-	"@TotalAmountBeforeDiscount": v.optional(StringishSchema),
-	"@TotalAmountAfterDiscount": v.optional(StringishSchema),
-	"@TotalDiscount": v.optional(StringishSchema),
-	"@TotalAmountWithoutVat": v.optional(StringishSchema),
-	"@DueAmount": v.optional(StringishSchema),
-	"@PaiedAmount": v.optional(StringishSchema),
-	"@Balance": v.optional(StringishSchema),
+export const TotalAmountDetailApiSchema = Schema.Struct({
+	"@CurrencyCode": Schema.optional(Schema.String),
+	"@TotalAmountBeforeDiscount": Schema.optional(StringishSchema),
+	"@TotalAmountAfterDiscount": Schema.optional(StringishSchema),
+	"@TotalDiscount": Schema.optional(StringishSchema),
+	"@TotalAmountWithoutVat": Schema.optional(StringishSchema),
+	"@DueAmount": Schema.optional(StringishSchema),
+	"@PaiedAmount": Schema.optional(StringishSchema),
+	"@Balance": Schema.optional(StringishSchema),
 });
 
-export const PassengerDetailApiSchema = v.object({
-	"@RPH": v.string(),
-	"@RoomRPH": v.optional(v.string()),
-	"@BillingHolder": v.optional(StringishSchema),
-	Name: v.optional(v.string()),
-	CategoryCode: v.optional(v.string()),
-	Sex: v.optional(v.string()),
-	BirthDate: v.optional(v.string()),
-	BirthPlace: v.optional(v.string()),
-	NationCode: v.optional(v.string()),
-	CitizenshipCode: v.optional(v.string()),
-	FiscalCode: v.optional(v.string()),
-	PhoneNumber: v.optional(v.string()),
-	EMail: v.optional(v.string()),
-	MasterRecordCode: v.optional(v.string()),
+export const PassengerDetailApiSchema = Schema.Struct({
+	"@RPH": Schema.String,
+	"@RoomRPH": Schema.optional(Schema.String),
+	"@BillingHolder": Schema.optional(StringishSchema),
+	Name: Schema.optional(Schema.String),
+	CategoryCode: Schema.optional(Schema.String),
+	Sex: Schema.optional(Schema.String),
+	BirthDate: Schema.optional(Schema.String),
+	BirthPlace: Schema.optional(Schema.String),
+	NationCode: Schema.optional(Schema.String),
+	CitizenshipCode: Schema.optional(Schema.String),
+	FiscalCode: Schema.optional(Schema.String),
+	PhoneNumber: Schema.optional(Schema.String),
+	EMail: Schema.optional(Schema.String),
+	MasterRecordCode: Schema.optional(Schema.String),
 });
 
 export const PassengerListApiSchema = listDetailApiSchema(
@@ -138,24 +138,23 @@ export const PassengerListApiSchema = listDetailApiSchema(
 	PassengerDetailApiSchema,
 );
 
-const FinancialDeadlineDetailWireSchema = v.object({
-	"@ReschedulingCode": v.optional(v.string()),
-	"@ExpireDate": v.optional(v.string()),
-	"@TotalAmount": v.optional(StringishSchema),
-	ReschedulingCode: v.optional(v.string()),
-	ExpireDate: v.optional(v.string()),
-	TotalAmount: v.optional(StringishSchema),
+const FinancialDeadlineDetailWireSchema = Schema.Struct({
+	"@ReschedulingCode": Schema.optional(Schema.String),
+	"@ExpireDate": Schema.optional(Schema.String),
+	"@TotalAmount": Schema.optional(StringishSchema),
+	ReschedulingCode: Schema.optional(Schema.String),
+	ExpireDate: Schema.optional(Schema.String),
+	TotalAmount: Schema.optional(StringishSchema),
 });
 
-export const FinancialDeadlineDetailApiSchema = v.pipe(
+export const FinancialDeadlineDetailApiSchema = mapSchema(
 	FinancialDeadlineDetailWireSchema,
-	v.transform((deadline) =>
+	(deadline) =>
 		coalesceWireAliases(deadline, {
 			"@ReschedulingCode": ["@ReschedulingCode", "ReschedulingCode"],
 			"@ExpireDate": ["@ExpireDate", "ExpireDate"],
 			"@TotalAmount": ["@TotalAmount", "TotalAmount"],
 		}),
-	),
 );
 
 export const FinancialDeadlineListApiSchema = listDetailApiSchema(
@@ -163,11 +162,11 @@ export const FinancialDeadlineListApiSchema = listDetailApiSchema(
 	FinancialDeadlineDetailApiSchema,
 );
 
-export const StoredDocumentDetailApiSchema = v.object({
-	DocumentRefCode: v.optional(v.string()),
-	DocumentType: v.optional(v.string()),
-	DocumentName: v.optional(v.string()),
-	ArchiviationDescription: v.optional(v.string()),
+export const StoredDocumentDetailApiSchema = Schema.Struct({
+	DocumentRefCode: Schema.optional(Schema.String),
+	DocumentType: Schema.optional(Schema.String),
+	DocumentName: Schema.optional(Schema.String),
+	ArchiviationDescription: Schema.optional(Schema.String),
 });
 
 export const StoredDocumentsListApiSchema = listDetailApiSchema(
@@ -175,10 +174,10 @@ export const StoredDocumentsListApiSchema = listDetailApiSchema(
 	StoredDocumentDetailApiSchema,
 );
 
-export const PrintableDocumentDetailApiSchema = v.object({
-	DocumentType: v.optional(v.string()),
-	DocumentName: v.optional(v.string()),
-	Enabled: v.optional(StringishSchema),
+export const PrintableDocumentDetailApiSchema = Schema.Struct({
+	DocumentType: Schema.optional(Schema.String),
+	DocumentName: Schema.optional(Schema.String),
+	Enabled: Schema.optional(StringishSchema),
 });
 
 export const PrintableDocumentsListApiSchema = listDetailApiSchema(
@@ -186,32 +185,32 @@ export const PrintableDocumentsListApiSchema = listDetailApiSchema(
 	PrintableDocumentDetailApiSchema,
 );
 
-const BookingFileDetailWireSchema = v.object({
-	"@BookingFileCode": v.optional(v.string()),
-	BookingFileCode: v.optional(v.string()),
-	CustomerRecordCode: v.optional(v.string()),
-	CustomerName: v.optional(v.string()),
-	CustomerEmail: v.optional(v.string()),
-	TravelAgencyName: v.optional(v.string()),
-	TravelAgencyEmail: v.optional(v.string()),
-	BookingFileStatus: v.optional(BookingFileStatusApiSchema),
-	Description: v.optional(v.string()),
-	Nation: v.optional(v.string()),
-	Destination: v.optional(v.string()),
-	CreationDate: v.optional(v.string()),
-	FirstConfirmationDate: v.optional(v.string()),
-	StartDate: v.optional(v.string()),
-	EndDate: v.optional(v.string()),
-	PackageCode: v.optional(v.string()),
-	BookedServiceList: v.optional(BookedServiceListApiSchema),
-	TotalAmountDetail: v.optional(TotalAmountDetailApiSchema),
-	PaxNumber: v.optional(StringishSchema),
-	PassengerList: v.optional(PassengerListApiSchema),
-	Reference: v.optional(v.string()),
-	ClerkName: v.optional(v.string()),
-	StoredDocumentsList: v.optional(StoredDocumentsListApiSchema),
-	PrintableDocumentsList: v.optional(PrintableDocumentsListApiSchema),
-	FinancialDeadlineList: v.optional(FinancialDeadlineListApiSchema),
+const BookingFileDetailWireSchema = Schema.Struct({
+	"@BookingFileCode": Schema.optional(Schema.String),
+	BookingFileCode: Schema.optional(Schema.String),
+	CustomerRecordCode: Schema.optional(Schema.String),
+	CustomerName: Schema.optional(Schema.String),
+	CustomerEmail: Schema.optional(Schema.String),
+	TravelAgencyName: Schema.optional(Schema.String),
+	TravelAgencyEmail: Schema.optional(Schema.String),
+	BookingFileStatus: Schema.optional(BookingFileStatusApiSchema),
+	Description: Schema.optional(Schema.String),
+	Nation: Schema.optional(Schema.String),
+	Destination: Schema.optional(Schema.String),
+	CreationDate: Schema.optional(Schema.String),
+	FirstConfirmationDate: Schema.optional(Schema.String),
+	StartDate: Schema.optional(Schema.String),
+	EndDate: Schema.optional(Schema.String),
+	PackageCode: Schema.optional(Schema.String),
+	BookedServiceList: Schema.optional(BookedServiceListApiSchema),
+	TotalAmountDetail: Schema.optional(TotalAmountDetailApiSchema),
+	PaxNumber: Schema.optional(StringishSchema),
+	PassengerList: Schema.optional(PassengerListApiSchema),
+	Reference: Schema.optional(Schema.String),
+	ClerkName: Schema.optional(Schema.String),
+	StoredDocumentsList: Schema.optional(StoredDocumentsListApiSchema),
+	PrintableDocumentsList: Schema.optional(PrintableDocumentsListApiSchema),
+	FinancialDeadlineList: Schema.optional(FinancialDeadlineListApiSchema),
 });
 
 /**
@@ -219,11 +218,10 @@ const BookingFileDetailWireSchema = v.object({
  * Accepts wire dialects, normalizes to a single PascalCase/@attr shape for camelCase mapping.
  * Nested `*List` fields are already flat Detail arrays.
  */
-export const BookingFileDetailApiSchema = v.pipe(
+export const BookingFileDetailApiSchema = mapSchema(
 	BookingFileDetailWireSchema,
-	v.transform((detail) =>
+	(detail) =>
 		coalesceWireAliases(detail, {
 			"@BookingFileCode": ["@BookingFileCode", "BookingFileCode"],
 		}),
-	),
 );

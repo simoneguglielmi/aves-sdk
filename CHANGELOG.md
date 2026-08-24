@@ -5,6 +5,77 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<a id="v5.0.0"></a>
+## [5.0.0] - 2026-08-24
+
+Effect-native core: **Effect Schema** + **`@effect/platform` HttpClient**, Promise `Result` facade at the edge, optional Layers / `ManagedRuntime` for Effect apps.
+
+### Added
+
+- `makeAvesRuntime(options, deps?)` — `ManagedRuntime` over `avesClientLayer` for `yield* AvesBooking` / `AvesMaster` / `AvesPackages` / `AvesTransport`
+- `avesClientLayer` / `AvesClientLive` — composable Effect Layers (`config → http → transport → domains`)
+- Domain Tags: `AvesBooking`, `AvesMaster`, `AvesPackages`, `AvesTransport`, `AvesHttp`, `AvesConfig`
+- `createAvesClient` — plain-object Promise facade (same shape as `AvesClient`)
+- Public `Result` / `ok` / `err`; `isAvesError`; tagged errors `AvesValidationError` / `AvesApiError` / `AvesUnknownError` (+ factories)
+- Test DI: `deps.httpClient` (`HttpClient.make`) and/or `deps.http` / domain service overrides
+
+### Changed
+
+- **Breaking:** Validation stack is **Effect Schema** (`effect`). Valibot is removed.
+- **Breaking:** HTTP is **`@effect/platform`** (`FetchHttpClient` by default). Undici is no longer a dependency; do not use `MockAgent` / `setGlobalDispatcher` for SDK tests — inject `HttpClient.make` via `deps.httpClient`.
+- **Breaking:** Domains are Effect-native (`Effect.Effect<…, AvesError>`). The Promise API is a thin `toPromiseFacade` edge on `createAvesClient` / `AvesClient`.
+- **Breaking:** `client.transport` is **removed** from the Promise facade. Effect programs use `yield* AvesTransport` (or domain Tags) with `makeAvesRuntime` / `avesClientLayer`.
+- **Breaking:** `AvesError` is a **tagged union**, not a single constructible class. Prefer `isAvesError(e)`, `e instanceof AvesApiError`, or `Effect.catchTag("AvesApiError", …)`. Promise `error.kind` (`validation` | `api` | `unknown`) is unchanged.
+- **Breaking:** DI no longer uses `new AvesTransport(options)` / `new BookingClient(transport)`. Use `AvesClientDeps`: `{ httpClient?, http?, transport?, master?, booking?, packages? }`.
+- Internal layout: `src/client/{booking,master,packages,http,transport,config}/` (types / tag / service / layer).
+- Published types shrank from 1.21 MB to 404 kB (npm tarball 115 kB → 72 kB): op params/results and the domain service types are now written against named types instead of inferred, so the declaration bundle references `BookingInput` & co. instead of inlining every schema structure. The public API is unchanged — `src/client/{ops,services}.test-d.ts` pin each op and domain method against the schema the transport actually uses.
+
+### Migration (4.x → 5.x)
+
+1. **Install** — `aves-sdk@5` pulls `effect` and `@effect/platform`. No Valibot/undici required.
+2. **Promise apps** — keep `new AvesClient(options)` / `createAvesClient(options)`. Import `Result` from `aves-sdk` if you typed it locally. Stop reading `client.transport`.
+3. **Errors** — replace `instanceof AvesError` with `isAvesError(error)` (or the concrete tagged class). `error.kind` / `message` / `status` / `code` still work on the Promise path.
+4. **Tests / DI** — replace undici `MockAgent` with platform mocks:
+
+```ts
+import { HttpClient, HttpClientResponse } from "@effect/platform";
+import { Effect } from "effect";
+import { AvesClient } from "aves-sdk";
+
+const httpClient = HttpClient.make((request, url) =>
+  Effect.succeed(
+    HttpClientResponse.fromWeb(
+      request,
+      new Response(`<SearchMasterRecordRS><RsStatus Status="OK"/></SearchMasterRecordRS>`, {
+        status: 200,
+      }),
+    ),
+  ),
+);
+
+const client = new AvesClient(options, { httpClient });
+```
+
+5. **Effect apps** — use Layers instead of the Promise facade:
+
+```ts
+import { Effect } from "effect";
+import { AvesMaster, makeAvesRuntime } from "aves-sdk";
+
+const runtime = makeAvesRuntime(options);
+const records = await runtime.runPromise(
+  Effect.gen(function* () {
+    const master = yield* AvesMaster;
+    return yield* master.search({ searchType: "CODE", recordCode: "508558" });
+  }),
+);
+await runtime.dispose();
+```
+
+Or `Effect.provide(avesClientLayer(options, deps))` without a ManagedRuntime. Recover with `Effect.catchTag("AvesApiError", …)` / `"AvesValidationError"` / `"AvesUnknownError"`.
+
+XML wire shapes, facade aliases, and domain method names from 4.x are unchanged.
+
 <a id="v4.1.0"></a>
 ## [4.1.0] - 2026-08-07
 

@@ -1,4 +1,4 @@
-import * as v from "valibot";
+import { Schema } from "effect";
 import { masterRecordFacades } from "../utils/facade-aliases.js";
 import {
 	createApiSchema,
@@ -28,15 +28,15 @@ import {
 	RecordTypeWireSchema,
 } from "./enums.js";
 
-const FinancialDetailInputSchema = v.object({
-	currencyCode: v.optional(v.string()),
-	creditLimit: v.optional(v.string()),
-	c_PaymentType: v.optional(MasterPaymentTypeSchema),
-	c_SpecPaymentTypeCode: v.optional(v.string()),
-	s_PaymentType: v.optional(MasterPaymentTypeSchema),
-	s_SpecPaymentTypeCode: v.optional(v.string()),
-	enableElectronicInvoicing: v.optional(BoolishSchema),
-	electronicInvoicingType: v.optional(v.string()),
+const FinancialDetailInputSchema = Schema.Struct({
+	currencyCode: Schema.optional(Schema.String),
+	creditLimit: Schema.optional(Schema.String),
+	c_PaymentType: Schema.optional(MasterPaymentTypeSchema),
+	c_SpecPaymentTypeCode: Schema.optional(Schema.String),
+	s_PaymentType: Schema.optional(MasterPaymentTypeSchema),
+	s_SpecPaymentTypeCode: Schema.optional(Schema.String),
+	enableElectronicInvoicing: Schema.optional(BoolishSchema),
+	electronicInvoicingType: Schema.optional(Schema.String),
 });
 
 const financialPair = createWireSchemaPair(
@@ -46,13 +46,13 @@ const financialPair = createWireSchemaPair(
 export const FinancialDetailSchema = financialPair.api;
 export const FinancialDetailApiValidationSchema = financialPair.validation;
 
-export const IdDocumentDetailInputSchema = v.object({
-	idType: v.optional(v.string()),
-	idCode: v.optional(v.string()),
-	idIssueLocation: v.optional(v.string()),
-	idIssueCounty: v.optional(v.string()),
-	idIssueDate: v.optional(v.string()),
-	idExpireDate: v.optional(v.string()),
+export const IdDocumentDetailInputSchema = Schema.Struct({
+	idType: Schema.optional(Schema.String),
+	idCode: Schema.optional(Schema.String),
+	idIssueLocation: Schema.optional(Schema.String),
+	idIssueCounty: Schema.optional(Schema.String),
+	idIssueDate: Schema.optional(Schema.String),
+	idExpireDate: Schema.optional(Schema.String),
 });
 
 const idDocumentPair = createWireSchemaPair(
@@ -62,9 +62,9 @@ const idDocumentPair = createWireSchemaPair(
 export const IdDocumentDetailSchema = idDocumentPair.api;
 export const IdDocumentDetailApiValidationSchema = idDocumentPair.validation;
 
-export const DynamicFieldsInputSchema = v.object({
-	key: v.string(),
-	value: v.string(),
+export const DynamicFieldsInputSchema = Schema.Struct({
+	key: Schema.String,
+	value: Schema.String,
 });
 
 /**
@@ -81,10 +81,10 @@ export const DynamicFieldsApiValidationSchema = createApiValidationSchema(
  * @property companyMainBusinessType - Company main business type
  * @property carrierType - Carrier type
  */
-const SupplierRefMasterRecordsInputSchema = v.object({
-	supplierRefCode: v.optional(v.string()),
-	companyMainBusinessType: v.optional(v.string()),
-	carrierType: v.optional(CarrierTypeSchema),
+const SupplierRefMasterRecordsInputSchema = Schema.Struct({
+	supplierRefCode: Schema.optional(Schema.String),
+	companyMainBusinessType: Schema.optional(Schema.String),
+	carrierType: Schema.optional(CarrierTypeSchema),
 });
 
 const supplierRefPair = createWireSchemaPair(
@@ -95,12 +95,12 @@ export const SupplierRefMasterRecordsSchema = supplierRefPair.api;
 export const SupplierRefMasterRecordsApiValidationSchema =
 	supplierRefPair.validation;
 
-const flagSchema = v.union([v.literal(0), v.literal(1)]);
+const flagSchema = Schema.Union(Schema.Literal(0), Schema.Literal(1));
 
-const AccountPoliciesInputSchema = v.object({
-	acceptProfilingPolicies: v.optional(flagSchema),
-	acceptPrivacyPolicies: v.optional(flagSchema),
-	acceptNewsletterPolicies: v.optional(flagSchema),
+const AccountPoliciesInputSchema = Schema.Struct({
+	acceptProfilingPolicies: Schema.optional(flagSchema),
+	acceptPrivacyPolicies: Schema.optional(flagSchema),
+	acceptNewsletterPolicies: Schema.optional(flagSchema),
 });
 
 const accountPoliciesPair = createWireSchemaPair(
@@ -115,36 +115,44 @@ export const AccountPoliciesApiValidationSchema =
  * Master record detail input schema (camelCase)
  */
 const masterRecordDetailEntries = {
-	recordCode: v.optional(v.pipe(v.string(), v.minLength(6), v.maxLength(6))),
-	insertCriteria: v.optional(InsertCriteriaSchema),
-	createdDate: v.optional(v.string()),
-	recordType: v.optional(RecordTypeSchema, RecordType.CUSTOMER),
-	recordStatus: v.optional(RecordStatusSchema, RecordStatus.ENABLED),
-	moniker: v.optional(v.string()),
-	name: v.optional(v.string()),
-	extraInfo: v.optional(v.string()),
+	recordCode: Schema.optional(
+		Schema.String.pipe(Schema.minLength(6), Schema.maxLength(6)),
+	),
+	insertCriteria: Schema.optional(InsertCriteriaSchema),
+	createdDate: Schema.optional(Schema.String),
+	recordType: Schema.optionalWith(RecordTypeSchema, {
+		default: () => RecordType.CUSTOMER,
+	}),
+	recordStatus: Schema.optionalWith(RecordStatusSchema, {
+		default: () => RecordStatus.ENABLED,
+	}),
+	moniker: Schema.optional(Schema.String),
+	name: Schema.optional(Schema.String),
+	extraInfo: Schema.optional(Schema.String),
 	languageCode: LanguageCodeSchema,
-	address: v.optional(v.string()),
-	zipCode: v.optional(v.string()),
-	cityName: v.optional(v.string()),
-	countyCode: v.optional(v.string()),
-	stateCode: v.optional(v.string()),
-	categoryCode: v.optional(v.string()),
-	firstPhoneNumber: v.optional(v.string()),
-	mobilePhoneNumber: v.optional(v.string()),
-	email: v.optional(v.string()),
-	gender: v.optional(GenderSchema),
-	birthDate: v.optional(v.string()),
-	birthCity: v.optional(v.string()),
-	birthCounty: v.optional(v.string()),
-	fiscalCode: v.optional(v.string()),
-	vatCode: v.optional(v.string()),
-	thirdPartRecordCode: v.optional(v.string()),
-	idDocumentDetail: v.optional(IdDocumentDetailInputSchema),
-	accountPolicies: v.optional(AccountPoliciesInputSchema),
-	financialDetail: v.optional(FinancialDetailInputSchema),
-	dynamicFields: v.optional(v.array(DynamicFieldsInputSchema)),
-	supplierRefMasterRecords: v.optional(SupplierRefMasterRecordsInputSchema),
+	address: Schema.optional(Schema.String),
+	zipCode: Schema.optional(Schema.String),
+	cityName: Schema.optional(Schema.String),
+	countyCode: Schema.optional(Schema.String),
+	stateCode: Schema.optional(Schema.String),
+	categoryCode: Schema.optional(Schema.String),
+	firstPhoneNumber: Schema.optional(Schema.String),
+	mobilePhoneNumber: Schema.optional(Schema.String),
+	email: Schema.optional(Schema.String),
+	gender: Schema.optional(GenderSchema),
+	birthDate: Schema.optional(Schema.String),
+	birthCity: Schema.optional(Schema.String),
+	birthCounty: Schema.optional(Schema.String),
+	fiscalCode: Schema.optional(Schema.String),
+	vatCode: Schema.optional(Schema.String),
+	thirdPartRecordCode: Schema.optional(Schema.String),
+	idDocumentDetail: Schema.optional(IdDocumentDetailInputSchema),
+	accountPolicies: Schema.optional(AccountPoliciesInputSchema),
+	financialDetail: Schema.optional(FinancialDetailInputSchema),
+	dynamicFields: Schema.optional(Schema.Array(DynamicFieldsInputSchema)),
+	supplierRefMasterRecords: Schema.optional(
+		SupplierRefMasterRecordsInputSchema,
+	),
 };
 
 export const MasterRecordDetailSchema = facadeObject(
@@ -164,26 +172,28 @@ export const MasterRecordDetailApiSchema = createApiSchema(
  * Master record detail API validation schema (PascalCase with @ attributes).
  * Nested structure is generated from `masterRecordWire`; overrides are server-only fields.
  */
-export const MasterRecordDetailApiValidationSchema = v.partial(
-	createApiValidationSchema(
-		v.object(masterRecordDetailEntries),
-		masterRecordWire,
-		{
-			// Responses widen RecordType with NOT_SET; requests keep the strict set.
-			RecordType: v.optional(RecordTypeWireSchema),
-			ModifiedDate: v.optional(v.string()),
-			// AVES misspells ModifiedDate on ExportBookingData MasterData rows.
-			ModifitedDate: v.optional(v.string()),
-			LoginType: v.optional(v.string()),
-			PromoterCode: v.optional(v.string()),
-			EncryptedPassword: v.optional(BoolishSchema),
-			NewsletterDisabled: v.optional(BoolishSchema),
-			AreaCode: v.optional(v.string()),
-			LastDateContact: v.optional(v.string()),
-			UseSupplierDataOnTravelDoc: v.optional(BoolishSchema),
-			BookingEnabled: v.optional(BoolishSchema),
-			PrivacyPolicyAccepted: v.optional(BoolishSchema),
-		},
+export const MasterRecordDetailApiValidationSchema = Schema.asSchema(
+	Schema.partial(
+		createApiValidationSchema(
+			Schema.Struct(masterRecordDetailEntries),
+			masterRecordWire,
+			{
+				// Responses widen RecordType with NOT_SET; requests keep the strict set.
+				RecordType: Schema.optional(RecordTypeWireSchema),
+				ModifiedDate: Schema.optional(Schema.String),
+				// AVES misspells ModifiedDate on ExportBookingData MasterData rows.
+				ModifitedDate: Schema.optional(Schema.String),
+				LoginType: Schema.optional(Schema.String),
+				PromoterCode: Schema.optional(Schema.String),
+				EncryptedPassword: Schema.optional(BoolishSchema),
+				NewsletterDisabled: Schema.optional(BoolishSchema),
+				AreaCode: Schema.optional(Schema.String),
+				LastDateContact: Schema.optional(Schema.String),
+				UseSupplierDataOnTravelDoc: Schema.optional(BoolishSchema),
+				BookingEnabled: Schema.optional(BoolishSchema),
+				PrivacyPolicyAccepted: Schema.optional(BoolishSchema),
+			},
+		),
 	),
 );
 

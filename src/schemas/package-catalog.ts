@@ -1,4 +1,4 @@
-import * as v from "valibot";
+import { Schema } from "effect";
 import {
 	avesSearchFacades,
 	packageDetailFacades,
@@ -10,6 +10,7 @@ import {
 	createListResponseSchema,
 	facadeObject,
 	listDetailApiSchema,
+	mapSchema,
 	toWireBody,
 } from "../utils/schema-transform.js";
 import {
@@ -43,11 +44,11 @@ export { PaxQtyCriteria, PaxQtyCriteriaSchema } from "./enums.js";
 // Shared catalog fragments (response)
 // ---------------------------------------------------------------------------
 
-export const FeatureDetailApiSchema = v.object({
-	"@Code": v.optional(v.string()),
-	"@Name": v.optional(v.string()),
-	ValueCode: v.optional(v.string()),
-	ValueName: v.optional(v.string()),
+export const FeatureDetailApiSchema = Schema.Struct({
+	"@Code": Schema.optional(Schema.String),
+	"@Name": Schema.optional(Schema.String),
+	ValueCode: Schema.optional(Schema.String),
+	ValueName: Schema.optional(Schema.String),
 });
 
 export const FeatureListApiSchema = listDetailApiSchema(
@@ -55,21 +56,21 @@ export const FeatureListApiSchema = listDetailApiSchema(
 	FeatureDetailApiSchema,
 );
 
-export const RefPackageInfoApiSchema = v.object({
-	"@PackageCode": v.optional(v.string()),
-	"@PackageReference": v.optional(v.string()),
-	"@PackageServiceType": v.optional(v.string()),
-	"@ServiceCodeForPackageDetail": v.optional(v.string()),
+export const RefPackageInfoApiSchema = Schema.Struct({
+	"@PackageCode": Schema.optional(Schema.String),
+	"@PackageReference": Schema.optional(Schema.String),
+	"@PackageServiceType": Schema.optional(Schema.String),
+	"@ServiceCodeForPackageDetail": Schema.optional(Schema.String),
 });
 
 /** Lean catalog SubService — enough for Program search/detail workflows */
-export const CatalogSubServiceDetailApiSchema = v.object({
-	"@ssCode": v.optional(v.string()),
-	FirstDescription: v.optional(v.string()),
-	SubServiceType: v.optional(v.string()),
-	SubServiceLevel: v.optional(StringishBoolSchema),
-	StartDate: v.optional(v.string()),
-	EndDate: v.optional(v.string()),
+export const CatalogSubServiceDetailApiSchema = Schema.Struct({
+	"@ssCode": Schema.optional(Schema.String),
+	FirstDescription: Schema.optional(Schema.String),
+	SubServiceType: Schema.optional(Schema.String),
+	SubServiceLevel: Schema.optional(StringishBoolSchema),
+	StartDate: Schema.optional(Schema.String),
+	EndDate: Schema.optional(Schema.String),
 });
 
 export const CatalogSubServiceListApiSchema = listDetailApiSchema(
@@ -78,16 +79,16 @@ export const CatalogSubServiceListApiSchema = listDetailApiSchema(
 );
 
 /** Lean catalog Service inside a Package */
-export const CatalogServiceDetailApiSchema = v.object({
-	"@sCode": v.optional(v.string()),
-	FirstDescription: v.optional(v.string()),
-	SecondDescription: v.optional(v.string()),
-	AvesServiceType: v.optional(v.string()),
-	TOServiceType: v.optional(v.string()),
-	StartDate: v.optional(v.string()),
-	EndDate: v.optional(v.string()),
-	RefPackageInfo: v.optional(RefPackageInfoApiSchema),
-	SubServiceList: v.optional(CatalogSubServiceListApiSchema),
+export const CatalogServiceDetailApiSchema = Schema.Struct({
+	"@sCode": Schema.optional(Schema.String),
+	FirstDescription: Schema.optional(Schema.String),
+	SecondDescription: Schema.optional(Schema.String),
+	AvesServiceType: Schema.optional(Schema.String),
+	TOServiceType: Schema.optional(Schema.String),
+	StartDate: Schema.optional(Schema.String),
+	EndDate: Schema.optional(Schema.String),
+	RefPackageInfo: Schema.optional(RefPackageInfoApiSchema),
+	SubServiceList: Schema.optional(CatalogSubServiceListApiSchema),
 });
 
 export const CatalogServiceListApiSchema = listDetailApiSchema(
@@ -96,21 +97,21 @@ export const CatalogServiceListApiSchema = listDetailApiSchema(
 );
 
 /** Package / Program detail (SearchPackageRS + GetPackageDetail) */
-export const PackageDetailApiSchema = v.object({
-	"@pCode": v.optional(v.string()),
-	FirstDescription: v.optional(v.string()),
-	SecondDescription: v.optional(v.string()),
-	FrequencyType: v.optional(v.string()),
-	ProgramType: v.optional(v.string()),
-	StartValidation: v.optional(v.string()),
-	EndValidation: v.optional(v.string()),
-	StartDate: v.optional(v.string()),
-	EndDate: v.optional(v.string()),
-	BasePrice: v.optional(StringishBoolSchema),
-	BasePax: v.optional(StringishBoolSchema),
-	CanCommitPack: v.optional(StringishBoolSchema),
-	FeatureList: v.optional(FeatureListApiSchema),
-	ServiceList: v.optional(CatalogServiceListApiSchema),
+export const PackageDetailApiSchema = Schema.Struct({
+	"@pCode": Schema.optional(Schema.String),
+	FirstDescription: Schema.optional(Schema.String),
+	SecondDescription: Schema.optional(Schema.String),
+	FrequencyType: Schema.optional(Schema.String),
+	ProgramType: Schema.optional(Schema.String),
+	StartValidation: Schema.optional(Schema.String),
+	EndValidation: Schema.optional(Schema.String),
+	StartDate: Schema.optional(Schema.String),
+	EndDate: Schema.optional(Schema.String),
+	BasePrice: Schema.optional(StringishBoolSchema),
+	BasePax: Schema.optional(StringishBoolSchema),
+	CanCommitPack: Schema.optional(StringishBoolSchema),
+	FeatureList: Schema.optional(FeatureListApiSchema),
+	ServiceList: Schema.optional(CatalogServiceListApiSchema),
 });
 
 export const PackageListApiSchema = listDetailApiSchema(
@@ -122,27 +123,27 @@ export const PackageListApiSchema = listDetailApiSchema(
 // SearchAvesPackages / SearchTopServices — AvesSearchRQ
 // ---------------------------------------------------------------------------
 
-const FeatureDetailInputSchema = v.object({
-	code: v.string(),
-	name: v.optional(v.string()),
+const FeatureDetailInputSchema = Schema.Struct({
+	code: Schema.String,
+	name: Schema.optional(Schema.String),
 });
 
 const PackageParamsInputSchema = facadeObject(
 	{
-		getAllDeptDate: v.optional(BoolishSchema),
-		getFlightPlan: v.optional(BoolishSchema),
-		getAllAccomodation: v.optional(BoolishSchema),
-		getRealAvailability: v.optional(BoolishSchema),
-		minStay: v.optional(StringishSchema),
-		maxStay: v.optional(StringishSchema),
+		getAllDeptDate: Schema.optional(BoolishSchema),
+		getFlightPlan: Schema.optional(BoolishSchema),
+		getAllAccomodation: Schema.optional(BoolishSchema),
+		getRealAvailability: Schema.optional(BoolishSchema),
+		minStay: Schema.optional(StringishSchema),
+		maxStay: Schema.optional(StringishSchema),
 	},
 	packageParamsFacades,
 );
 
 const TopServiceParamsInputSchema = facadeObject(
 	{
-		compatibleAccomodation: v.optional(BoolishSchema),
-		alternativeAccomodation: v.optional(BoolishSchema),
+		compatibleAccomodation: Schema.optional(BoolishSchema),
+		alternativeAccomodation: Schema.optional(BoolishSchema),
 	},
 	packageParamsFacades,
 );
@@ -156,54 +157,53 @@ const TopServiceParamsInputSchema = facadeObject(
  */
 export const AvesSearchSchema = facadeObject(
 	{
-		customerRecordCode: v.string(),
+		customerRecordCode: Schema.String,
 		languageCode: OptionalLanguageCodeSchema,
-		currencyCode: v.optional(v.string()),
-		startDate: v.string(),
-		endDate: v.string(),
-		earlyBookingDate: v.optional(v.string()),
-		passengerList: v.pipe(
-			v.array(PassengerDetailCreateInputSchema),
-			v.minLength(1),
+		currencyCode: Schema.optional(Schema.String),
+		startDate: Schema.String,
+		endDate: Schema.String,
+		earlyBookingDate: Schema.optional(Schema.String),
+		passengerList: Schema.Array(PassengerDetailCreateInputSchema).pipe(
+			Schema.minItems(1),
 		),
-		avesSearchType: v.optional(AvesSearchTypeSchema),
-		paxQty: v.optional(StringishSchema),
-		paxQtyCriteria: v.optional(PaxQtyCriteriaSchema),
-		discartNotAvailables: v.optional(BoolishSchema),
-		discartNotAvailablesMinSales: v.optional(BoolishSchema),
-		discartNotAvailablesDaysInOut: v.optional(BoolishSchema),
-		discardPriceZero: v.optional(BoolishSchema),
-		discardZeroPriceDays: v.optional(BoolishSchema),
-		destination: v.optional(DestinationInputSchema),
-		objectTypeCode: v.optional(v.string()),
-		featureList: v.optional(v.array(FeatureDetailInputSchema)),
-		servOrPackCode: v.optional(v.string()),
-		servOrPackDesc: v.optional(v.string()),
-		priceListCode: v.optional(v.string()),
-		costListCode: v.optional(v.string()),
-		suballotmentCode: v.optional(v.string()),
-		markupCode: v.optional(v.string()),
-		statisticCodes: v.optional(StatisticCodesInputSchema),
-		mergeBoardAndAccomodation: v.optional(BoolishSchema),
-		packageParams: v.optional(PackageParamsInputSchema),
-		topServiceParams: v.optional(TopServiceParamsInputSchema),
-		getDocumentation: v.optional(BoolishSchema),
+		avesSearchType: Schema.optional(AvesSearchTypeSchema),
+		paxQty: Schema.optional(StringishSchema),
+		paxQtyCriteria: Schema.optional(PaxQtyCriteriaSchema),
+		discartNotAvailables: Schema.optional(BoolishSchema),
+		discartNotAvailablesMinSales: Schema.optional(BoolishSchema),
+		discartNotAvailablesDaysInOut: Schema.optional(BoolishSchema),
+		discardPriceZero: Schema.optional(BoolishSchema),
+		discardZeroPriceDays: Schema.optional(BoolishSchema),
+		destination: Schema.optional(DestinationInputSchema),
+		objectTypeCode: Schema.optional(Schema.String),
+		featureList: Schema.optional(Schema.Array(FeatureDetailInputSchema)),
+		servOrPackCode: Schema.optional(Schema.String),
+		servOrPackDesc: Schema.optional(Schema.String),
+		priceListCode: Schema.optional(Schema.String),
+		costListCode: Schema.optional(Schema.String),
+		suballotmentCode: Schema.optional(Schema.String),
+		markupCode: Schema.optional(Schema.String),
+		statisticCodes: Schema.optional(StatisticCodesInputSchema),
+		mergeBoardAndAccomodation: Schema.optional(BoolishSchema),
+		packageParams: Schema.optional(PackageParamsInputSchema),
+		topServiceParams: Schema.optional(TopServiceParamsInputSchema),
+		getDocumentation: Schema.optional(BoolishSchema),
 	},
 	avesSearchFacades,
 );
 
 /** After client defaults: languageCode + avesSearchType must be present. */
-const AvesSearchResolvedSchema = v.pipe(
-	AvesSearchSchema,
-	v.check(
-		(i) => i.languageCode != null && i.avesSearchType != null,
-		"languageCode and avesSearchType required",
+const AvesSearchResolvedSchema = AvesSearchSchema.pipe(
+	Schema.filter(
+		(i: Schema.Schema.Type<typeof AvesSearchSchema>) =>
+			i.languageCode != null && i.avesSearchType != null,
+		{ message: () => "languageCode and avesSearchType required" },
 	),
 );
 
 /** Nest BaseSearch under AvesSearchRQ; apply paxQty / paxQtyCriteria defaults. */
 function toAvesSearchApiBody(
-	input: v.InferOutput<typeof AvesSearchResolvedSchema>,
+	input: Schema.Schema.Type<typeof AvesSearchResolvedSchema>,
 ) {
 	const {
 		customerRecordCode,
@@ -244,9 +244,9 @@ function toAvesSearchApiBody(
 	};
 }
 
-export const AvesSearchApiSchema = v.pipe(
+export const AvesSearchApiSchema = mapSchema(
 	AvesSearchResolvedSchema,
-	v.transform(toAvesSearchApiBody),
+	toAvesSearchApiBody,
 );
 
 export const SearchPackageResponseSchema = createListResponseSchema(
@@ -264,9 +264,9 @@ export const SearchServicesResponseSchema = createListResponseSchema(
 // ---------------------------------------------------------------------------
 
 /** SelectedServiceDetail for GetPackageDetail (ServiceCode + PackageRow attrs). */
-export const PackagePrgServiceDetailInputSchema = v.object({
-	serviceCode: v.string(),
-	packageRow: v.string(),
+export const PackagePrgServiceDetailInputSchema = Schema.Struct({
+	serviceCode: Schema.String,
+	packageRow: Schema.String,
 });
 
 /**
@@ -275,21 +275,22 @@ export const PackagePrgServiceDetailInputSchema = v.object({
  */
 export const PackageDetailRequestSchema = facadeObject(
 	{
-		customerRecordCode: v.string(),
+		customerRecordCode: Schema.String,
 		languageCode: OptionalLanguageCodeSchema,
-		currencyCode: v.optional(v.string()),
-		packageCode: v.string(),
-		startDate: v.string(),
-		endDate: v.string(),
-		priceListCode: v.optional(v.string()),
-		costListCode: v.optional(v.string()),
-		markupCode: v.optional(v.string()),
-		statisticCodes: v.optional(StatisticCodesInputSchema),
-		selectedServiceList: v.pipe(
-			v.array(PackagePrgServiceDetailInputSchema),
-			v.minLength(1),
+		currencyCode: Schema.optional(Schema.String),
+		packageCode: Schema.String,
+		startDate: Schema.String,
+		endDate: Schema.String,
+		priceListCode: Schema.optional(Schema.String),
+		costListCode: Schema.optional(Schema.String),
+		markupCode: Schema.optional(Schema.String),
+		statisticCodes: Schema.optional(StatisticCodesInputSchema),
+		selectedServiceList: Schema.Array(PackagePrgServiceDetailInputSchema).pipe(
+			Schema.minItems(1),
 		),
-		passengerList: v.optional(v.array(PassengerDetailCreateInputSchema)),
+		passengerList: Schema.optional(
+			Schema.Array(PassengerDetailCreateInputSchema),
+		),
 	},
 	packageDetailFacades,
 );
@@ -301,9 +302,9 @@ export const PackageDetailRequestApiSchema = createApiSchema(
 );
 
 export const PackageDetailResponseSchema = createFlattenedResponseSchema(
-	v.object({
+	Schema.Struct({
 		RsStatus: RsStatusSchema,
-		PackageDetail: v.optional(PackageDetailApiSchema),
+		PackageDetail: Schema.optional(PackageDetailApiSchema),
 	}),
 	"packageDetail",
 );
@@ -312,8 +313,8 @@ export const PackageDetailResponseSchema = createFlattenedResponseSchema(
 // CommitPackage — CommitPackRQ
 // ---------------------------------------------------------------------------
 
-export const CommitPackageSchema = v.object({
-	packageCode: v.string(),
+export const CommitPackageSchema = Schema.Struct({
+	packageCode: Schema.String,
 });
 
 export const CommitPackageApiSchema = createApiSchema(

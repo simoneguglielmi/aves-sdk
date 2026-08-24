@@ -1,37 +1,59 @@
 import {
-	type Dispatcher,
-	getGlobalDispatcher,
-	MockAgent,
-	setGlobalDispatcher,
-} from "undici";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+	HttpClient,
+	type HttpClientRequest,
+	HttpClientResponse,
+} from "@effect/platform";
+import { Effect } from "effect";
+import { beforeEach, describe, expect, it } from "vitest";
 import { AvesClient } from "./client.js";
-import { AvesError, apiError } from "./error.js";
+import {
+	AvesApiError,
+	apiError,
+	isAvesError,
+	unknownError,
+	validationError,
+} from "./error.js";
 
-const isBun = typeof process !== "undefined" && !!process.versions?.bun;
-const describeHttp = isBun ? describe.skip : describe;
+type MockReply = { status?: number; body: string };
+type MockRequest = { method: string; path: string; body: string };
 
-describeHttp("AvesClient", () => {
+const requestBodyText = (
+	request: HttpClientRequest.HttpClientRequest,
+): string => {
+	const { body } = request;
+	if (body._tag === "Uint8Array") return new TextDecoder().decode(body.body);
+	if (body._tag === "Raw" && typeof body.body === "string") return body.body;
+	return "";
+};
+
+const mockHttp = (onRequest: (req: MockRequest) => MockReply | string) =>
+	HttpClient.make((request, url) => {
+		const reply = onRequest({
+			method: request.method,
+			path: url.pathname,
+			body: requestBodyText(request),
+		});
+		const status = typeof reply === "string" ? 200 : (reply.status ?? 200);
+		const body = typeof reply === "string" ? reply : reply.body;
+		return Effect.succeed(
+			HttpClientResponse.fromWeb(request, new Response(body, { status })),
+		);
+	});
+
+describe("AvesClient", () => {
 	let client: AvesClient;
-	let mockAgent: MockAgent;
-	let originalDispatcher: Dispatcher;
+	let onRequest: (req: MockRequest) => MockReply | string;
 
 	const baseURL = "https://api.example.com";
 	const hostID = "000000";
 	const xtoken = "TOKEN000000";
 
 	beforeEach(() => {
-		originalDispatcher = getGlobalDispatcher();
-		mockAgent = new MockAgent();
-		mockAgent.disableNetConnect();
-		setGlobalDispatcher(mockAgent);
-
-		client = new AvesClient({ baseURL, hostID, xtoken });
-	});
-
-	afterEach(async () => {
-		await mockAgent.close();
-		setGlobalDispatcher(originalDispatcher);
+		onRequest = () => ({ status: 599, body: "unmocked" });
+		client = new AvesClient(
+			{ baseURL, hostID, xtoken },
+			{ httpClient: mockHttp((req) => onRequest(req)) },
+		);
 	});
 
 	describe("constructor", () => {
@@ -44,16 +66,9 @@ describeHttp("AvesClient", () => {
 
 	describe("search", () => {
 		it("should make search request and return camelCase response", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/masterRecords/v2/rest/Search",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<SearchMasterRecordRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<SearchMasterRecordRS>
           <RsStatus Status="OK"/>
           <MasterRecordList>
             <MasterRecordDetail RecordCode="508558">
@@ -62,7 +77,7 @@ describeHttp("AvesClient", () => {
             </MasterRecordDetail>
           </MasterRecordList>
         </SearchMasterRecordRS>`,
-				);
+			});
 
 			const result = await client.master.search({
 				searchType: "CODE",
@@ -85,27 +100,20 @@ describeHttp("AvesClient", () => {
 			});
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 			}
 		});
 
 		it("should handle API errors", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/masterRecords/v2/rest/Search",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<SearchMasterRecordRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<SearchMasterRecordRS>
           <RsStatus Status="ERROR">
             <ErrorCode>1001</ErrorCode>
             <ErrorDescription>Invalid request</ErrorDescription>
           </RsStatus>
         </SearchMasterRecordRS>`,
-				);
+			});
 
 			const result = await client.master.search({
 				searchType: "CODE",
@@ -114,7 +122,7 @@ describeHttp("AvesClient", () => {
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 				expect(result.error.kind).toBe("api");
 				expect(result.error.code).toBe(1001);
 				expect(result.error.status).toBe("ERROR");
@@ -122,14 +130,7 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should handle HTTP errors", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/masterRecords/v2/rest/Search",
-					method: "POST",
-				})
-				.reply(500, "Internal Server Error");
+			onRequest = () => ({ status: 500, body: "Internal Server Error" });
 
 			const result = await client.master.search({
 				searchType: "CODE",
@@ -138,7 +139,7 @@ describeHttp("AvesClient", () => {
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 				expect(result.error.kind).toBe("api");
 				expect(result.error.status).toBe("ERROR");
 				expect(result.error.code).toBe(500);
@@ -146,16 +147,10 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should accept all 2xx HTTP responses", async () => {
-			const mockClient = mockAgent.get(baseURL);
-			mockClient
-				.intercept({
-					path: "/interop/masterRecords/v2/rest/Search",
-					method: "POST",
-				})
-				.reply(
-					201,
-					`<SearchMasterRecordRS><RsStatus Status="OK"/></SearchMasterRecordRS>`,
-				);
+			onRequest = () => ({
+				status: 201,
+				body: `<SearchMasterRecordRS><RsStatus Status="OK"/></SearchMasterRecordRS>`,
+			});
 
 			const result = await client.master.search({
 				searchType: "CODE",
@@ -167,13 +162,7 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should cap HTTP error response bodies", async () => {
-			const mockClient = mockAgent.get(baseURL);
-			mockClient
-				.intercept({
-					path: "/interop/masterRecords/v2/rest/Search",
-					method: "POST",
-				})
-				.reply(500, "x".repeat(5_000));
+			onRequest = () => ({ status: 500, body: "x".repeat(5_000) });
 
 			const result = await client.master.search({
 				searchType: "CODE",
@@ -185,20 +174,16 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should transform request to PascalCase for API", async () => {
-			const mockClient = mockAgent.get(baseURL);
 			let capturedBody = "";
-
-			mockClient
-				.intercept({
-					path: "/interop/masterRecords/v2/rest/Search",
-					method: "POST",
-				})
-				.reply(200, (opts) => {
-					capturedBody = opts.body as string;
-					return `<SearchMasterRecordRS>
+			onRequest = ({ body }) => {
+				capturedBody = body;
+				return {
+					status: 200,
+					body: `<SearchMasterRecordRS>
             <RsStatus Status="OK"/>
-          </SearchMasterRecordRS>`;
-				});
+          </SearchMasterRecordRS>`,
+				};
+			};
 
 			await client.master.search({
 				searchType: "CODE",
@@ -214,16 +199,9 @@ describeHttp("AvesClient", () => {
 
 	describe("upsert", () => {
 		it("should make upsert request and return camelCase response", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<ManageMasterRecordRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<ManageMasterRecordRS>
           <RsStatus Status="OK"/>
           <MasterRecordDetail RecordCode="508558">
             <Name>John Doe</Name>
@@ -231,7 +209,7 @@ describeHttp("AvesClient", () => {
             <ZipCode>12345</ZipCode>
           </MasterRecordDetail>
         </ManageMasterRecordRS>`,
-				);
+			});
 
 			const result = await client.master.upsert({
 				name: "John Doe",
@@ -249,20 +227,16 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should allow optional insertCriteria", async () => {
-			const mockClient = mockAgent.get(baseURL);
 			let capturedBody = "";
-
-			mockClient
-				.intercept({
-					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
-					method: "POST",
-				})
-				.reply(200, (opts) => {
-					capturedBody = opts.body as string;
-					return `<ManageMasterRecordRS>
+			onRequest = ({ body }) => {
+				capturedBody = body;
+				return {
+					status: 200,
+					body: `<ManageMasterRecordRS>
             <RsStatus Status="OK"/>
-          </ManageMasterRecordRS>`;
-				});
+          </ManageMasterRecordRS>`,
+				};
+			};
 
 			await client.master.upsert({
 				name: "John Doe",
@@ -274,20 +248,16 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should transform request to PascalCase for API", async () => {
-			const mockClient = mockAgent.get(baseURL);
 			let capturedBody = "";
-
-			mockClient
-				.intercept({
-					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
-					method: "POST",
-				})
-				.reply(200, (opts) => {
-					capturedBody = opts.body as string;
-					return `<ManageMasterRecordRS>
+			onRequest = ({ body }) => {
+				capturedBody = body;
+				return {
+					status: 200,
+					body: `<ManageMasterRecordRS>
             <RsStatus Status="OK"/>
-          </ManageMasterRecordRS>`;
-				});
+          </ManageMasterRecordRS>`,
+				};
+			};
 
 			await client.master.upsert({
 				name: "John Doe",
@@ -302,22 +272,15 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should handle API errors", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/masterRecords/v2/rest/InsertOrUpdate",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<ManageMasterRecordRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<ManageMasterRecordRS>
           <RsStatus Status="ERROR">
             <ErrorCode>1002</ErrorCode>
             <ErrorDescription>Invalid record data</ErrorDescription>
           </RsStatus>
         </ManageMasterRecordRS>`,
-				);
+			});
 
 			const result = await client.master.upsert({
 				name: "John Doe",
@@ -326,7 +289,7 @@ describeHttp("AvesClient", () => {
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 				expect(result.error.kind).toBe("api");
 				expect(result.error.code).toBe(1002);
 				expect(result.error.status).toBe("ERROR");
@@ -365,16 +328,9 @@ describeHttp("AvesClient", () => {
 		};
 
 		it("should make create booking request and return camelCase response", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/CreateBookingFile",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<BookingFileRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<BookingFileRS>
           <RsStatus Status="OK"/>
           <BookingFileDetail BookingFileCode="14/036657">
             <CustomerRecordCode>138311</CustomerRecordCode>
@@ -383,7 +339,7 @@ describeHttp("AvesClient", () => {
             <EndDate>2015-01-03T00:00:00</EndDate>
           </BookingFileDetail>
         </BookingFileRS>`,
-				);
+			});
 
 			const result = await client.booking.create(minimalBookingParams);
 
@@ -404,33 +360,26 @@ describeHttp("AvesClient", () => {
 			});
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 			}
 		});
 
 		it("should handle API errors", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/CreateBookingFile",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<BookingFileRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<BookingFileRS>
           <RsStatus Status="ERROR">
             <ErrorCode>2001</ErrorCode>
             <ErrorDescription>Booking creation failed</ErrorDescription>
           </RsStatus>
         </BookingFileRS>`,
-				);
+			});
 
 			const result = await client.booking.create(minimalBookingParams);
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 				expect(result.error.kind).toBe("api");
 				expect(result.error.code).toBe(2001);
 				expect(result.error.status).toBe("ERROR");
@@ -438,20 +387,16 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should transform request to PascalCase with BookFileRQ root", async () => {
-			const mockClient = mockAgent.get(baseURL);
 			let capturedBody = "";
-
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/CreateBookingFile",
-					method: "POST",
-				})
-				.reply(200, (opts) => {
-					capturedBody = opts.body as string;
-					return `<BookingFileRS>
+			onRequest = ({ body }) => {
+				capturedBody = body;
+				return {
+					status: 200,
+					body: `<BookingFileRS>
             <RsStatus Status="OK"/>
-          </BookingFileRS>`;
-				});
+          </BookingFileRS>`,
+				};
+			};
 
 			await client.booking.create(minimalBookingParams);
 
@@ -505,15 +450,9 @@ describeHttp("AvesClient", () => {
 		};
 
 		it("should modify services and return typed booking file fields", async () => {
-			const mockClient = mockAgent.get(baseURL);
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/ModBookingFileServices",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<BookingFileRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<BookingFileRS>
             <RsStatus Status="OK"/>
             <BookingFileDetail BookingFileCode="14/036654">
               <CustomerRecordCode>138311</CustomerRecordCode>
@@ -521,7 +460,7 @@ describeHttp("AvesClient", () => {
               <BookingFileStatus Value="QUOTATION"/>
             </BookingFileDetail>
           </BookingFileRS>`,
-				);
+			});
 
 			const result = await client.booking.updateServices(modParams);
 			expect(result.success).toBe(true);
@@ -532,17 +471,14 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should send DELETE and package attributes in XML", async () => {
-			const mockClient = mockAgent.get(baseURL);
 			let capturedBody = "";
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/ModBookingFileServices",
-					method: "POST",
-				})
-				.reply(200, (opts) => {
-					capturedBody = opts.body as string;
-					return `<BookingFileRS><RsStatus Status="OK"/></BookingFileRS>`;
-				});
+			onRequest = ({ body }) => {
+				capturedBody = body;
+				return {
+					status: 200,
+					body: `<BookingFileRS><RsStatus Status="OK"/></BookingFileRS>`,
+				};
+			};
 
 			await client.booking.updateServices(modParams);
 			expect(capturedBody).toContain("<ModFileServicesRQ>");
@@ -557,13 +493,10 @@ describeHttp("AvesClient", () => {
 
 	describe("cancel / setStatus", () => {
 		it("should cancel booking file", async () => {
-			const mockClient = mockAgent.get(baseURL);
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/CancelBookingFile",
-					method: "POST",
-				})
-				.reply(200, `<CancelFileRS><RsStatus Status="OK"/></CancelFileRS>`);
+			onRequest = () => ({
+				status: 200,
+				body: `<CancelFileRS><RsStatus Status="OK"/></CancelFileRS>`,
+			});
 
 			const result = await client.booking.cancel({
 				bookingFileCode: "14/000081",
@@ -574,22 +507,16 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should set booking status to CANCELED", async () => {
-			const mockClient = mockAgent.get(baseURL);
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/SetBookingFileStatus",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<SetStatusRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<SetStatusRS>
             <RsStatus Status="OK"/>
             <BookingFileDetail BookingFileCode="14/000081">
               <CustomerRecordCode>000170</CustomerRecordCode>
               <BookingFileStatus Value="CANCELED"/>
             </BookingFileDetail>
           </SetStatusRS>`,
-				);
+			});
 
 			const result = await client.booking.setStatus({
 				customerRecordCode: "000170",
@@ -603,15 +530,9 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should nullify a booked service line", async () => {
-			const mockClient = mockAgent.get(baseURL);
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/SetBookingFileServiceStatus",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<SetStatusServiceRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<SetStatusServiceRS>
             <RsStatus Status="OK"/>
             <BookingFileDetail BookingFileCode="18/000252">
               <CustomerRecordCode>000001</CustomerRecordCode>
@@ -622,7 +543,7 @@ describeHttp("AvesClient", () => {
               </BookedServiceList>
             </BookingFileDetail>
           </SetStatusServiceRS>`,
-				);
+			});
 
 			const result = await client.booking.setServiceStatus({
 				customerRecordCode: "000001",
@@ -645,22 +566,16 @@ describeHttp("AvesClient", () => {
 				fileStatus: { value: "INVALID" as "CANCELED" },
 			});
 			expect(result.success).toBe(false);
-			if (!result.success) expect(result.error).toBeInstanceOf(AvesError);
+			if (!result.success) expect(isAvesError(result.error)).toBe(true);
 		});
 	});
 
 	describe("updateHeader", () => {
 		it("should modify header and return status-only response", async () => {
-			const mockClient = mockAgent.get(baseURL);
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/ModBookingFileHeader",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<ModFileHeaderRS><RsStatus Status="OK"/></ModFileHeaderRS>`,
-				);
+			onRequest = () => ({
+				status: 200,
+				body: `<ModFileHeaderRS><RsStatus Status="OK"/></ModFileHeaderRS>`,
+			});
 
 			const result = await client.booking.updateHeader({
 				bookingFileCode: "14/000043",
@@ -682,17 +597,14 @@ describeHttp("AvesClient", () => {
 
 	describe("addPayments", () => {
 		it("should insert payments and return status OK", async () => {
-			const mockClient = mockAgent.get(baseURL);
 			let capturedBody = "";
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/InsertFilePaymentList",
-					method: "POST",
-				})
-				.reply(200, (opts) => {
-					capturedBody = opts.body as string;
-					return `<FilePaymentListRS><RsStatus Status="OK"/></FilePaymentListRS>`;
-				});
+			onRequest = ({ body }) => {
+				capturedBody = body;
+				return {
+					status: 200,
+					body: `<FilePaymentListRS><RsStatus Status="OK"/></FilePaymentListRS>`,
+				};
+			};
 
 			const result = await client.booking.addPayments({
 				bookingFileCode: "18/000172",
@@ -733,23 +645,18 @@ describeHttp("AvesClient", () => {
 				],
 			} as Parameters<typeof client.booking.addPayments>[0]);
 			expect(result.success).toBe(false);
-			if (!result.success) expect(result.error).toBeInstanceOf(AvesError);
+			if (!result.success) expect(isAvesError(result.error)).toBe(true);
 		});
 	});
 
 	describe("search", () => {
 		it("should search packages and return camelCase package list", async () => {
-			const mockClient = mockAgent.get(baseURL);
 			let capturedBody = "";
-
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/SearchAvesPackages",
-					method: "POST",
-				})
-				.reply(200, (opts) => {
-					capturedBody = opts.body as string;
-					return `<SearchPackageRS>
+			onRequest = ({ body }) => {
+				capturedBody = body;
+				return {
+					status: 200,
+					body: `<SearchPackageRS>
           <RsStatus Status="OK"/>
           <PackageList>
             <PackageDetail pCode="2015F041">
@@ -757,8 +664,9 @@ describeHttp("AvesClient", () => {
               <CanCommitPack>false</CanCommitPack>
             </PackageDetail>
           </PackageList>
-        </SearchPackageRS>`;
-				});
+        </SearchPackageRS>`,
+				};
+			};
 
 			const result = await client.packages.search({
 				customerRecordCode: "138311",
@@ -803,24 +711,18 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should use client languageCode when omitted on search", async () => {
-			const localized = new AvesClient({
-				baseURL,
-				hostID,
-				xtoken,
-				languageCode: "02",
-			});
-			const mockClient = mockAgent.get(baseURL);
+			const localized = new AvesClient(
+				{ baseURL, hostID, xtoken, languageCode: "02" },
+				{ httpClient: mockHttp((req) => onRequest(req)) },
+			);
 			let capturedBody = "";
-
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/SearchAvesPackages",
-					method: "POST",
-				})
-				.reply(200, (opts) => {
-					capturedBody = opts.body as string;
-					return `<SearchPackageRS><RsStatus Status="OK"/></SearchPackageRS>`;
-				});
+			onRequest = ({ body }) => {
+				capturedBody = body;
+				return {
+					status: 200,
+					body: `<SearchPackageRS><RsStatus Status="OK"/></SearchPackageRS>`,
+				};
+			};
 
 			const result = await localized.packages.search({
 				customerRecordCode: "138311",
@@ -847,22 +749,15 @@ describeHttp("AvesClient", () => {
 
 	describe("get", () => {
 		it("should get package detail", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/GetPackageDetail",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<PackageDetailRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<PackageDetailRS>
           <RsStatus Status="OK"/>
           <PackageDetail pCode="2015F042">
             <FirstDescription>FANTASIA 4 DAYS/3 NIGHTS</FirstDescription>
           </PackageDetail>
         </PackageDetailRS>`,
-				);
+			});
 
 			const result = await client.packages.get({
 				customerRecordCode: "001692",
@@ -886,14 +781,10 @@ describeHttp("AvesClient", () => {
 
 	describe("commit", () => {
 		it("should commit package", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/CommitPackage",
-					method: "POST",
-				})
-				.reply(200, `<CommitPackRS><RsStatus Status="OK"/></CommitPackRS>`);
+			onRequest = () => ({
+				status: 200,
+				body: `<CommitPackRS><RsStatus Status="OK"/></CommitPackRS>`,
+			});
 
 			const result = await client.packages.commit({
 				packageCode: "14/PACKAGE001",
@@ -906,16 +797,9 @@ describeHttp("AvesClient", () => {
 
 	describe("searchBookings", () => {
 		it("should search by PACKAGE_CODE", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/SearchBookingFile",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<SearchFileRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<SearchFileRS>
           <RsStatus Status="OK"/>
           <BookingFileList>
             <BookingFileDetail BookingFileCode="14/036654">
@@ -924,7 +808,7 @@ describeHttp("AvesClient", () => {
             </BookingFileDetail>
           </BookingFileList>
         </SearchFileRS>`,
-				);
+			});
 
 			const result = await client.booking.search({
 				searchType: "PACKAGE_CODE",
@@ -972,14 +856,7 @@ describeHttp("AvesClient", () => {
         </BookingDataExportRS>`;
 
 		it("reads payments and amounts back for a booking file", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/ExportBookingData",
-					method: "POST",
-				})
-				.reply(200, exportResponse);
+			onRequest = () => ({ status: 200, body: exportResponse });
 
 			const result = await client.booking.exportData({
 				bookingFileCode: "14/036654",
@@ -1005,14 +882,7 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("exposes the same payload under facade alias names", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/ExportBookingData",
-					method: "POST",
-				})
-				.reply(200, exportResponse);
+			onRequest = () => ({ status: 200, body: exportResponse });
 
 			const result = await client.booking.exportData({
 				bookingCode: "14/036654",
@@ -1036,28 +906,21 @@ describeHttp("AvesClient", () => {
 
 			expect(result.success).toBe(false);
 			if (!result.success) {
-				expect(result.error).toBeInstanceOf(AvesError);
+				expect(isAvesError(result.error)).toBe(true);
 				expect(result.error.kind).toBe("validation");
 			}
 		});
 
 		it("surfaces AVES errors as api errors", async () => {
-			const mockClient = mockAgent.get(baseURL);
-
-			mockClient
-				.intercept({
-					path: "/interop/booking/v2/rest/ExportBookingData",
-					method: "POST",
-				})
-				.reply(
-					200,
-					`<BookingDataExportRS>
+			onRequest = () => ({
+				status: 200,
+				body: `<BookingDataExportRS>
             <RsStatus Status="ERROR">
               <ErrorCode>1002</ErrorCode>
               <ErrorDescription>Booking file not found</ErrorDescription>
             </RsStatus>
           </BookingDataExportRS>`,
-				);
+			});
 
 			const result = await client.booking.exportData({
 				bookingFileCode: "99/999999",
@@ -1073,10 +936,12 @@ describeHttp("AvesClient", () => {
 
 	describe("AvesError", () => {
 		it("should create error with correct properties", () => {
-			const error = new AvesError("api", "Test error message", "ERROR", 1001);
+			const error = apiError("Test error message", "ERROR", 1001);
 
 			expect(error).toBeInstanceOf(Error);
-			expect(error).toBeInstanceOf(AvesError);
+			expect(error).toBeInstanceOf(AvesApiError);
+			expect(isAvesError(error)).toBe(true);
+			expect(error._tag).toBe("AvesApiError");
 			expect(error.kind).toBe("api");
 			expect(error.message).toBe("Test error message");
 			expect(error.status).toBe("ERROR");
@@ -1091,17 +956,19 @@ describeHttp("AvesClient", () => {
 		});
 
 		it("should create validation error", () => {
-			const error = new AvesError("validation", "Validation failed");
+			const error = validationError("Validation failed");
 
-			expect(error).toBeInstanceOf(AvesError);
+			expect(isAvesError(error)).toBe(true);
+			expect(error._tag).toBe("AvesValidationError");
 			expect(error.kind).toBe("validation");
 			expect(error.message).toBe("Validation failed");
 		});
 
 		it("should create unknown error", () => {
-			const error = new AvesError("unknown", "Unknown error occurred");
+			const error = unknownError("Unknown error occurred");
 
-			expect(error).toBeInstanceOf(AvesError);
+			expect(isAvesError(error)).toBe(true);
+			expect(error._tag).toBe("AvesUnknownError");
 			expect(error.kind).toBe("unknown");
 			expect(error.message).toBe("Unknown error occurred");
 		});

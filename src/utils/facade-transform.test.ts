@@ -1,5 +1,5 @@
-import { parse } from "valibot";
 import { describe, expect, it } from "vitest";
+import { parse } from "../effect/schema-parse.js";
 import { BookingFileApiSchema } from "../schemas/booking-file.js";
 import { AvesSearchSchema } from "../schemas/package-catalog.js";
 import { withPublicAliases } from "./facade-transform.js";

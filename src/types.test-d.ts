@@ -1,15 +1,19 @@
 import { describe, expectTypeOf, it } from "vitest";
 import type {
+	AvesApiError,
+	AvesClientApi,
 	AvesError,
+	AvesValidationError,
 	DynamicFields,
 	MasterRecordDetail,
 	MasterRecordDetailResponse,
 	RecordType,
+	Result,
 	RsStatus,
 	RsStatusValue,
 } from "./index.js";
 
-// Pins 2.0 contracts: enum narrowing, honest AvesError, DynamicFields array,
+// Pins 2.0 contracts: enum narrowing, honest AvesApiError, DynamicFields array,
 // and MasterRecordDetailResponse server-only fields. Checked by `yarn test`
 // (vitest typecheck) / `yarn test:types`; excluded from `yarn typecheck`.
 
@@ -19,13 +23,13 @@ describe("RsStatus (#1 — enumSchema collapses to string)", () => {
 	});
 });
 
-describe("AvesError (#3, #4 — status/code widened by the constructor)", () => {
+describe("AvesApiError (#3, #4 — status/code)", () => {
 	it("code should be number | undefined, not number | string | undefined", () => {
-		expectTypeOf<AvesError["code"]>().toEqualTypeOf<number | undefined>();
+		expectTypeOf<AvesApiError["code"]>().toEqualTypeOf<number | undefined>();
 	});
 
 	it("status should be RsStatusValue | undefined, not string | undefined", () => {
-		expectTypeOf<AvesError["status"]>().toEqualTypeOf<
+		expectTypeOf<AvesApiError["status"]>().toEqualTypeOf<
 			RsStatusValue | undefined
 		>();
 	});
@@ -96,5 +100,36 @@ describe("SearchMasterRecordRS — flat array, no rsStatus on success", () => {
 		expectTypeOf<
 			import("./index.js").SearchMasterRecordRS
 		>().not.toHaveProperty("rsStatus");
+	});
+});
+
+describe("AvesError union", () => {
+	it("includes kind on every variant", () => {
+		expectTypeOf<AvesError["kind"]>().toEqualTypeOf<
+			"validation" | "api" | "unknown"
+		>();
+	});
+
+	it("narrows validation tag", () => {
+		expectTypeOf<
+			AvesValidationError["_tag"]
+		>().toEqualTypeOf<"AvesValidationError">();
+	});
+});
+
+describe("Result export", () => {
+	it("success/failure shape", () => {
+		expectTypeOf<Result<number, AvesError>>().toEqualTypeOf<
+			{ success: true; data: number } | { success: false; error: AvesError }
+		>();
+	});
+});
+
+describe("AvesClientApi Promise facade", () => {
+	it("exposes domains without transport", () => {
+		expectTypeOf<AvesClientApi>().toHaveProperty("master");
+		expectTypeOf<AvesClientApi>().toHaveProperty("booking");
+		expectTypeOf<AvesClientApi>().toHaveProperty("packages");
+		expectTypeOf<AvesClientApi>().not.toHaveProperty("transport");
 	});
 });

@@ -1,77 +1,73 @@
-import * as v from "valibot";
-import { createResponseSchema } from "../utils/schema-transform.js";
+import { Schema } from "effect";
+import { createResponseSchema, mapSchema } from "../utils/schema-transform.js";
 import { RsStatusValueSchema } from "./enums.js";
 
 /** AVES language code (`01` Italian, `02` English, …) */
-export const LanguageCodeSchema = v.pipe(
-	v.string(),
-	v.minLength(2),
-	v.maxLength(2),
+export const LanguageCodeSchema = Schema.String.pipe(
+	Schema.minLength(2),
+	Schema.maxLength(2),
 );
 
-export const OptionalLanguageCodeSchema = v.optional(LanguageCodeSchema);
+export const OptionalLanguageCodeSchema = Schema.optional(LanguageCodeSchema);
 
 /** XML often sends numbers as strings (or vice versa). */
-export const StringishSchema = v.union([v.string(), v.number()]);
+export const StringishSchema = Schema.Union(Schema.String, Schema.Number);
 
 /** Catalog/boolish wire fields that may arrive as string | number | boolean. */
-export const StringishBoolSchema = v.union([
-	v.string(),
-	v.number(),
-	v.boolean(),
-]);
+export const StringishBoolSchema = Schema.Union(
+	Schema.String,
+	Schema.Number,
+	Schema.Boolean,
+);
 
 /** AVES bool-ish wire values */
-export const BoolishSchema = v.union([
-	v.literal("true"),
-	v.literal("false"),
-	v.boolean(),
-]);
+export const BoolishSchema = Schema.Union(
+	Schema.Literal("true"),
+	Schema.Literal("false"),
+	Schema.Boolean,
+);
 
-export const DateRangeSchema = v.object({
-	minDate: v.string(),
-	maxDate: v.string(),
+export const DateRangeSchema = Schema.Struct({
+	minDate: Schema.String,
+	maxDate: Schema.String,
 });
 
 /**
  * Request header schema with authentication credentials
  */
-export const RqHeaderSchema = v.object({
-	"@HostID": v.pipe(v.string(), v.minLength(6), v.maxLength(6)),
-	"@Xtoken": v.string(),
-	"@Interface": v.literal("WEB"),
-	"@UserName": v.literal("WEB"),
+export const RqHeaderSchema = Schema.Struct({
+	"@HostID": Schema.String.pipe(Schema.minLength(6), Schema.maxLength(6)),
+	"@Xtoken": Schema.String,
+	"@Interface": Schema.Literal("WEB"),
+	"@UserName": Schema.Literal("WEB"),
 	"@LanguageCode": OptionalLanguageCodeSchema,
 });
 
-const warningsSchema = v.optional(v.string());
+const warningsSchema = Schema.optional(Schema.String);
+
+const ErrorCodeSchema = Schema.optional(
+	mapSchema(StringishSchema, (val) => Number(val)),
+);
 
 /**
  * Response status schema indicating success, error, or warning
  */
-export const RsStatusSchema = v.pipe(
-	v.object({
+export const RsStatusSchema = mapSchema(
+	Schema.Struct({
 		"@Status": RsStatusValueSchema,
-		ErrorCode: v.optional(
-			v.pipe(
-				StringishSchema,
-				v.transform((val) => Number(val)),
-			),
-		),
-		ErrorDescription: v.optional(v.string()),
+		ErrorCode: ErrorCodeSchema,
+		ErrorDescription: Schema.optional(Schema.String),
 		Warnings: warningsSchema,
 	}),
-	v.transform((input) => {
-		return {
-			status: input["@Status"],
-			errorCode: input.ErrorCode,
-			errorDescription: input.ErrorDescription,
-			warnings: input.Warnings,
-		};
+	(input) => ({
+		status: input["@Status"],
+		errorCode: input.ErrorCode,
+		errorDescription: input.ErrorDescription,
+		warnings: input.Warnings,
 	}),
 );
 
 /** Cancel / ModHeader / CommitPackage / InsertFilePaymentList */
 export const StatusOnlyResponseSchema = createResponseSchema(
-	v.object({ RsStatus: RsStatusSchema }),
+	Schema.Struct({ RsStatus: RsStatusSchema }),
 );

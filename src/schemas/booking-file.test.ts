@@ -1,5 +1,5 @@
-import { parse } from "valibot";
 import { describe, expect, it } from "vitest";
+import { parse } from "../effect/schema-parse.js";
 import { jsonToXml } from "../xml/client.js";
 import { createRootElement, XML_ROOT_ELEMENTS } from "../xml/root.js";
 import {

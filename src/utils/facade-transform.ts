@@ -1,9 +1,10 @@
+import { Effect } from "effect";
 import { isSpecialObject } from "./case-transform.js";
 import type { Result } from "./result.js";
 
 /**
  * User-facing names for AVES-specific response properties (compat window).
- * Inbound dual keys live on Valibot schemas via {@link facadeObject}.
+ * Inbound dual keys live on schemas via {@link facadeObject}.
  */
 export const publicKeyAliases = {
 	rsStatus: "response",
@@ -254,4 +255,21 @@ export function toFacadeResult<T, E extends Error>(
 	return result.success
 		? { success: true, data: withPublicAliases(result.data) }
 		: result;
+}
+
+/** Map success values through {@link withPublicAliases} (Effect path). */
+export function toFacadeEffect<A, E>(
+	effect: Effect.Effect<A, E>,
+): Effect.Effect<FacadeOutput<A>, E> {
+	return Effect.map(effect, withPublicAliases);
+}
+
+/**
+ * Wrap an Effect-returning method so success values get public aliases.
+ * Composable with domain `ops.*` bindings.
+ */
+export function facadeMethod<Args extends readonly unknown[], A, E>(
+	fn: (...args: Args) => Effect.Effect<A, E>,
+): (...args: Args) => Effect.Effect<FacadeOutput<A>, E> {
+	return (...args) => toFacadeEffect(fn(...args));
 }

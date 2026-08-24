@@ -1,6 +1,6 @@
 ---
 name: aves-sdk-architecture
-description: Maps aves-sdk layers — AvesClient facade, domain clients, transport split, AVES_OPS registry. Use when navigating src/client, DI, or deciding where new code belongs.
+description: Maps aves-sdk layers — Promise facade, Effect Tags/Layers, domain modules, AVES_OPS registry. Use when navigating src/client, DI, or deciding where new code belongs.
 ---
 
 # aves-sdk architecture
@@ -9,37 +9,43 @@ description: Maps aves-sdk layers — AvesClient facade, domain clients, transpo
 
 | Layer | Path | Role |
 | ----- | ---- | ---- |
-| Facade | `src/client.ts` | `AvesClient` + namespaced domain clients |
-| Domains | `src/client/{booking,master-records,packages}.ts` | Op methods → `invokeOp` + `toFacadeResult` |
+| Promise facade | `src/client.ts` | `createAvesClient` / `AvesClient` / `makeAvesRuntime` |
+| Composition | `src/client/layer.ts` | `avesClientLayer` / `AvesClientLive` |
+| Domains | `src/client/{booking,master,packages}/` | Tag · service · layer — Effect → `transport.ops` / `toFacadeEffect` |
 | Ops registry | `src/client/ops.ts` | `AVES_OPS` + `AvesOp` / `OpParams` / `OpResult` |
-| Transport | `src/client/transport.ts` | Thin orchestrator: validate → envelope → HTTP → reader |
-| HTTP | `src/client/http-client.ts` | POST XML + timeout (`HttpClient`) |
+| Transport | `src/client/transport/` | `invoke` · envelope · response reader |
+| HTTP | `src/client/http/` | XML POST via platform `HttpClient` (`makeAvesHttp` / `httpClientLayer`) |
+| Config | `src/client/config/` | `AvesConfig` |
 | Envelope | `src/client/envelope.ts` / `rq-header.ts` | RQ root + `RqHeader` |
-| Response | `src/client/response-reader.ts` | XML root → `safeParse` → `rsStatus` |
-| Constants / types | `src/client/constants.ts`, `src/client/types.ts` | Timeouts, headers, `HttpClientOptions`, `AvesClientDeps` |
 | Endpoints | `src/client/endpoints.ts` | URL map |
-| Schemas | `src/schemas/*.ts` | Input/API/response Valibot |
+| Schemas | `src/schemas/*.ts` | Effect Schema RQ/RS |
 | Transforms | `src/utils/{schema-transform,booking-transform,case-transform,wire-shapes,facade-*}.ts` | Wire + facade DX |
+| Effect bridges | `src/effect/` | `runToResult` · `decodeUnknownAves` · infer |
 | XML | `src/xml/` | Encode/decode + roots |
 | Types | `src/types.ts` | Public RQ/RS aliases (no types inside domain clients) |
-| Public API | `src/index.ts` | Client, enums, types, `AvesOp` / `OpParams` / `OpResult` |
+| Public API | `src/index.ts` | Client, Tags, enums, types, `Result`, errors |
 
 ## DI
 
-`AvesClient(options, deps?)` accepts optional `AvesClientDeps`: `transport`, `master`, `booking`, `packages`.
+`AvesClient(options, deps?)` / `avesClientLayer(options, deps?)` — optional `AvesClientDeps`:
 
-- Domains take `AvesTransport` only — no direct `undici`
-- Inject mocks via `deps` in tests
+`httpClient?` · `http?` · `transport?` · `master?` · `booking?` · `packages?`
+
+- Default HTTP: `FetchHttpClient.layer`
+- Tests: inject `HttpClient.make(...)` via `deps.httpClient`
+- Promise facade does **not** expose `transport` — Effect programs use Tags + Layers
 
 ## Domain namespaces
 
-Use `client.booking.*` / `client.master.*` / `client.packages.*`. Domain methods are only exposed through their namespace.
+Promise: `client.booking.*` / `client.master.*` / `client.packages.*`.
+Effect: `yield* AvesBooking` / `AvesMaster` / `AvesPackages` (after `provide` / `makeAvesRuntime`).
 
 Import RQ/RS types from `src/types.ts` only — never define type aliases inside domain service files.
 
 ## Ownership
 
-- Domains: `await this.transport.invokeOp("opName", params)` then `toFacadeResult` (or `withPublicAliases` for special cases)
+- Domains: `transport.ops.opName(params)` → `toFacadeEffect` / `facadeMethod`
+- Promise edge: `toPromiseFacade` in `createAvesClient`
 - `AVES_OPS` owns endpoint / roots / schemas / optional `bodyKey`
 - Transport owns orchestration; HTTP / envelope / reader are split modules
 - Schemas own shape; facade inbound maps live in `facade-aliases.ts`
@@ -52,7 +58,7 @@ Transport parses `{ rsStatus, masterRecordList }`; domain maps success to `Maste
 
 | Change | Put it in |
 | ------ | --------- |
-| New HTTP op | Domain + `ops.ts` + `endpoints.ts` + XML root |
+| New HTTP op | Domain module + `ops.ts` + `endpoints.ts` + XML root |
 | Request/response shape | `src/schemas/` |
 | Attr vs element for an RQ | `wire-shapes.ts` (see `aves-sdk-wire`) |
 | Facade dual keys (inbound) | `facade-aliases.ts` + `facadeObject` on schema |

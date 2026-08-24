@@ -1,5 +1,5 @@
-import type { BaseIssue } from "valibot";
-import { ValiError } from "valibot";
+import { Data, type ParseResult, Predicate } from "effect";
+import { formatParseError, isParseError } from "./effect/parse-error.js";
 import type { RsStatusValue } from "./schemas/enums.js";
 
 export const ERROR_KINDS = {
@@ -10,81 +10,80 @@ export const ERROR_KINDS = {
 
 export type ErrorKind = (typeof ERROR_KINDS)[keyof typeof ERROR_KINDS];
 
-/**
- * Error thrown by AVES API operations
- */
-export class AvesError extends Error {
-	constructor(
-		readonly kind: ErrorKind,
-		message: string,
-		readonly status?: RsStatusValue,
-		readonly code?: number,
-	) {
-		super(message);
-		this.name = "AvesError";
-	}
+/** Request/response Schema decode failure — `catchTag("AvesValidationError")`. */
+export class AvesValidationError extends Data.TaggedError(
+	"AvesValidationError",
+)<{
+	readonly message: string;
+	readonly status?: undefined;
+	readonly code?: undefined;
+}> {
+	readonly kind = ERROR_KINDS.VALIDATION;
 }
 
-export function validationError(message: string): AvesError {
-	return new AvesError(ERROR_KINDS.VALIDATION, message);
+/** AVES `rsStatus` / HTTP failure — `catchTag("AvesApiError")`. */
+export class AvesApiError extends Data.TaggedError("AvesApiError")<{
+	readonly message: string;
+	readonly status?: RsStatusValue;
+	readonly code?: number;
+}> {
+	readonly kind = ERROR_KINDS.API;
+}
+
+/** Unexpected defect — `catchTag("AvesUnknownError")`. */
+export class AvesUnknownError extends Data.TaggedError("AvesUnknownError")<{
+	readonly message: string;
+	readonly status?: undefined;
+	readonly code?: undefined;
+}> {
+	readonly kind = ERROR_KINDS.UNKNOWN;
+}
+
+/** Discriminated union of AVES failures (Effect + Promise facade). */
+export type AvesError = AvesValidationError | AvesApiError | AvesUnknownError;
+
+export const isAvesError = (u: unknown): u is AvesError =>
+	Predicate.isTagged(u, "AvesValidationError") ||
+	Predicate.isTagged(u, "AvesApiError") ||
+	Predicate.isTagged(u, "AvesUnknownError");
+
+export function validationError(message: string): AvesValidationError {
+	return new AvesValidationError({ message });
 }
 
 export function apiError(
 	message: string,
 	status?: RsStatusValue,
 	code?: number,
-): AvesError {
-	return new AvesError(ERROR_KINDS.API, message, status, code);
+): AvesApiError {
+	return new AvesApiError({ message, status, code });
 }
 
-export function unknownError(message: string): AvesError {
-	return new AvesError(ERROR_KINDS.UNKNOWN, message);
+export function unknownError(message: string): AvesUnknownError {
+	return new AvesUnknownError({ message });
 }
 
 /** Map unknown thrown values to a typed {@link AvesError}. */
 export function toAvesError(error: unknown, defaultMessage: string): AvesError {
-	if (error instanceof AvesError) return error;
-	if (error instanceof ValiError)
-		return validationError(`Validation error: ${buildDetails(error.issues)}`);
-	if (error instanceof Error) return unknownError(error.message);
+	if (isAvesError(error)) return error;
+	if (isParseError(error))
+		return validationError(`Validation error: ${formatParseError(error)}`);
+	if (error instanceof Error) {
+		if (error.name === "ParseError")
+			return validationError(`Validation error: ${error.message}`);
+		return unknownError(error.message);
+	}
 	return unknownError(defaultMessage);
 }
 
-export function buildDetails(issues: readonly BaseIssue<unknown>[]): string {
-	return issues.map(formatIssue).join("; ");
-}
-
-function formatIssue(issue: BaseIssue<unknown>): string {
-	const path = formatPath(issue.path);
-	const message = issue.message ?? "Invalid value";
-
-	return path ? `${path}: ${message}` : message;
-}
-
-function formatPath(path?: readonly unknown[]): string | undefined {
-	if (!path || path.length === 0) return;
-
-	const segments = path
-		.map(extractSegment)
-		.filter((segment): segment is string => segment !== undefined);
-
-	return segments.length > 0 ? segments.join(".") : undefined;
-}
-
-function extractSegment(segment: unknown): string | undefined {
-	if (typeof segment === "string" || typeof segment === "number") {
-		return String(segment);
-	}
-
-	if (typeof segment === "object" && segment !== null && "key" in segment) {
-		return String(segment.key);
-	}
-
-	return;
-}
-
-export function isAbortError(error: unknown): boolean {
-	return error instanceof Error && error.name === "AbortError";
+/** Format issue lists or ParseError for response-reader messages. */
+export function buildDetails(
+	issues: readonly { message?: string }[] | ParseResult.ParseError,
+): string {
+	if (isParseError(issues)) return formatParseError(issues);
+	if (Array.isArray(issues))
+		return issues.map((i) => i.message ?? "Invalid value").join("; ");
+	return String(issues);
 }
 
 export const isErrorStatus = (statusCode: number) =>
