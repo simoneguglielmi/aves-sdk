@@ -56,14 +56,14 @@
   resolved "https://registry.yarnpkg.com/@biomejs/cli-win32-x64/-/cli-win32-x64-2.5.15.tgz#f652af401e7177466d0f20b1ba7f3998ee317401"
   integrity sha512-yAzh4UqEImV6Hcy0zjUqNfJAsUhoD64FBQCdTG8Md/Z2wQeVP/ZmJ3XRYAs1g8J9fjTFyl2fCtc5FB5til47+g==
 
-"@effect/platform@^0.90":
-  version "0.90.10"
-  resolved "https://registry.yarnpkg.com/@effect/platform/-/platform-0.90.10.tgz#7f275eddcb5b9acf44f24386c44f689c3b055cbd"
-  integrity sha512-QhDPgCaLfIMQKOCoCPQvRUS+Y34iYJ07jdZ/CBAvYFvg/iUBebsmFuHL63RCD/YZH9BuK/kqqLYAA3M0fmUEgg==
+"@effect/platform@^0.97.2":
+  version "0.97.2"
+  resolved "https://registry.yarnpkg.com/@effect/platform/-/platform-0.97.2.tgz#8e169bb7f513575b1d1ba2d49d380b8710b703aa"
+  integrity sha512-fof9J+pId374/b1WAt0P1H8QmvulzpHTjS6SUHiG20U/sFjkBUS5vGMy1/XfdTAVKX1IY+Z87dFhi/RFDfgBPQ==
   dependencies:
     find-my-way-ts "^0.1.6"
-    msgpackr "^1.11.4"
-    multipasta "^0.2.7"
+    msgpackr "^1.11.10"
+    multipasta "^0.2.8"
 
 "@emnapi/core@1.11.1":
   version "1.11.1"
@@ -628,10 +628,10 @@ dts-resolver@^3.0.0:
   resolved "https://registry.yarnpkg.com/dts-resolver/-/dts-resolver-3.0.0.tgz#5b8787569f3ca7727b6989c884d6b3615787a61e"
   integrity sha512-1T1f+z+4tl9XD+m+0HBgWoL/nm0bOIffyWaUuUSBlFg/86IWvfx+wjNaO/ybU0AJzG9/Mi5hBUgGV6zCmWEN7Q==
 
-effect@^3:
-  version "3.22.1"
-  resolved "https://registry.yarnpkg.com/effect/-/effect-3.22.1.tgz#9a65922978c39a6e5fbb0a650450614b2fb4714e"
-  integrity sha512-TNoXushmPOBAjJlthF5d2QwnX2xBPEtcNJr5XKNKbRLbDvBcOYkXlYDfvGfSA0zriwLFuCll5MDtNMAdZL17PQ==
+effect@^3.22.2:
+  version "3.22.3"
+  resolved "https://registry.yarnpkg.com/effect/-/effect-3.22.3.tgz#0f300e192945214787c87a14917280e732cd02d1"
+  integrity sha512-pQU7KTFcqHCjCbhMsiv2vFLPtCfKMspA3ChglcRfAMt/h7KlGoEtRL4eaM5Bq5chTgIysITM+fUAW87HQFKl3A==
   dependencies:
     "@standard-schema/spec" "^1.0.0"
     fast-check "^3.23.1"
@@ -856,14 +856,14 @@ msgpackr-extract@^3.0.2:
     "@msgpackr-extract/msgpackr-extract-linux-x64" "3.0.4"
     "@msgpackr-extract/msgpackr-extract-win32-x64" "3.0.4"
 
-msgpackr@^1.11.4:
+msgpackr@^1.11.10:
   version "1.12.1"
   resolved "https://registry.yarnpkg.com/msgpackr/-/msgpackr-1.12.1.tgz#61d48d6becf4d5c4d659b2c5260240dc2c09bd44"
   integrity sha512-4EUH9tQHnMmEgzW/MdAP0KIfa1T9AF+htl0ffe2n5vb2EKn9y2co8ccpgWko6S52Jy1PQZKwRnx5/KkYjtd9MQ==
   optionalDependencies:
     msgpackr-extract "^3.0.2"
 
-multipasta@^0.2.7:
+multipasta@^0.2.8:
   version "0.2.8"
   resolved "https://registry.yarnpkg.com/multipasta/-/multipasta-0.2.8.tgz#376cde8703c8496c498d16d8f602ceddfdbf0e4d"
   integrity sha512-ZPWuMKyv0cSO29f7hozp+k6+crZbQijV8ipMvxNxRf2SwtYGTX1ZX89Kd20VV4H9Znonx+EQn+iy1wGQsJ+b+Q==
