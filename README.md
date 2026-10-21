@@ -118,7 +118,7 @@ createAvesClient(options, deps?)
 | `hostID` | 6-digit host id |
 | `xtoken` | Auth token |
 | `languageCode` | Optional 2-digit language code |
-| `timeoutMs` | Optional request timeout (default 30000) |
+| `timeoutMs` | Optional request timeout in milliseconds (default 30000). A numeric string (e.g. from an env var) is accepted; any other non-positive value throws `AvesValidationError` when the client is created |
 
 Optional DI (tests / custom HTTP):
 

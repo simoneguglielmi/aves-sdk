@@ -18,7 +18,7 @@ Task Progress:
 - [ ] Export InferInput/InferOutput / convenience aliases from types.ts / index.ts if public
 - [ ] Enums via enumSchema if new picklists — re-export from index
 - [ ] Tests: schema unit + client mock (Promise + Effect DX + facade aliases + error.kind/_tag)
-- [ ] yarn typecheck && yarn test && yarn check
+- [ ] yarn typecheck && yarn test && yarn run check
 - [ ] CHANGELOG under the next version section (+ README if DX / alias map changes); bump semver if breaking
 ```
 

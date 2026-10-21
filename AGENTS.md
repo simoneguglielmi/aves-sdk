@@ -13,7 +13,7 @@ Before changing Effect Schema / `@effect/platform` APIs, check current docs (Con
 ```bash
 yarn typecheck
 yarn test
-yarn check      # Biome: tabs, double quotes, organize imports
+yarn run check  # Biome: tabs, double quotes, organize imports (plain `yarn check` is Yarn 1's dependency check)
 yarn build      # clean + check + tsdown
 # optional: yarn test:bench · AVES_PERF=1 yarn test:perf
 ```
@@ -283,7 +283,7 @@ Task Progress:
 - [ ] Export InferInput/InferOutput types from types.ts / index.ts if public
 - [ ] Enums via enumSchema if new picklists — re-export from index
 - [ ] Tests: schema unit + client mock (Promise + Effect DX + facade aliases + error.kind/_tag)
-- [ ] yarn typecheck && yarn test && yarn check
+- [ ] yarn typecheck && yarn test && yarn run check
 - [ ] CHANGELOG under the next version section (+ README if DX / alias map changes); bump semver if breaking
 ```
 

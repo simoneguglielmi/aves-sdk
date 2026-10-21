@@ -228,6 +228,50 @@ describe("Effect client DX", () => {
 		}
 	});
 
+	it("gives an HTTP error with an empty body a readable message", async () => {
+		const client = createAvesClient(opts, {
+			httpClient: mockHttp(() => ({ status: 503, body: "" })),
+		});
+		const result = await client.master.search({
+			searchType: "CODE",
+			recordCode: "508558",
+		});
+		expect(result.success).toBe(false);
+		if (!result.success)
+			expect(result.error.message).toBe("AVES responded with HTTP 503");
+	});
+
+	it("reads a numeric string timeoutMs as milliseconds, as 1.x did (env vars)", async () => {
+		const slow = HttpClient.make((request) =>
+			Effect.sleep("30 millis").pipe(
+				Effect.as(
+					HttpClientResponse.fromWeb(
+						request,
+						new Response(searchOkXml, { status: 200 }),
+					),
+				),
+			),
+		);
+		const client = createAvesClient(
+			{ ...opts, timeoutMs: "2000" as unknown as number },
+			{ httpClient: slow },
+		);
+		const result = await client.master.search({
+			searchType: "CODE",
+			recordCode: "508558",
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it.each([["abc"], [0], [-5], [Number.NaN], [Number.POSITIVE_INFINITY]])(
+		"rejects timeoutMs %p when the client is created",
+		(timeoutMs) => {
+			expect(() =>
+				createAvesClient({ ...opts, timeoutMs: timeoutMs as number }),
+			).toThrow(AvesValidationError);
+		},
+	);
+
 	it("maps HttpClient RequestError to AvesApiError", async () => {
 		const failing = HttpClient.make((request) =>
 			Effect.fail(
