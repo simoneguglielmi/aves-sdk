@@ -2,59 +2,59 @@
 # yarn lockfile v1
 
 
-"@biomejs/biome@2.5.7":
-  version "2.5.7"
-  resolved "https://registry.yarnpkg.com/@biomejs/biome/-/biome-2.5.7.tgz#845a49fe90f271b4f280e4244ecaccb0306e9068"
-  integrity sha512-zr8K/DcY5tYsQOQwqMJ0AWElo6QgmgNI7idXgXLhevVszlt8RGVpesEJPqx3ThazLaOwjJ5Y8fz3BtH5fGZNsw==
+"@biomejs/biome@2.5.15":
+  version "2.5.15"
+  resolved "https://registry.yarnpkg.com/@biomejs/biome/-/biome-2.5.15.tgz#0a7d323f59b0d361e032ddcf7c4907d4f979eb22"
+  integrity sha512-WZTW4slm/pdkh92K6t/3aEN++44JD1PQ7squ7RCMLI1flHGl43DVOIGXvCjHiZgBMO1V4uYxoFNtqrIA4qGuIQ==
   optionalDependencies:
-    "@biomejs/cli-darwin-arm64" "2.5.7"
-    "@biomejs/cli-darwin-x64" "2.5.7"
-    "@biomejs/cli-linux-arm64" "2.5.7"
-    "@biomejs/cli-linux-arm64-musl" "2.5.7"
-    "@biomejs/cli-linux-x64" "2.5.7"
-    "@biomejs/cli-linux-x64-musl" "2.5.7"
-    "@biomejs/cli-win32-arm64" "2.5.7"
-    "@biomejs/cli-win32-x64" "2.5.7"
+    "@biomejs/cli-darwin-arm64" "2.5.15"
+    "@biomejs/cli-darwin-x64" "2.5.15"
+    "@biomejs/cli-linux-arm64" "2.5.15"
+    "@biomejs/cli-linux-arm64-musl" "2.5.15"
+    "@biomejs/cli-linux-x64" "2.5.15"
+    "@biomejs/cli-linux-x64-musl" "2.5.15"
+    "@biomejs/cli-win32-arm64" "2.5.15"
+    "@biomejs/cli-win32-x64" "2.5.15"
 
-"@biomejs/cli-darwin-arm64@2.5.7":
-  version "2.5.7"
-  resolved "https://registry.yarnpkg.com/@biomejs/cli-darwin-arm64/-/cli-darwin-arm64-2.5.7.tgz#64a47b72f6405f80f6df92fa79246c23d91d5ddd"
-  integrity sha512-vxo/Ls3/PYdQWyLhYYcgMOCzQypAjcY+iihS8M0wW03l16TCLW4zqZzGo75gm1VdCMj38hTVZ31KBWrZ4G9dJw==
+"@biomejs/cli-darwin-arm64@2.5.15":
+  version "2.5.15"
+  resolved "https://registry.yarnpkg.com/@biomejs/cli-darwin-arm64/-/cli-darwin-arm64-2.5.15.tgz#0d5e5c6a672617cb61101efafc638f993b7985a8"
+  integrity sha512-BZVzFhJ/mUvTLMYbc9x6el0o2Uv5zP7bACYyhFb6fSc1giroXm7PL0a5KqMJ9F+/BnkYRjagD/ROSDVOZ6eapg==
 
-"@biomejs/cli-darwin-x64@2.5.7":
-  version "2.5.7"
-  resolved "https://registry.yarnpkg.com/@biomejs/cli-darwin-x64/-/cli-darwin-x64-2.5.7.tgz#3f58c2d6e7af46c7da1c2232797a2a9e325194f4"
-  integrity sha512-Cd3Ga61amT/Yl/0x8elP5hhGYaFy4bw6WuysTgf7oo8TA5tJ5A1k+DkVoJ2BHbTVil51gTX9VPzArnrlLJ3Kyg==
+"@biomejs/cli-darwin-x64@2.5.15":
+  version "2.5.15"
+  resolved "https://registry.yarnpkg.com/@biomejs/cli-darwin-x64/-/cli-darwin-x64-2.5.15.tgz#bb0a1b696e7270ca187c514573baf9a82ba0fec5"
+  integrity sha512-V5Kw63V+fVGNFhFrizDxMbGXAzZCh8kYzJpy3GI6gTapWDg7bZK9oYC9CbVgQSEdTnupz0U5Efz8Ev+5vdBBXw==
 
-"@biomejs/cli-linux-arm64-musl@2.5.7":
-  version "2.5.7"
-  resolved "https://registry.yarnpkg.com/@biomejs/cli-linux-arm64-musl/-/cli-linux-arm64-musl-2.5.7.tgz#f135313f59f9e126a3553ace4239e4279cc2e7ac"
-  integrity sha512-xPI5yB6XlpDbNkS+bm1t42olw5c4l3UrlOmLg7KtLJvjvkNF/1V4tnUgfkylGIeb3u/T+BzMGYqgQhzjAoJzuQ==
+"@biomejs/cli-linux-arm64-musl@2.5.15":
+  version "2.5.15"
+  resolved "https://registry.yarnpkg.com/@biomejs/cli-linux-arm64-musl/-/cli-linux-arm64-musl-2.5.15.tgz#63839d4c11081d53cffa0cecf388769734551d1b"
+  integrity sha512-tGzZUTcJCV7tj5Adh/Gn6nR4MycqA3iohq2LEcrarAgRBkU0h0OKd2UzCRkOsOYOuUGaUJb4YmqRqyy2feGGSw==
 
-"@biomejs/cli-linux-arm64@2.5.7":
-  version "2.5.7"
-  resolved "https://registry.yarnpkg.com/@biomejs/cli-linux-arm64/-/cli-linux-arm64-2.5.7.tgz#3e98beda0cab6e1f33908805b1be2d182ae8ce3f"
-  integrity sha512-rR2QE0yF2GYSuYuKIa7pKvODGJqnOH+2eDREAM8wV+mWKSkMQKdAp4zXEZfTaxY8PMoNONnpgSWcBCyLDPDOKg==
+"@biomejs/cli-linux-arm64@2.5.15":
+  version "2.5.15"
+  resolved "https://registry.yarnpkg.com/@biomejs/cli-linux-arm64/-/cli-linux-arm64-2.5.15.tgz#ea868026056577eeb43c7e7a1517627115655e20"
+  integrity sha512-XaG7P7eeSLYETD3K9grfB0mQmpLQZjygdbsxekWBJAg4am79fGAtRpfRyNnTvXB2fZFNnJZG3nXm7HBat0+VUw==
 
-"@biomejs/cli-linux-x64-musl@2.5.7":
-  version "2.5.7"
-  resolved "https://registry.yarnpkg.com/@biomejs/cli-linux-x64-musl/-/cli-linux-x64-musl-2.5.7.tgz#2a21980331ef492601ef6c8e439953395f19bce1"
-  integrity sha512-rE5VZi+qtmPgQH+l7jVxYoZ18b/TiHEhulhMpjmCZH1PltSbjRcxNWywC3HZ9tYottG7ORkeTtoscBilKSBm0g==
+"@biomejs/cli-linux-x64-musl@2.5.15":
+  version "2.5.15"
+  resolved "https://registry.yarnpkg.com/@biomejs/cli-linux-x64-musl/-/cli-linux-x64-musl-2.5.15.tgz#e969cebdfbdc7c69eef154e20a0672e0184dc6f1"
+  integrity sha512-IlxUcyxilVGPsE008x13pWdkTbU3nQpP2i9b5UrbOYj6goBkKsRX1XB7yJLcV+O1H9LBchIIm4adOaVLZBX0ZQ==
 
-"@biomejs/cli-linux-x64@2.5.7":
-  version "2.5.7"
-  resolved "https://registry.yarnpkg.com/@biomejs/cli-linux-x64/-/cli-linux-x64-2.5.7.tgz#f4511c8ca02d8d0a86d0b0d688b90aa2ad0d14ce"
-  integrity sha512-FQgqJhscrqJUFptGaRSUJWlXAExwWcDwLuK49dvKfkQ1bB5SEEyFssnsxQY83Xm6jR0EbbX3+8+D5bfvYqUG2Q==
+"@biomejs/cli-linux-x64@2.5.15":
+  version "2.5.15"
+  resolved "https://registry.yarnpkg.com/@biomejs/cli-linux-x64/-/cli-linux-x64-2.5.15.tgz#4e5fb14b5ed66ff61e57510cbeef7dc5889d9959"
+  integrity sha512-xE4iEW/3LqlYj9GFgGrFsFSH51dEEpUbYWBfeOv0q87WkUDxK2o/HhreSb7qMJqck70RVM6Lg96hgedcAYcOkA==
 
-"@biomejs/cli-win32-arm64@2.5.7":
-  version "2.5.7"
-  resolved "https://registry.yarnpkg.com/@biomejs/cli-win32-arm64/-/cli-win32-arm64-2.5.7.tgz#b827341236d6914f83777857d6b16ee7734143cf"
-  integrity sha512-Oq4x0CCwP4jirrcTywXs5kOGZ4v5vuEP+gWrbtjApOA2CL9F3F9GlIdQIci8AKSCa/zURanMRpX/4wQ7Am6hHg==
+"@biomejs/cli-win32-arm64@2.5.15":
+  version "2.5.15"
+  resolved "https://registry.yarnpkg.com/@biomejs/cli-win32-arm64/-/cli-win32-arm64-2.5.15.tgz#a1c2c23500cce101ee9593623ed8af57794c3177"
+  integrity sha512-2kPKzhNlm8C+Ru3GcO0Me2ODkCBLrVOUNuyi84RJyWDVKAA4+Kjj3jMjL938lF6BRfvltC4vB2nPY9SvN51Ovg==
 
-"@biomejs/cli-win32-x64@2.5.7":
-  version "2.5.7"
-  resolved "https://registry.yarnpkg.com/@biomejs/cli-win32-x64/-/cli-win32-x64-2.5.7.tgz#aba3fa4705d963ff8c89f26ab5d4534f8f963c96"
-  integrity sha512-V+0wu/nrj2S+MhP4EQ0uHNolP0IALEsz45pg0WoKkHfDeh0+ItHwP/p7bX5RPoMOl9NkpHYWdYPhIcy2mACHvQ==
+"@biomejs/cli-win32-x64@2.5.15":
+  version "2.5.15"
+  resolved "https://registry.yarnpkg.com/@biomejs/cli-win32-x64/-/cli-win32-x64-2.5.15.tgz#f652af401e7177466d0f20b1ba7f3998ee317401"
+  integrity sha512-yAzh4UqEImV6Hcy0zjUqNfJAsUhoD64FBQCdTG8Md/Z2wQeVP/ZmJ3XRYAs1g8J9fjTFyl2fCtc5FB5til47+g==
 
 "@effect/platform@^0.90":
   version "0.90.10"
