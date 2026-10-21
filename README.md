@@ -98,6 +98,10 @@ Migration from 3.x: domain method names were shortened — see the
 Migration from 4.x: Effect Schema + platform HTTP + tagged errors — see the
 [5.0.0 migration notes](https://github.com/simoneguglielmi/aves-sdk/blob/main/CHANGELOG.md#v5.0.0).
 
+From 5.0.x: the Promise API is unchanged; Effect programs move to Effect 4
+(`effect/http`, `Context.Service`) — see the
+[5.1.0 notes](https://github.com/simoneguglielmi/aves-sdk/blob/main/CHANGELOG.md#v5.1.0).
+
 | Namespace | Methods |
 | --------- | ------- |
 | `master` | `search`, `upsert` |
