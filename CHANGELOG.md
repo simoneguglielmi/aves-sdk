@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<a id="v5.0.1"></a>
+## [5.0.1] - 2026-10-21
+
+Typed master record responses, a safe `timeoutMs`, and no empty error messages. No API change.
+
+### Fixed
+
+- **Master record responses are typed again.** Since 5.0.0 `MasterRecordDetailResponse`, `ManageMasterRecordRS` and `SearchMasterRecordRS` items were published as `{ [x: Uncapitalize<string>]: any }`, because `createApiValidationSchema` returned `Schema.Schema.AnyNoContext`. It now declares the wire struct it builds (encoded input fields under their wire keys, server-only overrides replacing their twins), so `result.data.recordCode`, `email`, `modifiedDate`, `financialDetail.currencyCode`, … have their real types, as in 4.x. Pinned in `src/types.test-d.ts` (no index signature, exact field types). Declarations: 404 kB → 467 kB.
+- **`timeoutMs` is checked when the client is built.** Effect's `Duration.millis` reads a string as nanoseconds and `NaN` / a negative value as 0, so `timeoutMs: "30000"` (typical when read from an env var, and accepted by 1.x through `setTimeout`) made every request time out at once. A numeric string is now read as milliseconds; anything that is not a positive number throws `AvesValidationError` from `createAvesClient` / `new AvesClient` / `avesClientLayer` / `makeAvesRuntime`.
+- **`AvesApiError.message` is never empty.** A non-OK `RsStatus` without `ErrorDescription` now reads `AVES responded with status ERROR (code 7)`, and an HTTP error with an empty body `AVES responded with HTTP 503`, instead of `""`.
+
 <a id="v5.0.0"></a>
 ## [5.0.0] - 2026-08-24
 
