@@ -1,6 +1,6 @@
 ---
 name: aves-sdk-style
-description: Coding style and conventions for aves-sdk — Biome, ESM imports, enums, Infer types, Vitest, yarn scripts. Use when writing or reviewing TypeScript in this package, adding tests, or formatting code.
+description: Coding style and conventions for aves-sdk — Biome, ESM imports, enums, Infer types, Vitest, pnpm scripts. Use when writing or reviewing TypeScript in this package, adding tests, or formatting code.
 ---
 
 # aves-sdk style
@@ -9,13 +9,13 @@ description: Coding style and conventions for aves-sdk — Biome, ESM imports, e
 
 | Tool | Role |
 | ---- | ---- |
-| **yarn** | Package manager (`packageManager`: yarn@1.22.22) |
-| **Biome** | Format + lint (`yarn run check`) — tabs, double quotes, organize imports |
-| **TypeScript** | `yarn typecheck` (`tsc --noEmit`); extends `@tsconfig/node22` |
-| **Vitest** | `yarn test` — node env, globals; `yarn test:bench`; `AVES_PERF=1 yarn test:perf` |
+| **pnpm** | Package manager (`packageManager`: pnpm@12.14.0); dependency build scripts need an `allowBuilds` entry in `pnpm-workspace.yaml` |
+| **Biome** | Format + lint (`pnpm check`) — tabs, double quotes, organize imports |
+| **TypeScript** | `pnpm typecheck` (`tsc --noEmit`); extends `@tsconfig/node22` |
+| **Vitest** | `pnpm test` — node env, globals; `pnpm test:bench`; `AVES_PERF=1 pnpm test:perf` |
 | **tsdown** | Build to `dist/` ESM + `.d.mts` |
 
-Always run Biome via `yarn run check` (plain `yarn check` is Yarn 1's built-in dependency check) / `yarn build` (build runs lint). Do not fight tab/double-quote settings.
+Always run Biome via `pnpm check` / `pnpm build` (build runs lint). Do not fight tab/double-quote settings.
 
 ## Module / TS
 
@@ -58,8 +58,8 @@ Add to `schemas/enums.ts` and re-export from `index.ts`.
 | Effect DX / Layers | `src/client.effect.test.ts` — runtime, DI, `catchTag`, timeout |
 | Transport reader | `src/client/transport/response-reader.test.ts` |
 | XML / utils | colocated `*.test.ts` |
-| Hot-path bench | `src/utils/hot-path.bench.ts` — `yarn test:bench` |
-| Hot-path asserts | `src/utils/hot-path.perf.test.ts` — `AVES_PERF=1 yarn test:perf` (skipped by default) |
+| Hot-path bench | `src/utils/hot-path.bench.ts` — `pnpm test:bench` |
+| Hot-path asserts | `src/utils/hot-path.perf.test.ts` — `AVES_PERF=1 pnpm test:perf` (skipped by default) |
 
 Patterns:
 

@@ -9,7 +9,7 @@ description: Index for aves-sdk project skills. Use when starting work in this r
 
 Skills live in **`.agents/skills/`** (symlinked for Cursor / Claude Code / Codex).
 
-TypeScript SDK for AVES XML REST. **yarn** · **Effect Schema** · **`@effect/platform`** · `tsdown` · Biome.
+TypeScript SDK for AVES XML REST. **pnpm** · **Effect Schema** · **`@effect/platform`** · `tsdown` · Biome.
 
 Before changing Effect Schema / `@effect/platform` APIs, check Context7.
 
@@ -27,6 +27,6 @@ Before changing Effect Schema / `@effect/platform` APIs, check Context7.
 Prefer existing helpers over new transform paths. Facade dual keys: schema-owned inbound (`facade-aliases.ts`) + Proxy outbound (`withPublicAliases`).
 
 ```bash
-yarn typecheck && yarn test
-# optional: yarn test:bench · AVES_PERF=1 yarn test:perf
+pnpm typecheck && pnpm test
+# optional: pnpm test:bench · AVES_PERF=1 pnpm test:perf
 ```

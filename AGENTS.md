@@ -2,7 +2,7 @@
 
 Self-contained agent guide for **aves-sdk**. Optional Agent Skills live in **`.agents/skills/`** (harness-agnostic). This file is enough on its own.
 
-TypeScript SDK for AVES XML REST. **yarn** · **Effect Schema** · **`@effect/platform`** · ESM (`tsdown`) · Biome · Vitest.
+TypeScript SDK for AVES XML REST. **pnpm** · **Effect Schema** · **`@effect/platform`** · ESM (`tsdown`) · Biome · Vitest.
 
 Before changing Effect Schema / `@effect/platform` APIs, check current docs (Context7 or Effect docs).
 
@@ -11,14 +11,14 @@ Before changing Effect Schema / `@effect/platform` APIs, check current docs (Con
 ## Commands
 
 ```bash
-yarn typecheck
-yarn test
-yarn run check  # Biome: tabs, double quotes, organize imports (plain `yarn check` is Yarn 1's dependency check)
-yarn build      # clean + check + tsdown
-# optional: yarn test:bench · AVES_PERF=1 yarn test:perf
+pnpm typecheck
+pnpm test
+pnpm check      # Biome: tabs, double quotes, organize imports
+pnpm build      # clean + check + tsdown
+# optional: pnpm test:bench · AVES_PERF=1 pnpm test:perf
 ```
 
-Verify after substantive edits: `yarn typecheck && yarn test`.
+Verify after substantive edits: `pnpm typecheck && pnpm test`.
 
 ---
 
@@ -86,7 +86,7 @@ Import RQ/RS types from `src/types.ts` only — never define type aliases inside
 
 | Tool | Notes |
 | ---- | ----- |
-| yarn | `packageManager`: yarn@1.22.22 |
+| pnpm | `packageManager`: pnpm@12.14.0 (via corepack). Dependency build scripts are denied unless listed in `pnpm-workspace.yaml` `allowBuilds` |
 | Biome | tabs, double quotes — do not fight formatter |
 | TS | ESM only; relative imports use **`.js` extensions** |
 | Types | Prefer `{}[]` over `Array<T>`; short early returns when clear |
@@ -117,8 +117,8 @@ Add to `schemas/enums.ts` and re-export from `index.ts`.
 | Effect DX / Layers | `src/client.effect.test.ts` — runtime, DI, `catchTag`, timeout |
 | Transport reader | `src/client/transport/response-reader.test.ts` |
 | XML / utils | colocated `*.test.ts` |
-| Hot-path bench | `src/utils/hot-path.bench.ts` — `yarn test:bench` |
-| Hot-path asserts | `src/utils/hot-path.perf.test.ts` — `AVES_PERF=1 yarn test:perf` |
+| Hot-path bench | `src/utils/hot-path.bench.ts` — `pnpm test:bench` |
+| Hot-path asserts | `src/utils/hot-path.perf.test.ts` — `AVES_PERF=1 pnpm test:perf` |
 
 Assert `result.success` / `error.kind` or `_tag` / `isAvesError`. Cover facade dual keys and flattened DX when touching those schemas.
 
@@ -283,7 +283,7 @@ Task Progress:
 - [ ] Export InferInput/InferOutput types from types.ts / index.ts if public
 - [ ] Enums via enumSchema if new picklists — re-export from index
 - [ ] Tests: schema unit + client mock (Promise + Effect DX + facade aliases + error.kind/_tag)
-- [ ] yarn typecheck && yarn test && yarn run check
+- [ ] pnpm typecheck && pnpm test && pnpm check
 - [ ] CHANGELOG under the next version section (+ README if DX / alias map changes); bump semver if breaking
 ```
 
