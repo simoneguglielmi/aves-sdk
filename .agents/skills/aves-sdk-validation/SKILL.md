@@ -40,7 +40,7 @@ Factories: `validationError`, `apiError`, `unknownError`, **`toAvesError`**, gua
 1. Look up `AVES_OPS[op]` (endpoint, roots, schemas, `bodyKey?`)
 2. `decodeUnknownAves(apiSchema, params)` — validation → `AvesValidationError`
 3. `buildOpEnvelope` + cached frozen `RqHeader`
-4. `AvesHttp.post` — platform client, timeout, status, capped error body
+4. `AvesHttp.post` — `effect/http` client, timeout, status, capped error body
 5. `readAvesResponseEffect` — XML root → Schema decode → `rsStatus` gate
 
 Response reader:

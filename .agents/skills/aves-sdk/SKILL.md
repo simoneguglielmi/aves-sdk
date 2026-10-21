@@ -9,9 +9,9 @@ description: Index for aves-sdk project skills. Use when starting work in this r
 
 Skills live in **`.agents/skills/`** (symlinked for Cursor / Claude Code / Codex).
 
-TypeScript SDK for AVES XML REST. **pnpm** · **Effect Schema** · **`@effect/platform`** · `tsdown` · Biome.
+TypeScript SDK for AVES XML REST. **pnpm** · **Effect Schema** · **`effect/http`** (Effect 4) · `tsdown` · Biome.
 
-Before changing Effect Schema / `@effect/platform` APIs, check Context7.
+Before changing Effect Schema / `effect/http` APIs, check Context7 (Effect 4 docs) or the installed `effect` `.d.ts`.
 
 ## Optional skills (mirrors of AGENTS.md sections)
 
