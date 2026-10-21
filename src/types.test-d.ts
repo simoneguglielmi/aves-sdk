@@ -5,6 +5,7 @@ import type {
 	AvesError,
 	AvesValidationError,
 	DynamicFields,
+	ManageMasterRecordRS,
 	MasterRecordDetail,
 	MasterRecordDetailResponse,
 	RecordType,
@@ -86,6 +87,36 @@ describe("MasterRecordDetailResponse (#11 — response schema parses the wrong s
 
 	it("has loginType, a server-only field its own JSDoc promises", () => {
 		expectTypeOf<MasterRecordDetailResponse>().toHaveProperty("loginType");
+	});
+});
+
+describe("Master record responses are fully typed (5.0.1 — createApiValidationSchema returned any)", () => {
+	it("MasterRecordDetailResponse has no index signature", () => {
+		expectTypeOf<MasterRecordDetailResponse>().not.toHaveProperty(
+			"notAnAvesField",
+		);
+	});
+
+	it("MasterRecordDetailResponse keeps its field types, nested ones included", () => {
+		expectTypeOf<MasterRecordDetailResponse["recordCode"]>().toEqualTypeOf<
+			string | undefined
+		>();
+		expectTypeOf<MasterRecordDetailResponse["email"]>().toEqualTypeOf<
+			string | undefined
+		>();
+		expectTypeOf<MasterRecordDetailResponse["modifiedDate"]>().toEqualTypeOf<
+			string | undefined
+		>();
+		expectTypeOf<
+			NonNullable<MasterRecordDetailResponse["financialDetail"]>["currencyCode"]
+		>().toEqualTypeOf<string | undefined>();
+	});
+
+	it("ManageMasterRecordRS exposes a typed recordCode, without an index signature", () => {
+		expectTypeOf<ManageMasterRecordRS>().not.toHaveProperty("notAnAvesField");
+		expectTypeOf<ManageMasterRecordRS["recordCode"]>().toEqualTypeOf<
+			string | undefined
+		>();
 	});
 });
 

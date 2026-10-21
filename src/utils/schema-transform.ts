@@ -539,16 +539,49 @@ function buildApiValidationObject<TFields extends StructFields>(
 }
 
 /**
+ * Type of the wire validation struct: the input's Encoded fields under their wire keys
+ * (same `Pascalize` as the encoder), with server-only overrides replacing their twins.
+ */
+export type ApiValidationType<
+	TFields extends StructFields,
+	TShape,
+	TOverrides extends StructFields,
+> = Omit<
+	Pascalize<Schema.Schema.Encoded<Schema.Struct<TFields>>, TShape>,
+	keyof TOverrides
+> &
+	Schema.Struct.Type<TOverrides>;
+
+/**
  * Validation schema for already-transformed PascalCase/@attr payloads.
  * Walks nested object entries recursively so keys cannot drift from the encoder.
  * `overrides` is only for server-only fields (not structural twins).
  */
-export function createApiValidationSchema<TFields extends StructFields>(
+export function createApiValidationSchema<
+	TFields extends StructFields,
+	const TShape extends WireShapeFor<
+		Schema.Schema.Type<Schema.Struct<TFields>> & object
+	> = Record<never, never>,
+	TOverrides extends StructFields = Record<never, never>,
+>(
 	inputSchema: Schema.Struct<TFields>,
-	shape: WireShapeFor<Schema.Schema.Type<Schema.Struct<TFields>> & object> = {},
-	overrides?: StructFields,
-): Schema.Schema.AnyNoContext {
-	return buildApiValidationObject(inputSchema, shape, overrides);
+	shape: TShape = {} as TShape,
+	overrides?: TOverrides,
+): Schema.Schema<
+	ApiValidationType<TFields, TShape, TOverrides>,
+	ApiValidationType<TFields, TShape, TOverrides>,
+	never
+> {
+	// The runtime struct is built key by key, so its type is declared here once.
+	return buildApiValidationObject(
+		inputSchema,
+		shape,
+		overrides,
+	) as Schema.Schema<
+		ApiValidationType<TFields, TShape, TOverrides>,
+		ApiValidationType<TFields, TShape, TOverrides>,
+		never
+	>;
 }
 
 /**
