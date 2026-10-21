@@ -10,12 +10,12 @@ description: Coding style and conventions for aves-sdk — Biome, ESM imports, e
 | Tool | Role |
 | ---- | ---- |
 | **yarn** | Package manager (`packageManager`: yarn@1.22.22) |
-| **Biome** | Format + lint (`yarn check`) — tabs, double quotes, organize imports |
+| **Biome** | Format + lint (`yarn run check`) — tabs, double quotes, organize imports |
 | **TypeScript** | `yarn typecheck` (`tsc --noEmit`); extends `@tsconfig/node22` |
 | **Vitest** | `yarn test` — node env, globals; `yarn test:bench`; `AVES_PERF=1 yarn test:perf` |
 | **tsdown** | Build to `dist/` ESM + `.d.mts` |
 
-Always run Biome via `yarn check` / `yarn build` (build runs check). Do not fight tab/double-quote settings.
+Always run Biome via `yarn run check` (plain `yarn check` is Yarn 1's built-in dependency check) / `yarn build` (build runs lint). Do not fight tab/double-quote settings.
 
 ## Module / TS
 
