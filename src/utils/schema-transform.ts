@@ -1,4 +1,4 @@
-import { ParseResult, Schema, SchemaAST } from "effect";
+import { Schema, SchemaAST, SchemaTransformation } from "effect";
 import { RsStatusSchema } from "../schemas/common.js";
 import { toWireBody } from "./booking-transform.js";
 import {
@@ -19,15 +19,15 @@ function unsupportedEncode<A>(_b: unknown): A {
 }
 
 /**
- * Context-pin choke point: Effect often infers `unknown` Context for dynamic
- * `Struct` / `partial` / AST rebuilds. These schemas never require services —
+ * Services-pin choke point: Effect infers `unknown` Decoding/EncodingServices for
+ * dynamic `Struct` fields and AST rebuilds. These schemas never require services —
  * pin to `never` here only. Do not invent parallel cast helpers or grow new
- * Context-erasure patterns outside this function.
+ * services-erasure patterns outside this function.
  */
 export function syncSchema<A, I>(
-	schema: Schema.Schema<A, I, never> | Schema.Schema<A, I, unknown>,
-): Schema.Schema<A, I, never> {
-	return schema as Schema.Schema<A, I, never>;
+	schema: Schema.Codec<A, I, unknown, unknown>,
+): Schema.Codec<A, I> {
+	return schema as Schema.Codec<A, I>;
 }
 
 /**
@@ -35,39 +35,39 @@ export function syncSchema<A, I>(
  * Uses `Schema.declare` for the output type — no `Schema.Any` casts.
  */
 export function mapSchema<A, I, B>(
-	schema: Schema.Schema<A, I, never>,
+	schema: Schema.Codec<A, I>,
 	decode: (a: A) => B,
-): Schema.Schema<B, I, never> {
-	return Schema.transform(
-		Schema.asSchema(schema),
-		Schema.declare((input: unknown): input is B => true),
-		{
-			strict: false,
-			decode,
-			encode: unsupportedEncode<A>,
-		},
+): Schema.Codec<B, I> {
+	return schema.pipe(
+		Schema.decodeTo(
+			Schema.declare((_input: unknown): _input is B => true),
+			SchemaTransformation.transform<B, A>({
+				decode,
+				encode: unsupportedEncode<A>,
+			}),
+		),
 	);
 }
 
 /**
- * Decode `from`, map the value, then re-validate through `to`.
+ * Decode `from`, map the value, then decode the result through `to`
+ * (`to` reads the mapped value as its own Encoded input).
  * Encoded stays `Encoded<from>`; Type becomes `Type<to>`.
  * Encode is identity (dual facade keys are decode-only).
  */
 export function redecodeSchema<A, I, B, J>(
-	from: Schema.Schema<A, I>,
-	to: Schema.Schema<B, J>,
+	from: Schema.Codec<A, I>,
+	to: Schema.Codec<B, J>,
 	map: (input: A) => unknown,
-): Schema.Schema<B, I, never> {
-	const source = Schema.asSchema(from);
-	const target = Schema.asSchema(to);
-	return syncSchema(
-		Schema.transformOrFail(source, target, {
-			strict: false,
-			decode: (input, options) =>
-				ParseResult.decodeUnknown(target)(map(input), options),
-			encode: ParseResult.succeed,
-		}),
+): Schema.Codec<B, I> {
+	return from.pipe(
+		Schema.decodeTo(
+			to,
+			SchemaTransformation.transform<J, A>({
+				decode: (input) => map(input) as J,
+				encode: (input) => input as unknown as A,
+			}),
+		),
 	);
 }
 
@@ -76,20 +76,18 @@ export function redecodeSchema<A, I, B, J>(
  * Use `elementOnlyWire` (`{}`) when the root has no attributes.
  */
 export function createApiSchema<A extends object, I extends object>(
-	inputSchema: Schema.Schema<A, I, never>,
+	inputSchema: Schema.Codec<A, I>,
 	shape: WireShapeFor<A>,
-): Schema.Schema<Pascalize<A>, I, never> {
-	return mapSchema(syncSchema(Schema.asSchema(inputSchema)), (input) =>
-		toWireBody(input, shape),
-	);
+): Schema.Codec<Pascalize<A>, I> {
+	return mapSchema(inputSchema, (input) => toWireBody(input, shape));
 }
 
 /**
  * Normalize XML one-or-many nodes into a typed array (Effect `ArrayEnsure`).
  */
 export function oneOrMany<A, I>(
-	itemSchema: Schema.Schema<A, I, never>,
-): Schema.ArrayEnsure<Schema.Schema<A, I, never>> {
+	itemSchema: Schema.Codec<A, I>,
+): Schema.ArrayEnsure<Schema.Codec<A, I>> {
 	return Schema.ArrayEnsure(itemSchema);
 }
 
@@ -98,13 +96,13 @@ export function oneOrMany<A, I>(
  */
 export function listDetailApiSchema<const TKey extends string, A, I>(
 	detailKey: TKey,
-	itemSchema: Schema.Schema<A, I, never>,
+	itemSchema: Schema.Codec<A, I>,
 ) {
 	const listField = Schema.optional(oneOrMany(itemSchema));
 	const fields = { [detailKey]: listField } as {
 		[K in TKey]: typeof listField;
 	};
-	const wireStruct = syncSchema(Schema.asSchema(Schema.Struct(fields)));
+	const wireStruct = syncSchema(Schema.Struct(fields));
 
 	return mapSchema(wireStruct, (list): A[] => {
 		const value = Reflect.get(list, detailKey);
@@ -117,16 +115,10 @@ export function listDetailApiSchema<const TKey extends string, A, I>(
  * Creates a schema that validates the PascalCase wire response, then camelizes
  * keys **in place** on the parse output — no second tree copy.
  */
-export function createResponseSchema<S extends Schema.Schema.AnyNoContext>(
-	apiSchema: S,
-): Schema.Schema<
-	Camelize<Schema.Schema.Type<S>>,
-	Schema.Schema.Encoded<S>,
-	never
-> {
-	return mapSchema(syncSchema(Schema.asSchema(apiSchema)), (input) =>
-		pascalToCamelKeysInPlace(input),
-	);
+export function createResponseSchema<A, I>(
+	apiSchema: Schema.Codec<A, I>,
+): Schema.Codec<Camelize<A>, I> {
+	return mapSchema(apiSchema, (input) => pascalToCamelKeysInPlace(input));
 }
 
 /**
@@ -135,18 +127,16 @@ export function createResponseSchema<S extends Schema.Schema.AnyNoContext>(
  */
 export function createListResponseSchema<const K extends string, A, I>(
 	listKey: K,
-	listSchema: Schema.Schema<A, I, never>,
+	listSchema: Schema.Codec<A, I>,
 ) {
 	const listField = Schema.optional(listSchema);
 	const wire = syncSchema(
-		Schema.asSchema(
-			Schema.Struct({
-				RsStatus: RsStatusSchema,
-				[listKey]: listField,
-			} as { RsStatus: typeof RsStatusSchema } & {
-				[P in K]: typeof listField;
-			}),
-		),
+		Schema.Struct({
+			RsStatus: RsStatusSchema,
+			[listKey]: listField,
+		} as { RsStatus: typeof RsStatusSchema } & {
+			[P in K]: typeof listField;
+		}),
 	);
 	return createResponseSchema(wire);
 }
@@ -178,17 +168,10 @@ export function flattenResponseDetail<const K extends string>(detailKey: K) {
 /**
  * camelCase response + spread a single `*Detail` onto the root.
  */
-export function createFlattenedResponseSchema<
-	S extends Schema.Schema.AnyNoContext,
-	const K extends string,
->(
-	apiSchema: S,
+export function createFlattenedResponseSchema<A, I, const K extends string>(
+	apiSchema: Schema.Codec<A, I>,
 	detailKey: K,
-): Schema.Schema<
-	FlattenedResponse<Camelize<Schema.Schema.Type<S>>, K>,
-	Schema.Schema.Encoded<S>,
-	never
-> {
+): Schema.Codec<FlattenedResponse<Camelize<A>, K>, I> {
 	return mapSchema(createResponseSchema(apiSchema), (input) =>
 		flattenResponseDetail(detailKey)(input),
 	);
@@ -201,25 +184,26 @@ export function createFlattenedResponseSchema<
  * Encoded = `I | objectEncoded` (never `I & extras` — that collapses string literals).
  */
 export function valueFieldSchema<A, I, const TExtra extends StructFields>(
-	valueSchema: Schema.Schema<A, I, never>,
+	valueSchema: Schema.Codec<A, I>,
 	extraEntries: TExtra,
 ) {
-	const valueObjectSchema = Schema.Struct({ value: valueSchema });
-	const objectSchema = Schema.extend(
-		valueObjectSchema,
-		Schema.Struct(extraEntries),
+	const objectSchema = Schema.Struct({ value: valueSchema }).pipe(
+		Schema.fieldsAssign(extraEntries),
+	);
+	type ValueObject = (typeof objectSchema)["Type"];
+
+	// Bare value → `{ value }`, then checked against the object's Type side.
+	const fromBare = valueSchema.pipe(
+		Schema.decodeTo(
+			Schema.toType(objectSchema),
+			SchemaTransformation.transform<ValueObject, A>({
+				decode: (value) => ({ value }) as ValueObject,
+				encode: (object) => (object as { readonly value: A }).value,
+			}),
+		),
 	);
 
-	const fromBare = Schema.transform(valueSchema, objectSchema, {
-		strict: false,
-		decode: (_value: A, fromI: I) => ({ value: fromI }),
-		encode: (
-			_toI: Schema.Schema.Encoded<typeof objectSchema>,
-			toA: Schema.Schema.Type<typeof objectSchema>,
-		) => toA.value,
-	});
-
-	return syncSchema(Schema.asSchema(Schema.Union(fromBare, objectSchema)));
+	return syncSchema(Schema.Union([fromBare, objectSchema]));
 }
 
 /**
@@ -283,19 +267,17 @@ export function coalesceAliases<
 	};
 }
 
-function isOptionalField(schema: unknown): boolean {
-	if (!Schema.isPropertySignature(schema)) return false;
-	const ast = schema.ast;
-	if (ast._tag === "PropertySignatureDeclaration") return ast.isOptional;
-	if (ast._tag === "PropertySignatureTransformation")
-		return ast.from.isOptional;
-	return false;
+/** Optional on the wire side (`Schema.optional`, decoding defaults, …). */
+function isOptionalField(field: StructField): boolean {
+	return SchemaAST.isOptional(SchemaAST.toEncoded(field.ast));
 }
 
 type SoftAliasTarget<
 	TFields extends StructFields,
 	A extends Readonly<Record<string, string>>,
 > = Extract<A[keyof A], keyof TFields & string>;
+
+type EncodedOptional = { readonly "~encoded.optionality": "optional" };
 
 /** Facade keys are always optional on dual input (AVES key or alias). */
 type MappedFacades<
@@ -305,21 +287,27 @@ type MappedFacades<
 	[K in keyof A as A[K] extends keyof TFields
 		? K
 		: never]: A[K] extends keyof TFields
-		? TFields[A[K]] extends Schema.PropertySignature.All
+		? TFields[A[K]] extends EncodedOptional
 			? TFields[A[K]]
-			: Schema.optional<
-					TFields[A[K]] extends Schema.Schema.All ? TFields[A[K]] : never
-				>
+			: Schema.optional<TFields[A[K]]>
 		: never;
 };
 
-function optionalizeField(schema: StructField): StructField {
-	if (isOptionalField(schema)) return schema;
-	if (Schema.isPropertySignature(schema) && "from" in schema)
-		return Schema.optional(
-			Schema.asSchema((schema as { from: Schema.Schema.AnyNoContext }).from),
-		);
-	return Schema.optional(Schema.asSchema(schema as Schema.Schema.AnyNoContext));
+/** `Schema.partial` for a field record: every entry optional (`?: T | undefined`). */
+type PartialFields<T extends StructFields> = {
+	[K in keyof T]: Schema.optional<T[K]>;
+};
+
+function optionalizeField(field: StructField): StructField {
+	if (isOptionalField(field)) return field;
+	return Schema.optional(field);
+}
+
+function partialFields<T extends StructFields>(fields: T): PartialFields<T> {
+	const out: Partial<Record<keyof T, StructField>> = {};
+	for (const k of Object.keys(fields) as (keyof T & string)[])
+		out[k] = Schema.optional(fields[k]);
+	return out as PartialFields<T>;
 }
 
 function pickFields<T extends StructFields, S extends keyof T & string>(
@@ -381,13 +369,13 @@ function collectSoftKeys<
  * Output is AVES-only (aliases coalesced; required fields re-validated).
  *
  * Dual Encoded is inferred from Struct composition:
- * `omit(required-aliased) + partial(those) + facadeEntries` — no Schema cast.
+ * `omit(required-aliased) + facadeEntries + partial(those)` — no Schema cast.
  */
 export function facadeObject<
 	TFields extends StructFields,
 	const A extends Readonly<Record<string, string>>,
 >(avesEntries: TFields, aliases: A) {
-	const aves = syncSchema(Schema.asSchema(Schema.Struct(avesEntries)));
+	const aves = syncSchema(Schema.Struct(avesEntries));
 	const applied: Record<string, string> = {};
 	for (const [facade, avesKey] of Object.entries(aliases)) {
 		if (!Object.hasOwn(avesEntries, avesKey)) continue;
@@ -397,145 +385,84 @@ export function facadeObject<
 	const facadeEntries = mapFacadeEntries(avesEntries, aliases);
 	const softKeys = collectSoftKeys(avesEntries, aliases);
 
-	// Single expression (no soft/no-soft ternary) so return type is not a Schema union.
-	const dual = Schema.extend(
-		Schema.Struct({
-			...omitFields(avesEntries, softKeys),
-			...facadeEntries,
-		}),
-		Schema.partial(Schema.Struct(pickFields(avesEntries, softKeys))),
-	);
+	const dual = Schema.Struct({
+		...omitFields(avesEntries, softKeys),
+		...facadeEntries,
+		...partialFields(pickFields(avesEntries, softKeys)),
+	});
 
-	return redecodeSchema(
-		syncSchema(Schema.asSchema(dual)),
-		aves,
-		coalesceAliases(applied),
-	);
+	return redecodeSchema(syncSchema(dual), aves, coalesceAliases(applied));
 }
 
-function isStructSchema(
-	schema: unknown,
-): schema is Schema.Struct<StructFields> {
-	return (
-		Schema.isSchema(schema) &&
-		SchemaAST.isTypeLiteral(schema.ast) &&
-		"fields" in schema
-	);
-}
-
-function isArraySchema(
-	schema: unknown,
-): schema is Schema.Array$<Schema.Schema.AnyNoContext> {
-	return (
-		Schema.isSchema(schema) &&
-		SchemaAST.isTupleType(schema.ast) &&
-		schema.ast.elements.length === 0 &&
-		schema.ast.rest.length === 1 &&
-		"value" in schema
-	);
-}
-
+/** `Union<[X, Undefined]>` (an optional field) → `X`; anything else unchanged. */
 function omitUndefinedUnion(ast: SchemaAST.AST): SchemaAST.AST {
-	if (ast._tag !== "Union") return ast;
+	if (!SchemaAST.isUnion(ast)) return ast;
 	const [only, ...rest] = ast.types.filter(
-		(t: SchemaAST.AST) => t._tag !== "UndefinedKeyword",
+		(t: SchemaAST.AST) => !SchemaAST.isUndefined(t),
 	);
 	return only && rest.length === 0 ? only : ast;
 }
 
 /**
- * Element AST of an array-shaped tuple (no fixed elements, exactly one rest),
- * or `undefined` for anything else. AST-level twin of {@link isArraySchema}.
+ * Element AST of an array-shaped node (no fixed elements, exactly one rest),
+ * or `undefined` for anything else.
  */
 function arrayElementAst(ast: SchemaAST.AST): SchemaAST.AST | undefined {
-	if (!SchemaAST.isTupleType(ast) || ast.elements.length > 0) return undefined;
+	if (!SchemaAST.isArrays(ast) || ast.elements.length > 0) return undefined;
 	const [element, ...extra] = ast.rest;
-	return extra.length === 0 ? element?.type : undefined;
-}
-
-/** Rebuild a usable Schema from AST (Struct.fields / Array.value must exist). */
-function schemaFromAst(ast: SchemaAST.AST): Schema.Schema.AnyNoContext {
-	const core = omitUndefinedUnion(ast);
-	if (SchemaAST.isTypeLiteral(core)) {
-		const fields: Record<string, StructField> = {};
-		for (const ps of core.propertySignatures) {
-			if (typeof ps.name !== "string") continue;
-			const inner = schemaFromAst(ps.type);
-			fields[ps.name] = ps.isOptional ? Schema.optional(inner) : inner;
-		}
-		return syncSchema(Schema.asSchema(Schema.Struct(fields)));
-	}
-	const elementAst = arrayElementAst(core);
-	if (elementAst) {
-		return syncSchema(Schema.asSchema(Schema.Array(schemaFromAst(elementAst))));
-	}
-	return syncSchema(Schema.asSchema(Schema.make(core)));
-}
-
-function unwrapOptional(schema: StructField): Schema.Schema.AnyNoContext {
-	if (!Schema.isPropertySignature(schema)) {
-		if (Schema.isSchema(schema)) return syncSchema(Schema.asSchema(schema));
-		return schemaFromAst((schema as { ast: SchemaAST.AST }).ast);
-	}
-	const ast = schema.ast;
-	if (ast._tag === "PropertySignatureDeclaration")
-		return schemaFromAst(ast.type);
-	if (ast._tag === "PropertySignatureTransformation")
-		return schemaFromAst(ast.from.type);
-	return schemaFromAst(ast);
+	return extra.length === 0 ? element : undefined;
 }
 
 /**
- * Recursively rewrite an input entry schema to PascalCase/@attr keys using the same
- * `wireKey` path as the encoder. Object/array nesting follows `shape.children`.
+ * Rewrite an Encoded entry AST to PascalCase/@attr keys using the same `wireKey`
+ * path as the encoder. Objects/arrays are rebuilt (arrays accept one-or-many);
+ * leaves keep their AST, checks and optionality as-is.
  */
-function toWireEntrySchema(schema: StructField, shape: WireShape): StructField {
-	if (isOptionalField(schema)) {
-		const rewritten = toWireEntrySchema(unwrapOptional(schema), shape);
-		const asSchema = Schema.isPropertySignature(rewritten)
-			? unwrapOptional(rewritten)
-			: Schema.asSchema(rewritten as Schema.Schema.AnyNoContext);
-		return Schema.optional(asSchema);
+function toWireEntrySchema(ast: SchemaAST.AST, shape: WireShape): Schema.Top {
+	const isOptional = SchemaAST.isOptional(ast);
+	const core = isOptional ? omitUndefinedUnion(ast) : ast;
+	const rebuilt = rewireCore(core, shape);
+	if (!rebuilt) return Schema.make(ast);
+	return isOptional ? Schema.optional(rebuilt) : rebuilt;
+}
+
+function rewireCore(
+	ast: SchemaAST.AST,
+	shape: WireShape,
+): Schema.Top | undefined {
+	if (SchemaAST.isObjects(ast)) return wireObjectSchema(ast, shape);
+	const element = arrayElementAst(ast);
+	if (element) return Schema.ArrayEnsure(toWireEntrySchema(element, shape));
+	return undefined;
+}
+
+function wireObjectSchema(
+	ast: SchemaAST.Objects,
+	shape: WireShape,
+	overrides?: StructFields,
+): Schema.Struct<StructFields> {
+	const validationEntries: Record<string, StructField> = {};
+	for (const ps of ast.propertySignatures) {
+		if (typeof ps.name !== "string") continue;
+		const childShape = shape.children?.[ps.name] ?? {};
+		validationEntries[wireKey(ps.name, shape)] = toWireEntrySchema(
+			ps.type,
+			childShape,
+		);
 	}
-	if (isArraySchema(schema)) {
-		const item = toWireEntrySchema(schema.value, shape);
-		const itemSchema = Schema.isPropertySignature(item)
-			? unwrapOptional(item)
-			: Schema.asSchema(item as Schema.Schema.AnyNoContext);
-		return oneOrMany(itemSchema);
-	}
-	if (isStructSchema(schema)) return buildApiValidationObject(schema, shape);
-	return schema;
+	return Schema.Struct({ ...validationEntries, ...(overrides ?? {}) });
 }
 
 function buildApiValidationObject<TFields extends StructFields>(
 	inputSchema: Schema.Struct<TFields>,
 	shape: WireShape,
 	overrides?: StructFields,
-): Schema.Schema.AnyNoContext {
-	const validationEntries: Record<string, StructField> = {};
-
-	for (const [key, field] of Object.entries(inputSchema.fields)) {
-		const childShape = shape.children?.[key] ?? {};
-		// Wire validation uses Encoded (no defaults / request transforms).
-		const forWire =
-			Schema.isSchema(field) && field.ast._tag === "Transformation"
-				? Schema.encodedSchema(field)
-				: field;
-		validationEntries[wireKey(key, shape)] = toWireEntrySchema(
-			forWire as StructField,
-			childShape,
-		);
-	}
-
-	return syncSchema(
-		Schema.asSchema(
-			Schema.Struct({
-				...validationEntries,
-				...(overrides ?? {}),
-			}),
-		),
-	);
+): Schema.Struct<StructFields> {
+	// Wire validation uses Encoded (no defaults / request transforms).
+	const encoded = SchemaAST.toEncoded(inputSchema.ast);
+	if (!SchemaAST.isObjects(encoded))
+		throw new Error("createApiValidationSchema expects a Struct input schema");
+	return wireObjectSchema(encoded, shape, overrides);
 }
 
 /**
@@ -546,10 +473,7 @@ export type ApiValidationType<
 	TFields extends StructFields,
 	TShape,
 	TOverrides extends StructFields,
-> = Omit<
-	Pascalize<Schema.Schema.Encoded<Schema.Struct<TFields>>, TShape>,
-	keyof TOverrides
-> &
+> = Omit<Pascalize<Schema.Struct.Encoded<TFields>, TShape>, keyof TOverrides> &
 	Schema.Struct.Type<TOverrides>;
 
 /**
@@ -560,28 +484,54 @@ export type ApiValidationType<
 export function createApiValidationSchema<
 	TFields extends StructFields,
 	const TShape extends WireShapeFor<
-		Schema.Schema.Type<Schema.Struct<TFields>> & object
+		Schema.Struct.Type<TFields> & object
 	> = Record<never, never>,
 	TOverrides extends StructFields = Record<never, never>,
 >(
 	inputSchema: Schema.Struct<TFields>,
 	shape: TShape = {} as TShape,
 	overrides?: TOverrides,
-): Schema.Schema<
+): Schema.Codec<
 	ApiValidationType<TFields, TShape, TOverrides>,
-	ApiValidationType<TFields, TShape, TOverrides>,
-	never
+	ApiValidationType<TFields, TShape, TOverrides>
 > {
-	// The runtime struct is built key by key, so its type is declared here once.
-	return buildApiValidationObject(
-		inputSchema,
-		shape,
-		overrides,
-	) as Schema.Schema<
-		ApiValidationType<TFields, TShape, TOverrides>,
-		ApiValidationType<TFields, TShape, TOverrides>,
-		never
-	>;
+	// The runtime struct is built key by key, so its type is declared here once
+	// (same AST and `fields`; only the static type is narrowed).
+	const struct = buildApiValidationObject(inputSchema, shape, overrides);
+	return Schema.make<
+		Schema.Codec<
+			ApiValidationType<TFields, TShape, TOverrides>,
+			ApiValidationType<TFields, TShape, TOverrides>
+		>
+	>(struct.ast, { fields: struct.fields });
+}
+
+/** Every key optional (`?: T | undefined`), as Effect 3 `Schema.partial` typed it. */
+export type PartialOf<A> = { [K in keyof A]?: A[K] | undefined };
+
+/**
+ * `Schema.partial` for an object Codec whose type is declared (e.g. by
+ * {@link createApiValidationSchema}): rebuilds the struct with every top-level
+ * property optional; nested objects keep their own optionality.
+ */
+export function partialSchema<A extends object>(
+	schema: Schema.Codec<A, A>,
+): Schema.Codec<PartialOf<A>, PartialOf<A>> {
+	const { ast } = schema;
+	if (!SchemaAST.isObjects(ast))
+		throw new Error("partialSchema expects an object schema");
+	const fields: Record<string, StructField> = {};
+	for (const ps of ast.propertySignatures) {
+		if (typeof ps.name !== "string") continue;
+		const field = Schema.make(ps.type);
+		fields[ps.name] = SchemaAST.isOptional(ps.type)
+			? field
+			: Schema.optional(field);
+	}
+	const struct = Schema.Struct(fields);
+	return Schema.make<Schema.Codec<PartialOf<A>, PartialOf<A>>>(struct.ast, {
+		fields: struct.fields,
+	});
 }
 
 /**
@@ -626,10 +576,10 @@ export function coalesceWireAliases<
  */
 export function createWireSchemaPair<TFields extends StructFields>(
 	inputSchema: Schema.Struct<TFields>,
-	shape: WireShapeFor<Schema.Schema.Type<Schema.Struct<TFields>> & object>,
+	shape: WireShapeFor<Schema.Struct.Type<TFields> & object>,
 ) {
 	return {
-		api: createApiSchema(syncSchema(Schema.asSchema(inputSchema)), shape),
+		api: createApiSchema(syncSchema(inputSchema), shape),
 		validation: createApiValidationSchema(inputSchema, shape),
 	};
 }

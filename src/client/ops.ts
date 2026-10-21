@@ -78,8 +78,8 @@ function defineOp<
 	endpoint: string;
 	requestRoot: XMLRootElementValues;
 	responseRoot: string;
-	apiSchema: Schema.Schema<A, I, never>;
-	responseSchema: Schema.Schema<B, J, never>;
+	apiSchema: Schema.Codec<A, I>;
+	responseSchema: Schema.Codec<B, J>;
 	bodyKey?: OpBodyKey;
 }) {
 	return config;

@@ -22,7 +22,7 @@ const languageCodeField = OptionalLanguageCodeSchema;
  */
 const CodeSearchSchema = Schema.Struct({
 	searchType: Schema.Literal(SearchMasterType.CODE),
-	recordCode: Schema.String.pipe(Schema.minLength(5), Schema.maxLength(6)),
+	recordCode: Schema.String.check(Schema.isMinLength(5), Schema.isMaxLength(6)),
 	languageCode: languageCodeField,
 });
 
@@ -106,7 +106,7 @@ const ExternalRefCodeSearchSchema = Schema.Struct({
  * Search master record input schema (camelCase)
  * Conditional fields based on searchType
  */
-export const SearchMasterRecordSchema = Schema.Union(
+export const SearchMasterRecordSchema = Schema.Union([
 	CodeSearchSchema,
 	NameSearchSchema,
 	VatCodeSearchSchema,
@@ -116,7 +116,7 @@ export const SearchMasterRecordSchema = Schema.Union(
 	LastModDateSearchSchema,
 	SearchFieldSearchSchema,
 	ExternalRefCodeSearchSchema,
-);
+]);
 
 /**
  * Search master record schema for API requests (transforms to PascalCase).

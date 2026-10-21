@@ -74,12 +74,12 @@ const OtherSearchSchema = facadeObject(
 /**
  * SearchFileRQ body (camelCase) — discriminated by searchType.
  */
-export const SearchBookingFileSchema = Schema.Union(
+export const SearchBookingFileSchema = Schema.Union([
 	FileCodeSearchSchema,
 	PaxNameSearchSchema,
 	PackageCodeSearchSchema,
 	OtherSearchSchema,
-);
+]);
 
 export const SearchBookingFileApiSchema = createApiSchema(
 	SearchBookingFileSchema,

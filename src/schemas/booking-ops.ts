@@ -83,10 +83,12 @@ export const ModFileServicesSchema = mapSchema(
 			deadlineList: Schema.optional(Schema.Array(ModDeadlineDetailInputSchema)),
 			selectedPackageDetail: Schema.optional(SelectedPackageDetailInputSchema),
 			selectedPackageList: Schema.optional(
-				Schema.Array(SelectedPackageDetailInputSchema).pipe(Schema.maxItems(1)),
+				Schema.Array(SelectedPackageDetailInputSchema).check(
+					Schema.isMaxLength(1),
+				),
 			),
-			selectedServiceList: Schema.Array(SelectedServiceDetailInputSchema).pipe(
-				Schema.minItems(1),
+			selectedServiceList: Schema.Array(SelectedServiceDetailInputSchema).check(
+				Schema.isMinLength(1),
 			),
 			cancellableBookedServiceList: Schema.optional(
 				Schema.Array(CancellableBookedServiceDetailInputSchema),
@@ -240,18 +242,18 @@ const FilePaymentListEntriesSchema = facadeObject(
 		paymentUser: Schema.optional(Schema.String),
 		enableMultiplePayments: BoolishSchema,
 		operationType: FilePaymentOperationTypeSchema,
-		filePaymentList: Schema.Array(FilePaymentDetailInputSchema).pipe(
-			Schema.minItems(1),
+		filePaymentList: Schema.Array(FilePaymentDetailInputSchema).check(
+			Schema.isMinLength(1),
 		),
 	},
 	paymentListFacades,
 );
 
-export const FilePaymentListSchema = FilePaymentListEntriesSchema.pipe(
-	Schema.filter(
-		(input: Schema.Schema.Type<typeof FilePaymentListEntriesSchema>) =>
-			Boolean(input.bookingFileCode || input.bookingFileRefCode),
-		{ message: () => "bookingFileCode or bookingFileRefCode is required" },
+export const FilePaymentListSchema = FilePaymentListEntriesSchema.check(
+	Schema.makeFilter((input) =>
+		input.bookingFileCode || input.bookingFileRefCode
+			? undefined
+			: "bookingFileCode or bookingFileRefCode is required",
 	),
 );
 

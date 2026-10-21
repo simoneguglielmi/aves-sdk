@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Effect, Schema } from "effect";
 import { masterRecordFacades } from "../utils/facade-aliases.js";
 import {
 	createApiSchema,
@@ -6,6 +6,7 @@ import {
 	createResponseSchema,
 	createWireSchemaPair,
 	facadeObject,
+	partialSchema,
 } from "../utils/schema-transform.js";
 import {
 	accountPoliciesWire,
@@ -95,7 +96,7 @@ export const SupplierRefMasterRecordsSchema = supplierRefPair.api;
 export const SupplierRefMasterRecordsApiValidationSchema =
 	supplierRefPair.validation;
 
-const flagSchema = Schema.Union(Schema.Literal(0), Schema.Literal(1));
+const flagSchema = Schema.Union([Schema.Literal(0), Schema.Literal(1)]);
 
 const AccountPoliciesInputSchema = Schema.Struct({
 	acceptProfilingPolicies: Schema.optional(flagSchema),
@@ -116,16 +117,16 @@ export const AccountPoliciesApiValidationSchema =
  */
 const masterRecordDetailEntries = {
 	recordCode: Schema.optional(
-		Schema.String.pipe(Schema.minLength(6), Schema.maxLength(6)),
+		Schema.String.check(Schema.isMinLength(6), Schema.isMaxLength(6)),
 	),
 	insertCriteria: Schema.optional(InsertCriteriaSchema),
 	createdDate: Schema.optional(Schema.String),
-	recordType: Schema.optionalWith(RecordTypeSchema, {
-		default: () => RecordType.CUSTOMER,
-	}),
-	recordStatus: Schema.optionalWith(RecordStatusSchema, {
-		default: () => RecordStatus.ENABLED,
-	}),
+	recordType: RecordTypeSchema.pipe(
+		Schema.withDecodingDefaultType(Effect.succeed(RecordType.CUSTOMER)),
+	),
+	recordStatus: RecordStatusSchema.pipe(
+		Schema.withDecodingDefaultType(Effect.succeed(RecordStatus.ENABLED)),
+	),
 	moniker: Schema.optional(Schema.String),
 	name: Schema.optional(Schema.String),
 	extraInfo: Schema.optional(Schema.String),
@@ -172,29 +173,30 @@ export const MasterRecordDetailApiSchema = createApiSchema(
  * Master record detail API validation schema (PascalCase with @ attributes).
  * Nested structure is generated from `masterRecordWire`; overrides are server-only fields.
  */
-export const MasterRecordDetailApiValidationSchema = Schema.asSchema(
-	Schema.partial(
-		createApiValidationSchema(
-			Schema.Struct(masterRecordDetailEntries),
-			masterRecordWire,
-			{
-				// Responses widen RecordType with NOT_SET; requests keep the strict set.
-				RecordType: Schema.optional(RecordTypeWireSchema),
-				ModifiedDate: Schema.optional(Schema.String),
-				// AVES misspells ModifiedDate on ExportBookingData MasterData rows.
-				ModifitedDate: Schema.optional(Schema.String),
-				LoginType: Schema.optional(Schema.String),
-				PromoterCode: Schema.optional(Schema.String),
-				EncryptedPassword: Schema.optional(BoolishSchema),
-				NewsletterDisabled: Schema.optional(BoolishSchema),
-				AreaCode: Schema.optional(Schema.String),
-				LastDateContact: Schema.optional(Schema.String),
-				UseSupplierDataOnTravelDoc: Schema.optional(BoolishSchema),
-				BookingEnabled: Schema.optional(BoolishSchema),
-				PrivacyPolicyAccepted: Schema.optional(BoolishSchema),
-			},
-		),
-	),
+const MasterRecordDetailWireSchema = createApiValidationSchema(
+	Schema.Struct(masterRecordDetailEntries),
+	masterRecordWire,
+	{
+		// Responses widen RecordType with NOT_SET; requests keep the strict set.
+		RecordType: Schema.optional(RecordTypeWireSchema),
+		ModifiedDate: Schema.optional(Schema.String),
+		// AVES misspells ModifiedDate on ExportBookingData MasterData rows.
+		ModifitedDate: Schema.optional(Schema.String),
+		LoginType: Schema.optional(Schema.String),
+		PromoterCode: Schema.optional(Schema.String),
+		EncryptedPassword: Schema.optional(BoolishSchema),
+		NewsletterDisabled: Schema.optional(BoolishSchema),
+		AreaCode: Schema.optional(Schema.String),
+		LastDateContact: Schema.optional(Schema.String),
+		UseSupplierDataOnTravelDoc: Schema.optional(BoolishSchema),
+		BookingEnabled: Schema.optional(BoolishSchema),
+		PrivacyPolicyAccepted: Schema.optional(BoolishSchema),
+	},
+);
+
+/** Every key optional: AVES omits fields freely on responses. */
+export const MasterRecordDetailApiValidationSchema = partialSchema(
+	MasterRecordDetailWireSchema,
 );
 
 /**
