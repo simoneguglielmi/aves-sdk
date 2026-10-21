@@ -163,8 +163,8 @@ export const AvesSearchSchema = facadeObject(
 		startDate: Schema.String,
 		endDate: Schema.String,
 		earlyBookingDate: Schema.optional(Schema.String),
-		passengerList: Schema.Array(PassengerDetailCreateInputSchema).pipe(
-			Schema.minItems(1),
+		passengerList: Schema.Array(PassengerDetailCreateInputSchema).check(
+			Schema.isMinLength(1),
 		),
 		avesSearchType: Schema.optional(AvesSearchTypeSchema),
 		paxQty: Schema.optional(StringishSchema),
@@ -193,11 +193,11 @@ export const AvesSearchSchema = facadeObject(
 );
 
 /** After client defaults: languageCode + avesSearchType must be present. */
-const AvesSearchResolvedSchema = AvesSearchSchema.pipe(
-	Schema.filter(
-		(i: Schema.Schema.Type<typeof AvesSearchSchema>) =>
-			i.languageCode != null && i.avesSearchType != null,
-		{ message: () => "languageCode and avesSearchType required" },
+const AvesSearchResolvedSchema = AvesSearchSchema.check(
+	Schema.makeFilter((i) =>
+		i.languageCode != null && i.avesSearchType != null
+			? undefined
+			: "languageCode and avesSearchType required",
 	),
 );
 
@@ -285,8 +285,8 @@ export const PackageDetailRequestSchema = facadeObject(
 		costListCode: Schema.optional(Schema.String),
 		markupCode: Schema.optional(Schema.String),
 		statisticCodes: Schema.optional(StatisticCodesInputSchema),
-		selectedServiceList: Schema.Array(PackagePrgServiceDetailInputSchema).pipe(
-			Schema.minItems(1),
+		selectedServiceList: Schema.Array(PackagePrgServiceDetailInputSchema).check(
+			Schema.isMinLength(1),
 		),
 		passengerList: Schema.optional(
 			Schema.Array(PassengerDetailCreateInputSchema),

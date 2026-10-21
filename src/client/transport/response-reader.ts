@@ -1,4 +1,4 @@
-import { Effect, Either, type Schema } from "effect";
+import { Effect, Result as EffectResult, type Schema } from "effect";
 import { decodeUnknownAves } from "../../effect/schema-parse.js";
 import { type AvesError, apiError, validationError } from "../../error.js";
 import type { RsStatus } from "../../types.js";
@@ -30,7 +30,7 @@ export function requireRsStatusOk<T extends { rsStatus: RsStatus }>(
 export function readAvesResponseEffect<A extends { rsStatus: RsStatus }, I>(
 	xmlText: string,
 	responseRootKey: string,
-	responseSchema: Schema.Schema<A, I, never>,
+	responseSchema: Schema.Codec<A, I>,
 ): Effect.Effect<A, AvesError> {
 	return Effect.gen(function* () {
 		const rootElement = xmlToJson(xmlText)[responseRootKey];
@@ -56,16 +56,16 @@ export function readAvesResponseEffect<A extends { rsStatus: RsStatus }, I>(
 export function readAvesResponse<A extends { rsStatus: RsStatus }, I>(
 	xmlText: string,
 	responseRootKey: string,
-	responseSchema: Schema.Schema<A, I, never>,
+	responseSchema: Schema.Codec<A, I>,
 ): Result<A, AvesError> {
 	return Effect.runSync(
-		Effect.either(
+		Effect.result(
 			readAvesResponseEffect(xmlText, responseRootKey, responseSchema),
 		).pipe(
 			Effect.map(
-				Either.match({
-					onLeft: (error) => err(error),
-					onRight: (data) => ok(data),
+				EffectResult.match({
+					onFailure: (error) => err(error),
+					onSuccess: (data) => ok(data),
 				}),
 			),
 		),

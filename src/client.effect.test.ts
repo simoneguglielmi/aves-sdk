@@ -1,10 +1,10 @@
+import { Effect } from "effect";
 import {
 	HttpClient,
 	HttpClientError,
 	type HttpClientRequest,
 	HttpClientResponse,
-} from "@effect/platform";
-import { Effect } from "effect";
+} from "effect/http";
 import { afterEach, describe, expect, it } from "vitest";
 import { AvesBooking } from "./client/booking/index.js";
 import type { AvesHttpService } from "./client/http/types.js";
@@ -272,13 +272,14 @@ describe("Effect client DX", () => {
 		},
 	);
 
-	it("maps HttpClient RequestError to AvesApiError", async () => {
+	it("maps HttpClient TransportError to AvesApiError", async () => {
 		const failing = HttpClient.make((request) =>
 			Effect.fail(
-				new HttpClientError.RequestError({
-					request,
-					reason: "Transport",
-					description: "offline",
+				new HttpClientError.HttpClientError({
+					reason: new HttpClientError.TransportError({
+						request,
+						description: "offline",
+					}),
 				}),
 			),
 		);

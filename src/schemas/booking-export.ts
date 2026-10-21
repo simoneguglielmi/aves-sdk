@@ -55,11 +55,11 @@ import { MasterRecordDetailApiValidationSchema } from "./master-record.js";
 
 /** Paging window. Bounds are spec'd, not invented (Booking.txt:11104-11106). */
 export const LimitRangeSchema = Schema.Struct({
-	skip: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
-	take: Schema.Number.pipe(
-		Schema.int(),
-		Schema.greaterThanOrEqualTo(1),
-		Schema.lessThanOrEqualTo(1000),
+	skip: Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0)),
+	take: Schema.Number.check(
+		Schema.isInt(),
+		Schema.isGreaterThanOrEqualTo(1),
+		Schema.isLessThanOrEqualTo(1000),
 	),
 });
 

@@ -14,7 +14,6 @@ export default defineConfig({
 	deps: {
 		neverBundle: [
 			"effect",
-			"@effect/platform",
 			"fast-xml-parser",
 			"fast-xml-builder",
 		],

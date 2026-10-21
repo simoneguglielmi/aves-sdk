@@ -1,6 +1,6 @@
 ---
 name: aves-sdk-architecture
-description: Maps aves-sdk layers — Promise facade, Effect Tags/Layers, domain modules, AVES_OPS registry. Use when navigating src/client, DI, or deciding where new code belongs.
+description: Maps aves-sdk layers — Promise facade, Effect services/Layers, domain modules, AVES_OPS registry. Use when navigating src/client, DI, or deciding where new code belongs.
 ---
 
 # aves-sdk architecture
@@ -11,10 +11,10 @@ description: Maps aves-sdk layers — Promise facade, Effect Tags/Layers, domain
 | ----- | ---- | ---- |
 | Promise facade | `src/client.ts` | `createAvesClient` / `AvesClient` / `makeAvesRuntime` |
 | Composition | `src/client/layer.ts` | `avesClientLayer` / `AvesClientLive` |
-| Domains | `src/client/{booking,master,packages}/` | Tag · service · layer — Effect → `transport.ops` / `toFacadeEffect` |
+| Domains | `src/client/{booking,master,packages}/` | Service tag (`Context.Service`) · service · layer — Effect → `transport.ops` / `toFacadeEffect` |
 | Ops registry | `src/client/ops.ts` | `AVES_OPS` + `AvesOp` / `OpParams` / `OpResult` |
 | Transport | `src/client/transport/` | `invoke` · envelope · response reader |
-| HTTP | `src/client/http/` | XML POST via platform `HttpClient` (`makeAvesHttp` / `httpClientLayer`) |
+| HTTP | `src/client/http/` | XML POST via `effect/http` `HttpClient` (`makeAvesHttp` / `httpClientLayer`) |
 | Config | `src/client/config/` | `AvesConfig` |
 | Envelope | `src/client/envelope.ts` / `rq-header.ts` | RQ root + `RqHeader` |
 | Endpoints | `src/client/endpoints.ts` | URL map |
@@ -23,7 +23,7 @@ description: Maps aves-sdk layers — Promise facade, Effect Tags/Layers, domain
 | Effect bridges | `src/effect/` | `runToResult` · `decodeUnknownAves` · infer |
 | XML | `src/xml/` | Encode/decode + roots |
 | Types | `src/types.ts` | Public RQ/RS aliases (no types inside domain clients) |
-| Public API | `src/index.ts` | Client, Tags, enums, types, `Result`, errors |
+| Public API | `src/index.ts` | Client, service tags, enums, types, `Result`, errors |
 
 ## DI
 
@@ -33,7 +33,7 @@ description: Maps aves-sdk layers — Promise facade, Effect Tags/Layers, domain
 
 - Default HTTP: `FetchHttpClient.layer`
 - Tests: inject `HttpClient.make(...)` via `deps.httpClient`
-- Promise facade does **not** expose `transport` — Effect programs use Tags + Layers
+- Promise facade does **not** expose `transport` — Effect programs use services + Layers
 
 ## Domain namespaces
 

@@ -51,12 +51,12 @@ const BookingFileStatusInputSchema = valueFieldSchema(BookingFileStatusSchema, {
 // ---------------------------------------------------------------------------
 
 export const StatisticCodesInputSchema = Schema.Struct({
-	sCode1: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
-	sCode2: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
-	sCode3: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
-	sCode4: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
-	sCode5: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
-	sCode6: Schema.optional(Schema.String.pipe(Schema.maxLength(4))),
+	sCode1: Schema.optional(Schema.String.check(Schema.isMaxLength(4))),
+	sCode2: Schema.optional(Schema.String.check(Schema.isMaxLength(4))),
+	sCode3: Schema.optional(Schema.String.check(Schema.isMaxLength(4))),
+	sCode4: Schema.optional(Schema.String.check(Schema.isMaxLength(4))),
+	sCode5: Schema.optional(Schema.String.check(Schema.isMaxLength(4))),
+	sCode6: Schema.optional(Schema.String.check(Schema.isMaxLength(4))),
 });
 
 // ---------------------------------------------------------------------------
@@ -91,10 +91,10 @@ const TravelInformationCustomizablePrintParametersInputSchema = Schema.Struct({
 	fillInCode: Schema.optional(Schema.String),
 });
 
-const DocumentCustomizablePrintParametersInputSchema = Schema.Union(
+const DocumentCustomizablePrintParametersInputSchema = Schema.Union([
 	ReservationFormCustomizablePrintParametersInputSchema,
 	TravelInformationCustomizablePrintParametersInputSchema,
-);
+]);
 
 const InfoDocumentToPrintInputSchema = Schema.Struct({
 	documentType: DocumentTypeSchema,
@@ -186,10 +186,10 @@ export const SelectedServiceDetailInputSchema = facadeObject(
 		qty: Schema.String,
 		pax: Schema.String,
 		paxAssociated: Schema.optional(
-			Schema.Union(
+			Schema.Union([
 				Schema.Array(Schema.String),
 				Schema.Array(Schema.Struct({ pax: Schema.String })),
-			),
+			]),
 		),
 		avesSession: Schema.String,
 		avesServiceInfo: Schema.optional(AvesServiceInfoInputSchema),
@@ -334,13 +334,11 @@ const BookingFileEntriesSchema = facadeObject(
 );
 
 export const BookingFileSchema = mapSchema(
-	BookingFileEntriesSchema.pipe(
-		Schema.filter(
-			(input: Schema.Schema.Type<typeof BookingFileEntriesSchema>) =>
-				!!(input.customerDetail || input.customerRecordCode),
-			{
-				message: () => "customerDetail or customerRecordCode is required",
-			},
+	BookingFileEntriesSchema.check(
+		Schema.makeFilter((input) =>
+			input.customerDetail || input.customerRecordCode
+				? undefined
+				: "customerDetail or customerRecordCode is required",
 		),
 	),
 	coalesceCustomerRecordCode,

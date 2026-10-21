@@ -16,8 +16,8 @@ export type AvesOpDef<
 > = OpEnvelopeDef & {
 	endpoint: string;
 	responseRoot: string;
-	apiSchema: Schema.Schema<A, I, never>;
-	responseSchema: Schema.Schema<B, J, never>;
+	apiSchema: Schema.Codec<A, I>;
+	responseSchema: Schema.Codec<B, J>;
 };
 
 /** Per-op invokers — prefer `transport.ops.create(params)` in domains. */
@@ -33,7 +33,7 @@ export type OpInvokers = {
  * Domains build these with `facadeMethod(ops.x)`. Naming the shape lets the
  * service types below be annotated instead of inferred, which keeps the
  * emitted `.d.ts` from carrying a second full copy of every method signature
- * (once on the factory, once inside the Effect `Context.Tag`).
+ * (once on the factory, once inside the Effect `Context.Service`).
  */
 export type FacadeOp<K extends AvesOp> = (
 	params: OpParams<K>,

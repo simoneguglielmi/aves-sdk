@@ -5,6 +5,38 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<a id="v5.1.0"></a>
+## [5.1.0] - 2026-10-21
+
+Effect 4 and a dependency refresh. **The Promise API is unchanged** (`createAvesClient` / `AvesClient`: same request XML, `data` shapes and error `kind` / `_tag` / `status` / `code`, checked on ~70 scenarios against 5.0.1); validation messages are now shorter and list every invalid field. **Effect consumers: see the breaking notes below** — this is shipped as a minor by choice, not a major.
+
+### Changed
+
+- **Effect 4:** `effect` `~4.0.5` (tilde: `effect/http` is marked unstable in 4.x). `@effect/platform` is removed — HTTP now comes from `effect/http`.
+- **Validation messages** (visible on the Promise path too): same prefix, then every invalid field with its path instead of a dump of the whole schema.
+  - Before: `Validation error occurred during invoke: ((({ readonly recordCode?: minLength(6) & maxLength(6) | undefined; …` (several KB)
+  - After: `Validation error occurred during invoke: Expected a value with a length of at least 6\n  at ["recordCode"]\nMissing key\n  at ["languageCode"]`
+  - Custom check messages are unchanged (e.g. `customerDetail or customerRecordCode is required`). Pinned in `src/client.test.ts`.
+- `fast-xml-parser` ^5.11.2, `fast-xml-builder` ^1.3.1.
+
+### Breaking for Effect consumers
+
+If you only use the Promise facade, nothing below applies.
+
+- **Effect 4 required** to compose the SDK's Layers / runtime with your own program: `avesClientLayer`, `AvesClientLive`, the `*Live` layers, `fetchHttpLayer`, `httpClientLayer` and `makeAvesRuntime` (`ManagedRuntime`) are Effect 4 types. Effect 3 and 4 values cannot be mixed.
+- **Services:** `AvesConfig`, `AvesHttp`, `AvesTransport`, `AvesMaster`, `AvesBooking`, `AvesPackages` are `Context.Service` classes instead of `Context.Tag`. `yield* AvesMaster` and `Layer.succeed(AvesMaster, impl)` still work; Tag-only v3 APIs do not.
+- **HTTP:** `AvesClientDeps.httpClient`, `makeAvesHttp`, `httpClientLayer` and `fetchHttpLayer` use `HttpClient` from `effect/http`. In test mocks, `HttpClient.make` receives `(request, url, signal, fiber)` (a `(request, url)` callback still works) and a transport failure is `new HttpClientError.HttpClientError({ reason: new HttpClientError.TransportError({…}) })` — `HttpClientError.RequestError` is gone.
+- **Schema helpers:** `InferInput<S extends Schema.Top>` reads `Schema.Codec.Encoded<S>`; exported enum schemas (`RecordTypeSchema`, …, `AvesOpSchema`) are `Schema.Literals<…>`. The resolved request/response types are unchanged.
+- Unchanged: `Effect.catchTag("AvesApiError" | "AvesValidationError" | "AvesUnknownError")`, `isAvesError`, the error classes and factories.
+
+### Development
+
+- **pnpm 12** (`packageManager: pnpm@12.14.0`) instead of Yarn 1; the lockfile was imported from `yarn.lock`. `pnpm check` runs Biome. The `"publish": "npm publish"` script is gone: `publish` is also a post-publish lifecycle hook, so it tried to publish the same version twice.
+- Biome 2.5.15, `@tsconfig/node22` 22.0.6, `@types/node` ^26.6.5.
+- tsdown 0.23.1: exports are marked inline in the declaration bundle; same 197 exported names. Declarations 466 kB → 475 kB with Effect 4.
+- Vitest 5 with `vite` ^8.3.4 as an explicit devDependency (a required peer; 8.3.5 is younger than pnpm's `minimumReleaseAge`). `hot-path.bench.ts` uses the `bench` fixture and `bench.compare`.
+- `dotenv` removed: `vitest.config.ts` loads `.env` with Node's built-in `process.loadEnvFile` for the local e2e test.
+
 <a id="v5.0.1"></a>
 ## [5.0.1] - 2026-10-21
 

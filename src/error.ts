@@ -1,4 +1,4 @@
-import { Data, type ParseResult, Predicate } from "effect";
+import { Data, Predicate, type Schema } from "effect";
 import { formatParseError, isParseError } from "./effect/parse-error.js";
 import type { RsStatusValue } from "./schemas/enums.js";
 
@@ -76,9 +76,9 @@ export function toAvesError(error: unknown, defaultMessage: string): AvesError {
 	return unknownError(defaultMessage);
 }
 
-/** Format issue lists or ParseError for response-reader messages. */
+/** Format issue lists or SchemaError for response-reader messages. */
 export function buildDetails(
-	issues: readonly { message?: string }[] | ParseResult.ParseError,
+	issues: readonly { message?: string }[] | Schema.SchemaError,
 ): string {
 	if (isParseError(issues)) return formatParseError(issues);
 	if (Array.isArray(issues))

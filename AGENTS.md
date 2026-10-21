@@ -2,23 +2,23 @@
 
 Self-contained agent guide for **aves-sdk**. Optional Agent Skills live in **`.agents/skills/`** (harness-agnostic). This file is enough on its own.
 
-TypeScript SDK for AVES XML REST. **yarn** · **Effect Schema** · **`@effect/platform`** · ESM (`tsdown`) · Biome · Vitest.
+TypeScript SDK for AVES XML REST. **pnpm** · **Effect 4** (`effect` ~4.0: Schema + `effect/http`) · ESM (`tsdown`) · Biome · Vitest.
 
-Before changing Effect Schema / `@effect/platform` APIs, check current docs (Context7 or Effect docs).
+Before changing Effect Schema / `effect/http` APIs, check current docs (Context7, the Effect 4 migration guides, or the installed `node_modules/effect` `.d.ts`). `effect/http` is `@stability unstable`, hence the tilde pin.
 
 ---
 
 ## Commands
 
 ```bash
-yarn typecheck
-yarn test
-yarn run check  # Biome: tabs, double quotes, organize imports (plain `yarn check` is Yarn 1's dependency check)
-yarn build      # clean + check + tsdown
-# optional: yarn test:bench · AVES_PERF=1 yarn test:perf
+pnpm typecheck
+pnpm test
+pnpm check      # Biome: tabs, double quotes, organize imports
+pnpm build      # clean + check + tsdown
+# optional: pnpm test:bench · AVES_PERF=1 pnpm test:perf
 ```
 
-Verify after substantive edits: `yarn typecheck && yarn test`.
+Verify after substantive edits: `pnpm typecheck && pnpm test`.
 
 ---
 
@@ -28,10 +28,10 @@ Verify after substantive edits: `yarn typecheck && yarn test`.
 | ----- | ---- | ---- |
 | Promise facade | `src/client.ts` | `createAvesClient` / `AvesClient` / `makeAvesRuntime` |
 | Composition | `src/client/layer.ts` | `avesClientLayer` / `AvesClientLive` |
-| Domains | `src/client/{booking,master,packages}/` | Tag · service · layer — Effect methods → `transport.ops` / `toFacadeEffect` |
+| Domains | `src/client/{booking,master,packages}/` | Service tag (`Context.Service`) · service · layer — Effect methods → `transport.ops` / `toFacadeEffect` |
 | Ops registry | `src/client/ops.ts` | `AVES_OPS` + `AvesOp` / `OpParams` / `OpResult` |
 | Transport | `src/client/transport/` | `invoke` · envelope · response reader |
-| HTTP | `src/client/http/` | XML POST via platform `HttpClient` |
+| HTTP | `src/client/http/` | XML POST via `effect/http` `HttpClient` |
 | Config | `src/client/config/` | `AvesConfig` |
 | Envelope | `src/client/envelope.ts` / `rq-header.ts` | RQ root + `RqHeader` |
 | Schemas | `src/schemas/*.ts` | Effect Schema RQ/RS |
@@ -39,7 +39,7 @@ Verify after substantive edits: `yarn typecheck && yarn test`.
 | Effect bridges | `src/effect/` | `runToResult` · `decodeUnknownAves` · infer |
 | XML | `src/xml/` | Encode/decode + roots |
 | Types | `src/types.ts` | Public RQ/RS aliases (no types inside domain clients) |
-| Public API | `src/index.ts` | Client, Tags, enums, types, `Result`, errors |
+| Public API | `src/index.ts` | Client, service tags, enums, types, `Result`, errors |
 
 ### DI
 
@@ -86,12 +86,13 @@ Import RQ/RS types from `src/types.ts` only — never define type aliases inside
 
 | Tool | Notes |
 | ---- | ----- |
-| yarn | `packageManager`: yarn@1.22.22 |
+| pnpm | `packageManager`: pnpm@12.14.0 (via corepack). Dependency build scripts are denied unless listed in `pnpm-workspace.yaml` `allowBuilds` |
 | Biome | tabs, double quotes — do not fight formatter |
 | TS | ESM only; relative imports use **`.js` extensions** |
 | Types | Prefer `{}[]` over `Array<T>`; short early returns when clear |
 
 - Prefer existing helpers over one-off transforms
+- Effect 4 idioms: services are `class X extends Context.Service<X, Shape>()("aves/X") {}`; schema params are `Schema.Codec<A, I>` (no services); transforms use `Schema.decodeTo` + `SchemaTransformation.transform` (see `mapSchema` / `redecodeSchema`); filters use `.check(Schema.isMinLength(…))` / `Schema.makeFilter`; unions/literals take arrays (`Schema.Union([…])`, `Schema.Literals([…])`)
 - Prefer `await` over `.then`
 - Request types: `InferInput<typeof XSchema>` · Response: `InferOutput<typeof XResponseSchema>` (`src/effect/infer.ts`)
 - Define aliases in `types.ts`; export from `index.ts` when public
@@ -117,8 +118,8 @@ Add to `schemas/enums.ts` and re-export from `index.ts`.
 | Effect DX / Layers | `src/client.effect.test.ts` — runtime, DI, `catchTag`, timeout |
 | Transport reader | `src/client/transport/response-reader.test.ts` |
 | XML / utils | colocated `*.test.ts` |
-| Hot-path bench | `src/utils/hot-path.bench.ts` — `yarn test:bench` |
-| Hot-path asserts | `src/utils/hot-path.perf.test.ts` — `AVES_PERF=1 yarn test:perf` |
+| Hot-path bench | `src/utils/hot-path.bench.ts` — `pnpm test:bench` |
+| Hot-path asserts | `src/utils/hot-path.perf.test.ts` — `AVES_PERF=1 pnpm test:perf` |
 
 Assert `result.success` / `error.kind` or `_tag` / `isAvesError`. Cover facade dual keys and flattened DX when touching those schemas.
 
@@ -155,7 +156,7 @@ Factories: `validationError`, `apiError`, `unknownError`, **`toAvesError`**, gua
 1. Look up `AVES_OPS[op]` (endpoint, roots, schemas, `bodyKey?`)
 2. `decodeUnknownAves(apiSchema, params)` — validation → `AvesValidationError`
 3. `buildOpEnvelope` + cached frozen `RqHeader`
-4. `AvesHttp.post` — platform client, timeout, status, capped error body
+4. `AvesHttp.post` — `effect/http` client, timeout, status, capped error body
 5. `readAvesResponseEffect` — XML root → Schema decode → `rsStatus` gate
 
 Rules: map errors via `toAvesError` / factories — no raw `Error` in Results. Promise edge uses `runToResult`.
@@ -283,7 +284,7 @@ Task Progress:
 - [ ] Export InferInput/InferOutput types from types.ts / index.ts if public
 - [ ] Enums via enumSchema if new picklists — re-export from index
 - [ ] Tests: schema unit + client mock (Promise + Effect DX + facade aliases + error.kind/_tag)
-- [ ] yarn typecheck && yarn test && yarn run check
+- [ ] pnpm typecheck && pnpm test && pnpm check
 - [ ] CHANGELOG under the next version section (+ README if DX / alias map changes); bump semver if breaking
 ```
 

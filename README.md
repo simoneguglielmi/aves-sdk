@@ -1,6 +1,6 @@
 # AVES SDK
 
-Type-safe TypeScript SDK for the AVES XML REST API. Handles XML parsing, **Effect Schema** validation, camelCase ↔ PascalCase / `@` attrs, and `@effect/platform` HTTP. Public domain methods return `Result` (they do not throw). Effect apps can also `yield*` domain Tags via Layers / `makeAvesRuntime`.
+Type-safe TypeScript SDK for the AVES XML REST API. Handles XML parsing, **Effect Schema** validation, camelCase ↔ PascalCase / `@` attrs, and `effect/http` HTTP (Effect 4). Public domain methods return `Result` (they do not throw). Effect apps can also `yield*` domain services via Layers / `makeAvesRuntime`.
 
 ## Installation
 
@@ -14,7 +14,7 @@ pnpm add aves-sdk
 bun add aves-sdk
 ```
 
-`aves-sdk` depends on `effect` and `@effect/platform`.
+`aves-sdk` depends on `effect` 4 (`~4.0`; HTTP comes from `effect/http`). It is a regular dependency, so Promise-only apps do not need Effect themselves. Effect apps that compose the SDK's Layers / services should use the same `effect` 4.0.x.
 
 ## Quick start (Promise facade)
 
@@ -98,6 +98,10 @@ Migration from 3.x: domain method names were shortened — see the
 Migration from 4.x: Effect Schema + platform HTTP + tagged errors — see the
 [5.0.0 migration notes](https://github.com/simoneguglielmi/aves-sdk/blob/main/CHANGELOG.md#v5.0.0).
 
+From 5.0.x: the Promise API is unchanged; Effect programs move to Effect 4
+(`effect/http`, `Context.Service`) — see the
+[5.1.0 notes](https://github.com/simoneguglielmi/aves-sdk/blob/main/CHANGELOG.md#v5.1.0).
+
 | Namespace | Methods |
 | --------- | ------- |
 | `master` | `search`, `upsert` |
@@ -123,7 +127,7 @@ createAvesClient(options, deps?)
 Optional DI (tests / custom HTTP):
 
 ```typescript
-import { HttpClient, HttpClientResponse } from "@effect/platform";
+import { HttpClient, HttpClientResponse } from "effect/http";
 import { Effect } from "effect";
 import { AvesClient } from "aves-sdk";
 
@@ -718,6 +722,9 @@ if (!result.success) {
 
 Effect programs recover with `Effect.catchTag("AvesApiError", …)` (also `"AvesValidationError"`, `"AvesUnknownError"`).
 
+Validation messages keep their prefix and list every invalid field with its path, e.g.
+`Validation error occurred during invoke: Expected a value with a length of at least 6\n  at ["recordCode"]\nMissing key\n  at ["languageCode"]`.
+
 ---
 
 ## Case transformation & wire shapes
@@ -761,17 +768,17 @@ Editing CreateBooking shapes does not affect SearchFile or AvesSearch.
 ## Architecture
 
 Promise edge: `createAvesClient` / `AvesClient` → `toPromiseFacade` on domain services.
-Effect edge: `makeAvesRuntime` / `avesClientLayer` / `AvesClientLive` → `yield*` Tags.
+Effect edge: `makeAvesRuntime` / `avesClientLayer` / `AvesClientLive` → `yield*` services (`Context.Service`).
 
 | Module | Role |
 | ------ | ---- |
 | `src/client.ts` | Promise facade + `makeAvesRuntime` |
 | `src/client/layer.ts` | `avesClientLayer` / `AvesClientLive` composition |
-| `src/client/booking/` | Booking Tag / service / layer |
-| `src/client/master/` | Master-records Tag / service / layer |
-| `src/client/packages/` | Package catalog Tag / service / layer |
+| `src/client/booking/` | Booking service tag / service / layer |
+| `src/client/master/` | Master-records service tag / service / layer |
+| `src/client/packages/` | Package catalog service tag / service / layer |
 | `src/client/transport/` | `invoke` / `ops` / response reader |
-| `src/client/http/` | XML POST via `@effect/platform` HttpClient |
+| `src/client/http/` | XML POST via `effect/http` HttpClient |
 | `src/client/config/` | `AvesConfig` |
 | `src/schemas/` | Effect Schema RQ/RS |
 | `src/xml/` | XML root helpers + JSON ↔ XML |

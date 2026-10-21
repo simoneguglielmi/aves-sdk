@@ -3,29 +3,29 @@ import { createResponseSchema, mapSchema } from "../utils/schema-transform.js";
 import { RsStatusValueSchema } from "./enums.js";
 
 /** AVES language code (`01` Italian, `02` English, …) */
-export const LanguageCodeSchema = Schema.String.pipe(
-	Schema.minLength(2),
-	Schema.maxLength(2),
+export const LanguageCodeSchema = Schema.String.check(
+	Schema.isMinLength(2),
+	Schema.isMaxLength(2),
 );
 
 export const OptionalLanguageCodeSchema = Schema.optional(LanguageCodeSchema);
 
 /** XML often sends numbers as strings (or vice versa). */
-export const StringishSchema = Schema.Union(Schema.String, Schema.Number);
+export const StringishSchema = Schema.Union([Schema.String, Schema.Number]);
 
 /** Catalog/boolish wire fields that may arrive as string | number | boolean. */
-export const StringishBoolSchema = Schema.Union(
+export const StringishBoolSchema = Schema.Union([
 	Schema.String,
 	Schema.Number,
 	Schema.Boolean,
-);
+]);
 
 /** AVES bool-ish wire values */
-export const BoolishSchema = Schema.Union(
+export const BoolishSchema = Schema.Union([
 	Schema.Literal("true"),
 	Schema.Literal("false"),
 	Schema.Boolean,
-);
+]);
 
 export const DateRangeSchema = Schema.Struct({
 	minDate: Schema.String,
@@ -36,7 +36,7 @@ export const DateRangeSchema = Schema.Struct({
  * Request header schema with authentication credentials
  */
 export const RqHeaderSchema = Schema.Struct({
-	"@HostID": Schema.String.pipe(Schema.minLength(6), Schema.maxLength(6)),
+	"@HostID": Schema.String.check(Schema.isMinLength(6), Schema.isMaxLength(6)),
 	"@Xtoken": Schema.String,
 	"@Interface": Schema.Literal("WEB"),
 	"@UserName": Schema.Literal("WEB"),

@@ -18,7 +18,7 @@ Task Progress:
 - [ ] Export InferInput/InferOutput / convenience aliases from types.ts / index.ts if public
 - [ ] Enums via enumSchema if new picklists — re-export from index
 - [ ] Tests: schema unit + client mock (Promise + Effect DX + facade aliases + error.kind/_tag)
-- [ ] yarn typecheck && yarn test && yarn run check
+- [ ] pnpm typecheck && pnpm test && pnpm check
 - [ ] CHANGELOG under the next version section (+ README if DX / alias map changes); bump semver if breaking
 ```
 
@@ -49,10 +49,10 @@ Register static metadata only in `AVES_OPS` — do not pass endpoint/schema bags
 ## Verify / release
 
 ```bash
-yarn typecheck
-yarn test
-yarn build   # when packaging / before release
-# optional: yarn test:bench · AVES_PERF=1 yarn test:perf
+pnpm typecheck
+pnpm test
+pnpm build   # when packaging / before release
+# optional: pnpm test:bench · AVES_PERF=1 pnpm test:perf
 ```
 
 Breaking DX → semver + `CHANGELOG.md` version section (not a perpetual Unreleased dump) + README examples / alias map when public shapes change.

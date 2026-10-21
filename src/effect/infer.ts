@@ -9,11 +9,11 @@ type MutableDeep<T> =
 			: T;
 
 /** Caller-facing input (Encoded). */
-export type InferInput<S extends Schema.Schema.Any> = MutableDeep<
-	Schema.Schema.Encoded<S>
+export type InferInput<S extends Schema.Top> = MutableDeep<
+	Schema.Codec.Encoded<S>
 >;
 
 /** Decoded / transformed output (Type). */
-export type InferOutput<S extends Schema.Schema.Any> = MutableDeep<
+export type InferOutput<S extends Schema.Top> = MutableDeep<
 	Schema.Schema.Type<S>
 >;
