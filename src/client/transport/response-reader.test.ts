@@ -40,6 +40,29 @@ describe("requireRsStatusOk", () => {
 		);
 		expect(msg).toBe("7:nope");
 	});
+
+	it("gives a non-OK status without a description a readable message", async () => {
+		const messages = await Promise.all(
+			[undefined, ""].map((errorDescription) =>
+				Effect.runPromise(
+					requireRsStatusOk({
+						rsStatus: {
+							status: "ERROR" as const,
+							errorCode: 7,
+							errorDescription,
+							warnings: undefined,
+						},
+					}).pipe(
+						Effect.catchTag("AvesApiError", (e) => Effect.succeed(e.message)),
+					),
+				),
+			),
+		);
+		expect(messages).toEqual([
+			"AVES responded with status ERROR (code 7)",
+			"AVES responded with status ERROR (code 7)",
+		]);
+	});
 });
 
 describe("readAvesResponseEffect", () => {

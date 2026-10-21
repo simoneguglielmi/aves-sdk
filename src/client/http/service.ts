@@ -31,7 +31,12 @@ const readOkText = (
 		Effect.flatMap((body) => {
 			if (isErrorStatus(response.status))
 				return Effect.fail(
-					apiError(body.slice(0, MAX_ERROR_BODY), "ERROR", response.status),
+					apiError(
+						body.slice(0, MAX_ERROR_BODY) ||
+							`AVES responded with HTTP ${response.status}`,
+						"ERROR",
+						response.status,
+					),
 				);
 			return Effect.succeed(body);
 		}),

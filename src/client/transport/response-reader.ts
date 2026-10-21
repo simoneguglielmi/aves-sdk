@@ -13,7 +13,9 @@ export function requireRsStatusOk<T extends { rsStatus: RsStatus }>(
 	if (rsStatus.status !== "OK")
 		return Effect.fail(
 			apiError(
-				rsStatus.errorDescription ?? "",
+				// AVES may send no description: never surface an empty message.
+				rsStatus.errorDescription ||
+					`AVES responded with status ${rsStatus.status}${rsStatus.errorCode === undefined ? "" : ` (code ${rsStatus.errorCode})`}`,
 				rsStatus.status,
 				rsStatus.errorCode,
 			),
