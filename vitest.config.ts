@@ -1,4 +1,8 @@
+import { existsSync } from "node:fs";
 import { defineConfig } from "vitest/config";
+
+// Local e2e credentials (src/test, gitignored) come from .env; Node reads it natively.
+if (existsSync(".env")) process.loadEnvFile(".env");
 
 export default defineConfig({
 	test: {
