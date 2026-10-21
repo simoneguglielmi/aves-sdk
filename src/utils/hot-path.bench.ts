@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { test } from "vitest";
 import {
 	normalizeEmptyPaxAssociated,
 	toWireBody,
@@ -106,87 +106,62 @@ const bookingCamelRs = pascalToCamelKeys(
 	structuredClone(bookingWireRs),
 ) as Record<string, unknown>;
 
-describe("toWireBody", () => {
-	bench(
-		"fused toWireBody (current)",
-		() => {
-			toWireBody(bookingInput, bookingFileWire);
-		},
-		{ time: 300, warmupTime: 50 },
-	);
+/** Same budget for every comparison: short runs, enough to rank the variants. */
+const BENCH_OPTIONS = { time: 300, warmupTime: 50 };
 
-	bench(
-		"legacy 3-walk (wrap → pax → pascal)",
-		() => {
+test("toWireBody", async ({ bench }) => {
+	await bench.compare(
+		bench("fused toWireBody (current)", () => {
+			toWireBody(bookingInput, bookingFileWire);
+		}),
+		bench("legacy 3-walk (wrap → pax → pascal)", () => {
 			camelToPascalKeys(
 				normalizeEmptyPaxAssociated(
 					wrapListDetails(bookingInput, bookingFileWire),
 				),
 				bookingFileWire,
 			);
-		},
-		{ time: 300, warmupTime: 50 },
+		}),
+		BENCH_OPTIONS,
 	);
 });
 
-describe("pascalToCamelKeys", () => {
-	bench(
-		"immutable copy (from fresh clone)",
-		() => {
+test("pascalToCamelKeys", async ({ bench }) => {
+	await bench.compare(
+		bench("immutable copy (from fresh clone)", () => {
 			pascalToCamelKeys(structuredClone(bookingWireRs));
-		},
-		{ time: 300, warmupTime: 50 },
-	);
-
-	bench(
-		"in-place mutate (on fresh clone)",
-		() => {
+		}),
+		bench("in-place mutate (on fresh clone)", () => {
 			pascalToCamelKeysInPlace(structuredClone(bookingWireRs));
-		},
-		{ time: 300, warmupTime: 50 },
+		}),
+		BENCH_OPTIONS,
 	);
 });
 
-describe("withPublicAliases", () => {
-	bench(
-		"Proxy wrap (fresh target) + selective get",
-		() => {
+test("withPublicAliases", async ({ bench }) => {
+	await bench.compare(
+		bench("Proxy wrap (fresh target) + selective get", () => {
 			touchFacade(
 				withPublicAliases(structuredClone(bookingCamelRs)) as Record<
 					string,
 					unknown
 				>,
 			);
-		},
-		{ time: 300, warmupTime: 50 },
-	);
-
-	bench(
-		"deep alias copy + selective get",
-		() => {
+		}),
+		bench("deep alias copy + selective get", () => {
 			touchFacade(
 				deepAliasCopy(structuredClone(bookingCamelRs)) as Record<
 					string,
 					unknown
 				>,
 			);
-		},
-		{ time: 300, warmupTime: 50 },
-	);
-
-	bench(
-		"Proxy cached + JSON.stringify",
-		() => {
+		}),
+		bench("Proxy cached + JSON.stringify", () => {
 			JSON.stringify(withPublicAliases(bookingCamelRs));
-		},
-		{ time: 300, warmupTime: 50 },
-	);
-
-	bench(
-		"deep alias copy + JSON.stringify",
-		() => {
+		}),
+		bench("deep alias copy + JSON.stringify", () => {
 			JSON.stringify(deepAliasCopy(bookingCamelRs));
-		},
-		{ time: 300, warmupTime: 50 },
+		}),
+		BENCH_OPTIONS,
 	);
 });
