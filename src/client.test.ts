@@ -295,6 +295,49 @@ describe("AvesClient", () => {
 				expect(result.error.status).toBe("ERROR");
 			}
 		});
+		// Pins Effect 4's default formatter output (all issues, each with its path):
+		// a wording change in a future Effect upgrade must fail here, visibly.
+		it("lists every invalid field in the validation message", async () => {
+			const result = await client.master.upsert({
+				recordCode: "12345",
+			} as Parameters<typeof client.master.upsert>[0]);
+
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error.kind).toBe("validation");
+				expect(result.error.message).toBe(
+					[
+						"Validation error occurred during invoke: Expected a value with a length of at least 6",
+						'  at ["recordCode"]',
+						"Missing key",
+						'  at ["languageCode"]',
+					].join("\n"),
+				);
+			}
+		});
+
+		it("formats response decode failures with the wire path", async () => {
+			onRequest = () => ({
+				status: 200,
+				body: `<ManageMasterRecordRS>
+          <RsStatus Status="OK"/>
+          <MasterRecordDetail InsertCriteria="X"/>
+        </ManageMasterRecordRS>`,
+			});
+
+			const result = await client.master.upsert({ languageCode: "02" });
+
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error.kind).toBe("validation");
+				expect(result.error.message).toBe(
+					[
+						'Invalid response format: Expected "S" | "N" | "T" | "M"',
+						'  at ["MasterRecordDetail"]["@InsertCriteria"]',
+					].join("\n"),
+				);
+			}
+		});
 	});
 
 	describe("create", () => {
