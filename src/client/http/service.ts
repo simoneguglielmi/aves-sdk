@@ -1,3 +1,4 @@
+import { Duration, Effect, Layer } from "effect";
 import {
 	FetchHttpClient,
 	HttpBody,
@@ -5,8 +6,7 @@ import {
 	type HttpClientError,
 	HttpClientRequest,
 	type HttpClientResponse,
-} from "@effect/platform";
-import { Duration, Effect, Layer } from "effect";
+} from "effect/http";
 import {
 	type AvesError,
 	apiError,
@@ -42,7 +42,7 @@ const readOkText = (
 		}),
 	);
 
-/** Map platform {@link HttpClient} into the AVES XML POST surface. */
+/** Map the `effect/http` {@link HttpClient} into the AVES XML POST surface. */
 export function makeAvesHttp(
 	options: HttpClientOptions,
 	http: HttpClient.HttpClient,
@@ -52,9 +52,9 @@ export function makeAvesHttp(
 		HttpClient.mapRequest(HttpClientRequest.prependUrl(options.baseURL)),
 		HttpClient.transformResponse((effect) =>
 			effect.pipe(
-				Effect.timeoutFail({
+				Effect.timeoutOrElse({
 					duration: timeout,
-					onTimeout: () => timedOut,
+					orElse: () => Effect.fail(timedOut),
 				}),
 				Effect.mapError(toAvesHttpError),
 			),
@@ -70,7 +70,7 @@ export function makeAvesHttp(
 	};
 }
 
-/** Default platform HTTP (`globalThis.fetch`). Override via {@link AvesClientDeps.httpClient}. */
+/** Default HTTP client (`globalThis.fetch`). Override via {@link AvesClientDeps.httpClient}. */
 export const fetchHttpLayer: Layer.Layer<HttpClient.HttpClient> =
 	FetchHttpClient.layer;
 

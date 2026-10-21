@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Result as EffectResult, Exit, Option } from "effect";
 import {
 	type AvesError,
 	apiError,
@@ -20,15 +20,15 @@ export async function runToResult<A>(
 }
 
 function causeToAvesError(cause: Cause.Cause<AvesError>): AvesError {
-	const failure = Cause.failureOption(cause);
+	const failure = Cause.findErrorOption(cause);
 	if (Option.isSome(failure)) return failure.value;
 
-	if (Cause.isInterruptedOnly(cause))
+	if (Cause.hasInterruptsOnly(cause))
 		return apiError("Request timed out", "TIMEOUT");
 
-	const defect = Cause.dieOption(cause);
-	if (Option.isSome(defect))
-		return toAvesError(defect.value, "Unknown error occurred");
+	const defect = Cause.findDefect(cause);
+	if (EffectResult.isSuccess(defect))
+		return toAvesError(defect.success, "Unknown error occurred");
 
 	return unknownError(Cause.pretty(cause));
 }
@@ -48,7 +48,7 @@ type EffectFn = (...args: never[]) => Effect.Effect<unknown, AvesError>;
 export type PromiseFacade<S extends { readonly [K in keyof S]: EffectFn }> = {
 	readonly [K in keyof S]: (
 		...args: Parameters<S[K]>
-	) => Promise<Result<Effect.Effect.Success<ReturnType<S[K]>>, AvesError>>;
+	) => Promise<Result<Effect.Success<ReturnType<S[K]>>, AvesError>>;
 };
 
 export function toPromiseFacade<

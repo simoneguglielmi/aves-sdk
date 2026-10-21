@@ -49,7 +49,7 @@ import type { PackageCatalogService } from "./packages/service.js";
 // Each case rebuilds a method's signature straight from the schemas the
 // registry passes to the transport, and pins the published type against it.
 // Together with ops.test-d.ts this covers the whole chain that used to be
-// inferred: schema -> OpTypes -> FacadeOp -> service -> Context.Tag.
+// inferred: schema -> OpTypes -> FacadeOp -> service -> Context.Service.
 
 describe("BookingService methods match their schemas", () => {
 	it("create", () => {

@@ -1,11 +1,11 @@
-import { HttpClient } from "@effect/platform";
 import { Effect, Layer } from "effect";
+import { HttpClient } from "effect/http";
 import { AvesConfig } from "../config/tag.js";
 import { makeAvesHttp } from "./service.js";
 import { AvesHttp } from "./tag.js";
 
 /**
- * Live AVES HTTP — requires {@link AvesConfig} + platform {@link HttpClient}.
+ * Live AVES HTTP — requires {@link AvesConfig} + `effect/http` {@link HttpClient}.
  * Provide {@link fetchHttpLayer} or {@link httpClientLayer} underneath.
  */
 export const AvesHttpLive: Layer.Layer<

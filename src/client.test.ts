@@ -1,9 +1,9 @@
+import { Effect } from "effect";
 import {
 	HttpClient,
 	type HttpClientRequest,
 	HttpClientResponse,
-} from "@effect/platform";
-import { Effect } from "effect";
+} from "effect/http";
 import { beforeEach, describe, expect, it } from "vitest";
 import { AvesClient } from "./client.js";
 import {

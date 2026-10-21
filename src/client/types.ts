@@ -1,4 +1,4 @@
-import type { HttpClient } from "@effect/platform";
+import type { HttpClient } from "effect/http";
 import type { BookingService } from "./booking/service.js";
 import type { AvesHttpService } from "./http/types.js";
 import type { MasterRecordsService } from "./master/service.js";
@@ -7,7 +7,7 @@ import type { AvesTransportService } from "./transport/types.js";
 
 /** Optional Layer overrides — Effect services (not Promise facades). */
 export type AvesClientDeps = {
-	/** Platform HTTP client (e.g. `HttpClient.make` in tests). Default: FetchHttpClient. */
+	/** `effect/http` client (e.g. `HttpClient.make` in tests). Default: FetchHttpClient. */
 	httpClient?: HttpClient.HttpClient;
 	http?: AvesHttpService;
 	transport?: AvesTransportService;
